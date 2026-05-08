@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Khmer TTS</title>
+</head>
+<body>
+
+<h2>Khmer Text to Speech</h2>
+
+<textarea id="text" rows="5" cols="40">សួស្តី</textarea><br><br>
+
+<button onclick="speak()">Speak</button>
+
+<audio id="audio" controls></audio>
+
+<script>
+function speak() {
+    let text = document.getElementById("text").value;
+
+    fetch("/speak", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: "text=" + encodeURIComponent(text)
+    })
+    .then(res => res.blob())
+    .then(blob => {
+        let url = URL.createObjectURL(blob);
+        let audio = document.getElementById("audio");
+        audio.src = url;
+        audio.play();
+    });
+}
+</script>
+
+</body>
+</html>
