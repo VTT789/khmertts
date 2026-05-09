@@ -1,3 +1,8 @@
+<<<<<<< HEAD
 flask
 edge-tts
+=======
+flask
+edge-tts
+>>>>>>> 10eb63c (update)
 gunicorn

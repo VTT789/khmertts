@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from flask import Flask, request, send_file
 import asyncio
 import edge_tts
@@ -25,3 +26,30 @@ def speak():
 
 if __name__ == "__main__":
     app.run(debug=True)
+=======
+from flask import Flask, request, send_file
+import asyncio
+import edge_tts
+import os
+
+app = Flask(__name__)
+
+async def tts(text, path):
+    communicate = edge_tts.Communicate(text, "km-KH-SreymomNeural")
+    await communicate.save(path)
+
+@app.route("/")
+def home():
+    return open("index.html", encoding="utf-8").read()
+
+@app.route("/speak", methods=["POST"])
+def speak():
+    text = request.form["text"]
+    voice = request.form["voice"]
+
+    file = "out.mp3"
+
+    asyncio.run(edge_tts.Communicate(text, voice).save(file))
+
+    return send_file(file, mimetype="audio/mpeg")
+>>>>>>> 10eb63c (update)
