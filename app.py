@@ -5,60 +5,46 @@ import os
 import tempfile
 import uuid
 import asyncio
-import traceback
 
 app = Flask(__name__)
 CORS(app)
 
-# Create a persistent event loop for the entire application
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-
-async def generate_tts(text, voice, rate, file_path):
-    """Generate TTS audio file"""
-    try:
-        print(f"🎤 Starting TTS: voice={voice}, rate={rate}, text={text[:50]}")
-        
-        # Remove rate parameter for Khmer voices
-        if voice.startswith('km-'):
-            communicate = edge_tts.Communicate(text=text, voice=voice)
-        else:
-            # Format rate properly for Chinese
-            if rate and rate != "0%":
-                if rate == "-20":
-                    rate = "-20%"
-                elif rate == "20":
-                    rate = "+20%"
-                elif rate == "-50":
-                    rate = "-50%"
-                elif rate == "50":
-                    rate = "+50%"
-            communicate = edge_tts.Communicate(text=text, voice=voice, rate=rate)
-        
-        await communicate.save(file_path)
-        
-        # Verify file
-        if os.path.exists(file_path) and os.path.getsize(file_path) > 1000:
-            print(f"✅ TTS Success! Size: {os.path.getsize(file_path)} bytes")
-            return True
-        return False
-        
-    except Exception as e:
-        print(f"❌ TTS Error: {type(e).__name__}: {str(e)}")
-        traceback.print_exc()
-        
-        # Fallback without rate
-        try:
-            communicate = edge_tts.Communicate(text=text, voice=voice)
-            await communicate.save(file_path)
-            return True
-        except:
-            return False
-
+# Simple wrapper to run async functions
 def run_async(coro):
-    """Run async coroutine in the persistent event loop"""
-    future = asyncio.run_coroutine_threadsafe(coro, loop)
-    return future.result(timeout=60)
+    """Run async function in a new event loop"""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
+
+def generate_tts_sync(text, voice, rate, file_path):
+    """Generate TTS - synchronous wrapper"""
+    try:
+        async def _generate():
+            if voice.startswith('km-'):
+                communicate = edge_tts.Communicate(text=text, voice=voice)
+            else:
+                # Format rate for Chinese
+                if rate and rate != "0%":
+                    if rate == "-20":
+                        rate = "-20%"
+                    elif rate == "20":
+                        rate = "+20%"
+                    elif rate == "-50":
+                        rate = "-50%"
+                    elif rate == "50":
+                        rate = "+50%"
+                communicate = edge_tts.Communicate(text=text, voice=voice, rate=rate)
+            
+            await communicate.save(file_path)
+        
+        run_async(_generate())
+        return os.path.exists(file_path) and os.path.getsize(file_path) > 1000
+    except Exception as e:
+        print(f"TTS Error: {e}")
+        return False
 
 @app.route("/")
 def home():
@@ -87,9 +73,9 @@ def speak():
     file_path = os.path.join(temp_dir, filename)
     
     try:
-        success = run_async(generate_tts(text, voice, rate, file_path))
+        success = generate_tts_sync(text, voice, rate, file_path)
         
-        if not success or not os.path.exists(file_path):
+        if not success:
             return jsonify({"error": "TTS generation failed"}), 500
         
         response = send_file(file_path, mimetype="audio/mpeg")
@@ -103,75 +89,54 @@ def speak():
                 pass
         
         return response
-        
     except Exception as e:
         print(f"Server error: {e}")
-        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
-@app.route("/debug-tts", methods=["GET"])
-def debug_tts():
-    """Debug endpoint to test edge-tts connectivity"""
-    result = {"status": "testing", "voices_found": 0, "khmer_voices": [], "error": None}
-    
-    try:
-        voices = run_async(edge_tts.list_voices())
-        result["voices_found"] = len(voices)
-        
-        khmer_voices = []
-        for v in voices:
-            if v.get('ShortName', '').startswith('km-'):
-                khmer_voices.append(v.get('ShortName'))
-        result["khmer_voices"] = khmer_voices
-        result["status"] = "success"
-    except Exception as e:
-        result["error"] = str(e)
-        result["status"] = "failed"
-    
-    return jsonify(result)
-
-@app.route("/test-simple", methods=["GET"])
+@app.route("/test-simple")
 def test_simple():
-    """Test with hardcoded English text"""
-    text = "Hello world"
+    """Simple test endpoint - Hello World"""
+    text = "Hello world. This is a test of the text to speech system."
     voice = "en-US-JennyNeural"
-    rate = "0%"
     
     temp_dir = tempfile.gettempdir()
     filename = f"tts_{uuid.uuid4().hex}.mp3"
     file_path = os.path.join(temp_dir, filename)
     
-    try:
-        success = run_async(generate_tts(text, voice, rate, file_path))
-        
-        if not success:
-            return jsonify({"error": "TTS failed", "text": text}), 500
-        
-        response = send_file(file_path, mimetype="audio/mpeg")
-        
-        @response.call_on_close
-        def cleanup():
-            try:
-                if os.path.exists(file_path):
-                    os.unlink(file_path)
-            except:
-                pass
-        
-        return response
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    success = generate_tts_sync(text, voice, "0%", file_path)
+    
+    if not success:
+        return jsonify({"error": "TTS failed"}), 500
+    
+    response = send_file(file_path, mimetype="audio/mpeg")
+    
+    @response.call_on_close
+    def cleanup():
+        try:
+            if os.path.exists(file_path):
+                os.unlink(file_path)
+        except:
+            pass
+    
+    return response
 
-@app.route("/test", methods=["GET"])
+@app.route("/test")
 def test():
-    return jsonify({
-        "status": "healthy",
-        "message": "TTS API is working!",
-        "endpoints": ["/", "/speak", "/test", "/health", "/debug-tts", "/test-simple"]
-    })
+    return jsonify({"status": "healthy", "message": "Server running"})
 
-@app.route("/health", methods=["GET"])
-def health():
-    return jsonify({"status": "healthy"}), 200
+@app.route("/debug-tts")
+def debug_tts():
+    """Debug endpoint to test edge-tts connectivity"""
+    try:
+        voices = run_async(edge_tts.list_voices())
+        khmer_voices = [v['ShortName'] for v in voices if v['ShortName'].startswith('km-')]
+        return jsonify({
+            "status": "success",
+            "voices_found": len(voices),
+            "khmer_voices": khmer_voices
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
