@@ -10,40 +10,49 @@ app = Flask(__name__)
 CORS(app)
 
 # Simple wrapper to run async functions
-def run_async(coro):
-    """Run async function in a new event loop"""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(coro)
-    finally:
-        loop.close()
-
 def generate_tts_sync(text, voice, rate, file_path):
-    """Generate TTS - synchronous wrapper"""
+    """Generate TTS - synchronous wrapper with detailed logging"""
     try:
+        print(f"🔵 Starting TTS: voice={voice}, text={text[:30]}, rate={rate}")
+        
         async def _generate():
+            print(f"  🟢 Inside async function")
             if voice.startswith('km-'):
+                print(f"  📢 Using Khmer voice (no rate)")
                 communicate = edge_tts.Communicate(text=text, voice=voice)
             else:
+                print(f"  📢 Using Chinese voice with rate")
                 # Format rate for Chinese
+                formatted_rate = rate
                 if rate and rate != "0%":
                     if rate == "-20":
-                        rate = "-20%"
+                        formatted_rate = "-20%"
                     elif rate == "20":
-                        rate = "+20%"
+                        formatted_rate = "+20%"
                     elif rate == "-50":
-                        rate = "-50%"
+                        formatted_rate = "-50%"
                     elif rate == "50":
-                        rate = "+50%"
-                communicate = edge_tts.Communicate(text=text, voice=voice, rate=rate)
+                        formatted_rate = "+50%"
+                print(f"  🎚️ Rate: {formatted_rate}")
+                communicate = edge_tts.Communicate(text=text, voice=voice, rate=formatted_rate)
             
+            print(f"  💾 Saving to {file_path}")
             await communicate.save(file_path)
+            print(f"  ✅ Save completed")
         
         run_async(_generate())
-        return os.path.exists(file_path) and os.path.getsize(file_path) > 1000
+        
+        if os.path.exists(file_path):
+            size = os.path.getsize(file_path)
+            print(f"  📁 File created, size: {size} bytes")
+            return size > 1000
+        else:
+            print(f"  ❌ File not created at {file_path}")
+            return False
     except Exception as e:
-        print(f"TTS Error: {e}")
+        print(f"🔥 TTS Exception: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
 
 @app.route("/")
@@ -124,19 +133,55 @@ def test_simple():
 def test():
     return jsonify({"status": "healthy", "message": "Server running"})
 
-@app.route("/debug-tts")
-def debug_tts():
-    """Debug endpoint to test edge-tts connectivity"""
+@app.route("/test-tts-debug")
+def test_tts_debug():
+    """Ultra-simple TTS test"""
+    import asyncio
+    import tempfile
+    
+    result = {"steps": []}
+    
     try:
-        voices = run_async(edge_tts.list_voices())
-        khmer_voices = [v['ShortName'] for v in voices if v['ShortName'].startswith('km-')]
-        return jsonify({
-            "status": "success",
-            "voices_found": len(voices),
-            "khmer_voices": khmer_voices
-        })
+        result["steps"].append("Starting test")
+        
+        # Create temp file
+        fd, path = tempfile.mkstemp(suffix='.mp3')
+        os.close(fd)
+        result["steps"].append(f"Temp file: {path}")
+        
+        # Simple test with English
+        text = "test"
+        voice = "en-US-JennyNeural"
+        
+        async def simple_tts():
+            result["steps"].append("Creating communicate object")
+            comm = edge_tts.Communicate(text=text, voice=voice)
+            result["steps"].append("Calling save()")
+            await comm.save(path)
+            result["steps"].append("Save() completed")
+        
+        run_async(simple_tts())
+        
+        if os.path.exists(path):
+            size = os.path.getsize(path)
+            result["steps"].append(f"File created! Size: {size}")
+            result["success"] = True
+        else:
+            result["steps"].append("File not created")
+            result["success"] = False
+            
+        # Cleanup
+        try:
+            os.unlink(path)
+        except:
+            pass
+            
+        return jsonify(result)
+        
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        result["error"] = str(e)
+        result["success"] = False
+        return jsonify(result), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
