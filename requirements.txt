@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-flask
-edge-tts
-=======
-flask
-edge-tts
->>>>>>> 10eb63c (update)
-gunicorn
+Flask==3.0.0
+edge-tts==6.1.9
+gunicorn==21.2.0
+flask-cors==4.0.0
