@@ -1,2 +1,9 @@
-.tmp.driveupload/
-*.tmp
+*.pyc
+__pycache__/
+venv/
+env/
+*.mp3
+*.wav
+.DS_Store
+.vscode/
+.idea/
