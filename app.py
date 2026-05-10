@@ -27,16 +27,18 @@ def run_async(coro):
 # RATE FORMATTER
 # =========================
 def format_rate(rate):
-    """Convert simple values to Edge-TTS format"""
     if not rate:
-        return "0%"
+        return "+0%"
 
     rate = str(rate).replace("%", "").strip()
 
     if rate == "0":
-        return "0%"
+        return "+0%"
 
     if rate.startswith("-"):
+        return f"{rate}%"
+
+    if rate.startswith("+"):
         return f"{rate}%"
 
     return f"+{rate}%"
