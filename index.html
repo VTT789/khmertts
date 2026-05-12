@@ -520,15 +520,15 @@
     async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, parseInt(document.getElementById('speechInterval').value || 500))); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
     function enqueueSpeech(text, voice, rate = null) { if (!text) return; speechQueue.push({ text, voice, rate }); processSpeechQueue(); }
     function killAllSpeech() { if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; } speechQueue = []; isProcessingQueue = false; }
-    function speakChineseEdge(text) { if (!text) return; const voice = document.getElementById('zhVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); enqueueSpeech(text, voice, rateFormatted); }
-    function speakKhmerEdge(text) { if (!text) return; const voice = document.getElementById('kmVoiceSelect').value; enqueueSpeech(text, voice, null); }
-    function speakChineseFromMain() { killAllSpeech(); speakChineseEdge(document.getElementById('chineseOut').innerText); }
-    function speakKhmerFromMain() { killAllSpeech(); speakKhmerEdge(document.getElementById('khmerOut').innerText); }
+    function speakChineseEdge(text) { if (!text) return; killAllSpeech(); const voice = document.getElementById('zhVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); enqueueSpeech(text, voice, rateFormatted); }
+    function speakKhmerEdge(text) { if (!text) return; killAllSpeech(); const voice = document.getElementById('kmVoiceSelect').value; enqueueSpeech(text, voice, null); }
+    function speakChineseFromMain() { const text = document.getElementById('chineseOut').innerText; if(text) speakChineseEdge(text); }
+    function speakKhmerFromMain() { const text = document.getElementById('khmerOut').innerText; if(text) speakKhmerEdge(text); }
     async function speakAutoSequence(zhText, kmText) { killAllSpeech(); const interval = parseInt(document.getElementById('speechInterval').value); const zhReps = parseInt(document.getElementById('zhReps').value); const kmReps = parseInt(document.getElementById('kmReps').value); const zhVoice = document.getElementById('zhVoiceSelect').value; const kmVoice = document.getElementById('kmVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); for(let i=0; i<zhReps; i++) { await callEdgeTTS(zhText, zhVoice, rateFormatted); if(i < zhReps-1) await new Promise(r => setTimeout(r, interval)); } if(kmText && kmText.trim()) { for(let j=0; j<kmReps; j++) { await callEdgeTTS(kmText, kmVoice, null); if(j < kmReps-1) await new Promise(r => setTimeout(r, interval)); } } if(autoActive) startAutoCycle(); }
     
     let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = true;
     
-    // MOUSE DRAG OFFSET SYSTEM - using internal state without sliders
+    // MOUSE DRAG OFFSET SYSTEM
     let zhOffsetX = 0, zhOffsetY = 0, kmOffsetX = 0, kmOffsetY = 0;
     let activeDragElement = null, dragStartX = 0, dragStartY = 0, startOffsetX = 0, startOffsetY = 0, currentElemType = null;
     
@@ -650,7 +650,7 @@
     async function loadSheetFromModalUrl() { let urlOrId = sheetUrlModal.value.trim(); if(!urlOrId) return; let sheetId = ''; if(urlOrId.includes('spreadsheets/d/')) { const match = urlOrId.match(/\/d\/([a-zA-Z0-9_-]+)/); if(match) sheetId = match[1]; } else if(urlOrId.length > 20) sheetId = urlOrId; else { alert("Invalid Sheet ID"); return; } const apiUrl = `https://opensheet.elk.sh/${sheetId}/Sheet1`; try { const response = await fetch(apiUrl); if(!response.ok) throw new Error("Fetch failed"); const data = await response.json(); if(!Array.isArray(data) || data.length===0) throw new Error("Empty sheet"); const firstRow = data[0]; const columns = Object.keys(firstRow); let khmerCol = null, chineseCol = null; const khmerKw = ['khmer','km','ភាសាខ្មែរ','cambodian','kh']; const chineseKw = ['chinese','zh','中文','mandarin','cn','han']; for(const col of columns) { const c = col.toLowerCase(); if(khmerKw.some(k=>c.includes(k))) khmerCol = col; if(chineseKw.some(k=>c.includes(k))) chineseCol = col; } if(!khmerCol || !chineseCol) { const stringCols = []; for(const row of data.slice(0,3)) for(const [k,v] of Object.entries(row)) if(typeof v === 'string' && v.length>0 && !stringCols.includes(k)) stringCols.push(k); if(stringCols.length>=2) { khmerCol = khmerCol || stringCols[0]; chineseCol = chineseCol || stringCols[1]; } } if(!khmerCol || !chineseCol) throw new Error("Could not detect columns"); const newVocab = data.map(row => ({ khmer: row[khmerCol]?.toString().trim() || "", chinese: row[chineseCol]?.toString().trim() || "" })).filter(v=>v.khmer && v.chinese); if(newVocab.length===0) throw new Error("No valid rows"); vocabList = newVocab; saveAllData(); pickRandom(); hideModal(); } catch(err) { alert("Sheet load error: "+err.message); } }
     confirmUrlLoad.onclick = loadSheetFromModalUrl;
     
-    // DRAG & NIGHT MODE & GEAR LOGIC (original)
+    // DRAG & NIGHT MODE & GEAR LOGIC
     let posX=0,posY=0,initialX,initialY,activeDrag=false; const dragHandle=document.getElementById("dragHandle"), floatingMenu=document.getElementById("floatingMenu");
     dragHandle.onmousedown=(e)=>{ if(e.target.classList?.contains('drag-dark-toggle')||e.target.closest('.aba-icon-inline')) return; activeDrag=true; initialX=e.clientX-posX; initialY=e.clientY-posY; };
     document.addEventListener("mousemove",(e)=>{ if(activeDrag){ posX=e.clientX-initialX; posY=e.clientY-initialY; floatingMenu.style.transform=`translate3d(${posX}px,${posY}px,0)`; } });
@@ -681,6 +681,10 @@
         kmElem.addEventListener('touchstart', (e) => { e.preventDefault(); onDragStart(e, 'km'); }, { passive: false });
         window.addEventListener('mousemove', onDragMove); window.addEventListener('mouseup', onDragEnd);
         window.addEventListener('touchmove', onDragMove, { passive: false }); window.addEventListener('touchend', onDragEnd);
+        
+        // FIX: Re-attach click speech handlers after any potential overwrite
+        document.getElementById('chineseOut').onclick = speakChineseFromMain;
+        document.getElementById('khmerOut').onclick = speakKhmerFromMain;
     };
     window.onresize = widthFit;
 </script>
