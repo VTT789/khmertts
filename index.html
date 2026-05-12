@@ -1,5 +1,3 @@
-Here is the HTML document with the background click issue fixed so clicking anywhere on the main area (outside the floating menu) will trigger a random word.
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -185,6 +183,12 @@ Here is the HTML document with the background click issue fixed so clicking anyw
         body.night-mode .confirm-url-btn {
             background: #2563eb;
         }
+        body.night-mode .offset-reset-btn {
+            background: #dc2626 !important;
+        }
+        body.night-mode .offset-reset-btn:hover {
+            background: #b91c1c !important;
+        }
 
         .main-layout { display: flex; height: 100vh; width: 100vw; overflow: hidden; position: relative; }
         .content-area { 
@@ -308,6 +312,23 @@ Here is the HTML document with the background click issue fixed so clicking anyw
         .color-input { width: 100%; height: 24px; border: none; cursor: pointer; background: none; padding: 0; }
         .bold-toggle { cursor: pointer; font-weight: bold; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; font-size: 0.65rem; padding: 4px 0; transition: all 0.2s; }
         .bold-toggle.active { background: #1e293b; color: white; border-color: #1e293b; }
+
+        .offset-reset-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            margin-left: 8px;
+        }
+        .offset-reset-btn:hover {
+            background: #dc2626;
+            transform: scale(0.96);
+        }
 
         .display-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; pointer-events: auto; background: inherit; }
         .text-line { display: flex; align-items: center; gap: 20px; max-width: 95%; pointer-events: auto; user-select: none; }
@@ -554,12 +575,14 @@ Here is the HTML document with the background click issue fixed so clicking anyw
 
                 <div id="mainControls" class="control-group active">
                     <div class="size-row"><label>Next Word Delay (s)</label><input type="range" id="autoDelay" class="size-slider" min="2" max="15" step="1" value="5"><span id="delayVal" style="font-size:0.7rem; width:20px;">5s</span></div>
-                    <div class="size-row"><label>ZH Y offset (px)</label><input type="range" id="zhYOffset" class="size-slider" min="-200" max="200" value="0" step="5"><span id="zhYVal" style="width:35px;">0px</span></div>
-                    <div class="size-row"><label>KM Y offset (px)</label><input type="range" id="kmYOffset" class="size-slider" min="-200" max="200" value="0" step="5"><span id="kmYVal" style="width:35px;">0px</span></div>
                     <div class="style-grid"><label>ZH</label><select id="mZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette (Pinyin)</option><option value="'XHeiPinyin'">X Hei Pinyin</option></select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
                     <div class="size-row"><label>ZH Size</label><input type="range" id="mZhSize" class="size-slider" min="5" max="60" value="35"></div>
                     <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option></select><input type="color" id="mKmColor" class="color-input" value="#1e293b"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
                     <div class="size-row"><label>KM Size</label><input type="range" id="mKmSize" class="size-slider" min="5" max="40" value="18"></div>
+                    <div class="size-row" style="justify-content: flex-start; gap: 12px;">
+                        <label style="width: auto;">Reset Drag Positions</label>
+                        <button id="resetAllOffsetsBtn" class="offset-reset-btn">⟳</button>
+                    </div>
                 </div>
 
                 <div id="voiceControls" class="control-group">
@@ -699,6 +722,19 @@ Here is the HTML document with the background click issue fixed so clicking anyw
         if (kmEl) kmEl.style.transform = `translate(${kmDragOffset.x}px, ${kmDragOffset.y}px)`;
     }
     
+    function resetAllDragOffsets() {
+        zhDragOffset = { x: 0, y: 0 };
+        kmDragOffset = { x: 0, y: 0 };
+        const zhEl = document.getElementById('chineseOut');
+        const kmEl = document.getElementById('khmerOut');
+        if (zhEl) zhEl.style.transform = `translate(0px, 0px)`;
+        if (kmEl) kmEl.style.transform = `translate(0px, 0px)`;
+        localStorage.setItem('zhDragX', 0);
+        localStorage.setItem('zhDragY', 0);
+        localStorage.setItem('kmDragX', 0);
+        localStorage.setItem('kmDragY', 0);
+    }
+    
     function resetTransformForNewWord() {
         const zhEl = document.getElementById('chineseOut');
         const kmEl = document.getElementById('khmerOut');
@@ -706,18 +742,16 @@ Here is the HTML document with the background click issue fixed so clicking anyw
         if (kmEl) kmEl.style.transform = `translate(${kmDragOffset.x}px, ${kmDragOffset.y}px)`;
     }
     
-    function saveAllData() { const settings = { mZhSize: document.getElementById('mZhSize').value, mKmSize: document.getElementById('mKmSize').value, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, interval: document.getElementById('speechInterval').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing')?.value || 8, zhY: document.getElementById('zhYOffset')?.value || 0, kmY: document.getElementById('kmYOffset')?.value || 0, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider')?.value || 0 }; localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList)); localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings)); }
-    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings) { const s = JSON.parse(savedSettings); document.getElementById('mZhSize').value = s.mZhSize || 35; document.getElementById('mKmSize').value = s.mKmSize || 18; document.getElementById('mZhColor').value = s.mZhColor || "#000000"; document.getElementById('mKmColor').value = s.mKmColor || "#1e293b"; document.getElementById('zhReps').value = s.zhReps || 3; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('speechInterval').value = s.interval || 500; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor; const vocabSpacing = s.vocabSpacing !== undefined ? s.vocabSpacing : 8; document.getElementById('sVocabSpacing').value = vocabSpacing; document.body.style.setProperty('--vocab-spacing', vocabSpacing + 'px'); document.getElementById('vocabSpacingVal').innerText = vocabSpacing + 'px'; document.getElementById('zhYOffset').value = s.zhY || 0; document.getElementById('kmYOffset').value = s.kmY || 0; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; applyRateDisplay(); applyMainPositions(); } applyStyles(); }
+    function saveAllData() { const settings = { mZhSize: document.getElementById('mZhSize').value, mKmSize: document.getElementById('mKmSize').value, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, interval: document.getElementById('speechInterval').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing')?.value || 8, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider')?.value || 0 }; localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList)); localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings)); }
+    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings) { const s = JSON.parse(savedSettings); document.getElementById('mZhSize').value = s.mZhSize || 35; document.getElementById('mKmSize').value = s.mKmSize || 18; document.getElementById('mZhColor').value = s.mZhColor || "#000000"; document.getElementById('mKmColor').value = s.mKmColor || "#1e293b"; document.getElementById('zhReps').value = s.zhReps || 3; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('speechInterval').value = s.interval || 500; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor; const vocabSpacing = s.vocabSpacing !== undefined ? s.vocabSpacing : 8; document.getElementById('sVocabSpacing').value = vocabSpacing; document.body.style.setProperty('--vocab-spacing', vocabSpacing + 'px'); document.getElementById('vocabSpacingVal').innerText = vocabSpacing + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; applyRateDisplay(); } applyStyles(); }
     function applyRateDisplay() { const rateSlider = document.getElementById('zhRateSlider'); const rateSpan = document.getElementById('zhRateVal'); if(rateSlider && rateSpan) { let val = parseInt(rateSlider.value); rateSpan.innerText = (val > 0 ? '+' + val : val) + '%'; } saveAllData(); }
-    function applyMainPositions() { const zhY = parseInt(document.getElementById('zhYOffset').value,10); const kmY = parseInt(document.getElementById('kmYOffset').value,10); document.getElementById('zhYVal').innerText = zhY+'px'; document.getElementById('kmYVal').innerText = kmY+'px'; const zhEl = document.getElementById('chineseOut'); const kmEl = document.getElementById('khmerOut'); if(zhEl) zhEl.style.transform = `translate(${zhDragOffset.x}px, ${zhDragOffset.y + zhY}px)`; if(kmEl) kmEl.style.transform = `translate(${kmDragOffset.x}px, ${kmDragOffset.y + kmY}px)`; saveAllData(); }
-    function applyVocabSpacing() { const val = document.getElementById('sVocabSpacing').value; document.getElementById('vocabSpacingVal').innerText = val+'px'; document.body.style.setProperty('--vocab-spacing', val+'px'); saveAllData(); }
     function applyStyles() { const mZh = document.getElementById('chineseOut'), mKm = document.getElementById('khmerOut'); if(mZh){ mZh.style.fontFamily = document.getElementById('mZhFont').value; mZh.style.color = document.getElementById('mZhColor').value; mZh.style.fontWeight = document.getElementById('mZhBold').classList.contains('active') ? 'bold' : 'normal'; } if(mKm){ mKm.style.fontFamily = document.getElementById('mKmFont').value; mKm.style.color = document.getElementById('mKmColor').value; mKm.style.fontWeight = document.getElementById('mKmBold').classList.contains('active') ? 'bold' : 'normal'; } document.querySelectorAll('.side-zh').forEach(el => { el.style.fontFamily = document.getElementById('sZhFont').value; el.style.color = document.getElementById('sZhColor').value; el.style.fontSize = document.getElementById('sZhSize').value+'rem'; }); document.querySelectorAll('.side-km').forEach(el => { el.style.fontFamily = document.getElementById('sKmFont').value; el.style.color = document.getElementById('sKmColor').value; el.style.fontSize = document.getElementById('sKmSize').value+'rem'; }); document.getElementById('delayVal').innerText = document.getElementById('autoDelay').value+'s'; document.getElementById('repVal').innerText = document.getElementById('zhReps').value; document.getElementById('kmRepVal').innerText = document.getElementById('kmReps').value; widthFit(); saveAllData(); }
     function widthFit() { const zhLine = document.getElementById('chineseOut'), kmLine = document.getElementById('khmerOut'), container = document.getElementById('displayArea'); if(!zhLine || !container) return; const maxW = container.clientWidth * 0.8; let zhS = parseFloat(document.getElementById('mZhSize').value), kmS = parseFloat(document.getElementById('mKmSize').value); zhLine.style.fontSize = zhS + "vh"; kmLine.style.fontSize = kmS + "vh"; while (zhLine.scrollWidth > maxW && zhS > 1) { zhS -= 0.5; zhLine.style.fontSize = zhS + "vh"; } while (kmLine.scrollWidth > maxW && kmS > 1) { kmS -= 0.5; kmLine.style.fontSize = kmS + "vh"; } }
     function pickRandom() { if (!vocabList.length) return; const idx = Math.floor(Math.random() * vocabList.length); history = history.slice(0, historyIndex + 1); history.push(idx); historyIndex = history.length - 1; loadWord(idx); }
     function historyPrev() { if (historyIndex > 0) { historyIndex--; loadWord(history[historyIndex]); } }
     function historyNext() { if (historyIndex < history.length - 1) { historyIndex++; loadWord(history[historyIndex]); } }
     function loadWord(idx) { killAllSpeech(); const item = vocabList[idx]; const key = item.chinese.substring(0, 1); let related = vocabList.map((it, i) => ({...it, oIdx: i})).filter(it => it.oIdx !== idx && it.chinese.includes(key)).slice(0, 50); sidebarIndices = [idx, ...related.map(i => i.oIdx)]; sidebarFocusIdx = 0; renderSidebarUI(); updateDisplay(); speakAutoSequence(item.chinese, item.khmer); }
-    function updateDisplay() { if (!vocabList[sidebarIndices[sidebarFocusIdx]]) return; const item = vocabList[sidebarIndices[sidebarFocusIdx]]; document.getElementById('chineseOut').innerText = item.chinese; document.getElementById('khmerOut').innerText = item.khmer; document.querySelectorAll('.vocab-item').forEach((d, i) => d.classList.toggle('active', i === sidebarFocusIdx)); applyStyles(); applyMainPositions(); resetTransformForNewWord(); }
+    function updateDisplay() { if (!vocabList[sidebarIndices[sidebarFocusIdx]]) return; const item = vocabList[sidebarIndices[sidebarFocusIdx]]; document.getElementById('chineseOut').innerText = item.chinese; document.getElementById('khmerOut').innerText = item.khmer; document.querySelectorAll('.vocab-item').forEach((d, i) => d.classList.toggle('active', i === sidebarFocusIdx)); applyStyles(); resetTransformForNewWord(); }
     function renderSidebarUI() { const list = document.getElementById('sidebarList'); list.innerHTML = ''; sidebarIndices.forEach((idx, sIdx) => { const div = document.createElement('div'); div.className = `vocab-item ${sIdx === sidebarFocusIdx ? 'active' : ''}`; div.innerHTML = `<div class="word-wrapper" onclick="sidebarFocusIdx=${sIdx};updateDisplay();speakAutoSequence(vocabList[${idx}].chinese, vocabList[${idx}].khmer); event.stopPropagation()"><span class="side-zh">${vocabList[idx].chinese}</span><span class="side-km">${vocabList[idx].khmer}</span></div><button class="select-main-btn" onclick="loadWord(${idx}); event.stopPropagation()">MAIN</button>`; list.appendChild(div); }); applyStyles(); }
     function moveSidebarFocus(delta) { if (!sidebarIndices.length) return; let newFocus = sidebarFocusIdx + delta; if (newFocus < 0) newFocus = sidebarIndices.length - 1; if (newFocus >= sidebarIndices.length) newFocus = 0; sidebarFocusIdx = newFocus; updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); }
     function toggleAuto() { autoActive = !autoActive; const btn = document.getElementById('autoBtn'); btn.classList.toggle('active', autoActive); btn.classList.toggle('off', !autoActive); btn.innerText = autoActive ? "AUTO: ON" : "AUTO: OFF"; if(autoActive) pickRandom(); else { clearTimeout(autoTimer); killAllSpeech(); } }
@@ -726,19 +760,12 @@ Here is the HTML document with the background click issue fixed so clicking anyw
     function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
     function switchTab(tab) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active'); document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab))); }
     
-    // FIXED: Background click handler - now properly triggers random word when clicking main area
     function setupBackgroundClick() {
         const contentArea = document.getElementById('bgClickArea');
         contentArea.addEventListener('click', function(e) {
-            // Don't trigger if click is inside floating menu or on draggable text elements (to avoid conflict with drag)
             if (e.target.closest('#floatingMenu')) return;
-            // Also don't trigger if clicking on the draggable text elements while dragging? 
-            // But we still want clicks on text to speak. However text has its own onclick (speak), so we don't prevent.
-            // allow random word on background area but also allow text clicks to speak (they are separate)
-            // We'll only trigger if the click target is not specifically the text elements' onclick action area.
-            // However for better UX: if click is on .zh or .km, they already trigger speak, we should NOT also trigger random word.
             if (e.target.classList.contains('zh') || e.target.classList.contains('km')) {
-                return; // let the speak handler do its job
+                return;
             }
             pickRandom();
         });
@@ -835,7 +862,8 @@ Here is the HTML document with the background click issue fixed so clicking anyw
     
     window.onload = () => {
         loadSettings(); const savedList = localStorage.getItem('vocabMaster_List'); if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) pickRandom(); } initNightMode(); applyStyles(); widthFit(); initGearDrag(); setupQRPopup(); initDragBehavior(); loadDragPositions(); setupBackgroundClick();
-        document.getElementById('zhYOffset').addEventListener('input',applyMainPositions); document.getElementById('kmYOffset').addEventListener('input',applyMainPositions); document.getElementById('sVocabSpacing').addEventListener('input',applyVocabSpacing); 
+        document.getElementById('resetAllOffsetsBtn').addEventListener('click', resetAllDragOffsets);
+        document.getElementById('sVocabSpacing').addEventListener('input',function(){ const val = this.value; document.getElementById('vocabSpacingVal').innerText = val+'px'; document.body.style.setProperty('--vocab-spacing', val+'px'); saveAllData(); });
         document.getElementById('autoDelay').addEventListener('input',applyStyles); document.getElementById('zhReps').addEventListener('input',applyStyles); document.getElementById('kmReps').addEventListener('input',applyStyles); 
         document.getElementById('mZhSize').addEventListener('input',applyStyles); document.getElementById('mKmSize').addEventListener('input',applyStyles); document.getElementById('mZhColor').addEventListener('input',applyStyles); document.getElementById('mKmColor').addEventListener('input',applyStyles); 
         document.getElementById('sZhSize').addEventListener('input',applyStyles); document.getElementById('sKmSize').addEventListener('input',applyStyles); document.getElementById('sZhColor').addEventListener('input',applyStyles); document.getElementById('sKmColor').addEventListener('input',applyStyles); 
@@ -848,4 +876,3 @@ Here is the HTML document with the background click issue fixed so clicking anyw
 </script>
 </body>
 </html>
-```
