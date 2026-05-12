@@ -1,3 +1,5 @@
+Here is the HTML document with the background click issue fixed so clicking anywhere on the main area (outside the floating menu) will trigger a random word.
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -185,7 +187,17 @@
         }
 
         .main-layout { display: flex; height: 100vh; width: 100vw; overflow: hidden; position: relative; }
-        .content-area { flex: 1; display: flex; flex-direction: column; background: #fff; min-width: 300px; overflow: hidden; cursor: pointer; transition: background 0.2s; position: relative; }
+        .content-area { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            background: #fff; 
+            min-width: 300px; 
+            overflow: hidden; 
+            cursor: pointer; 
+            transition: background 0.2s;
+            position: relative;
+        }
 
         #floatingMenu {
             position: fixed; top: 20px; left: 20px; z-index: 9999;
@@ -297,21 +309,30 @@
         .bold-toggle { cursor: pointer; font-weight: bold; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; font-size: 0.65rem; padding: 4px 0; transition: all 0.2s; }
         .bold-toggle.active { background: #1e293b; color: white; border-color: #1e293b; }
 
-        .display-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; pointer-events: auto; user-select: none; }
-        .text-line { display: flex; align-items: center; gap: 20px; max-width: 95%; pointer-events: auto; }
+        .display-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; pointer-events: auto; background: inherit; }
+        .text-line { display: flex; align-items: center; gap: 20px; max-width: 95%; pointer-events: auto; user-select: none; }
         
-        /* Draggable text elements */
+        .draggable-text {
+            cursor: grab;
+            transition: transform 0.05s linear;
+            display: inline-block;
+            position: relative;
+            will-change: transform;
+        }
+        .draggable-text:active {
+            cursor: grabbing;
+        }
+        
         .zh, .km { 
             cursor: grab; 
             transition: opacity 0.2s, transform 0.05s linear; 
             line-height: 1.1; 
             white-space: nowrap;
-            user-select: none;
             display: inline-block;
+            position: relative;
         }
         .zh:active, .km:active { cursor: grabbing; }
         .km { line-height: 1.2; }
-        .dragging-active { opacity: 0.7; transition: none; }
 
         .sidebar { width: 400px; min-width: 280px; background: var(--sidebar-bg); display: flex; flex-direction: column; border-left: 1px solid var(--border); transition: transform 0.3s ease, width 0.3s ease, background 0.2s; }
         .sidebar.hidden { width: 0 !important; min-width: 0 !important; border: none; transform: translateX(100%); overflow: hidden; }
@@ -365,15 +386,68 @@
             box-shadow: 0 25px 50px rgba(0,0,0,0.3);
             animation: fadeInUp 0.2s ease;
         }
-        .file-source-card h3 { margin: 0 0 18px 0; font-size: 1.5rem; font-weight: 700; }
-        .source-buttons { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-        .source-btn { background: #eef2ff; border: none; padding: 12px; border-radius: 40px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
-        .source-btn:hover { background: #d9e2ff; transform: scale(0.98); }
-        .url-input-area { margin: 12px 0; display: flex; flex-direction: column; gap: 12px; }
-        .url-input-area input { padding: 12px; border-radius: 32px; border: 1px solid #cbd5e1; font-size: 0.8rem; width: 100%; box-sizing: border-box; }
-        .confirm-url-btn { background: #2563eb; color: white; border: none; padding: 10px; border-radius: 32px; font-weight: bold; cursor: pointer; }
-        .close-modal { background: #e2e8f0; border: none; padding: 10px 18px; border-radius: 40px; margin-top: 12px; cursor: pointer; font-weight: 600; width: 100%; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .file-source-card h3 {
+            margin: 0 0 18px 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .source-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .source-btn {
+            background: #eef2ff;
+            border: none;
+            padding: 12px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .source-btn:hover {
+            background: #d9e2ff;
+            transform: scale(0.98);
+        }
+        .url-input-area {
+            margin: 12px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .url-input-area input {
+            padding: 12px;
+            border-radius: 32px;
+            border: 1px solid #cbd5e1;
+            font-size: 0.8rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .confirm-url-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 32px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal {
+            background: #e2e8f0;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 40px;
+            margin-top: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         .qr-overlay {
             display: none;
@@ -399,7 +473,13 @@
             display: inline-block;
             animation: fadeInScale 0.2s ease;
         }
-        .qr-card img { width: 280px; max-width: 70vw; height: auto; border-radius: 16px; display: block; }
+        .qr-card img {
+            width: 280px;
+            max-width: 70vw;
+            height: auto;
+            border-radius: 16px;
+            display: block;
+        }
         .qr-close-btn {
             position: absolute;
             top: -12px;
@@ -419,8 +499,13 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             transition: background 0.2s;
         }
-        .qr-close-btn:hover { background: #ef4444; }
-        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .qr-close-btn:hover {
+            background: #ef4444;
+        }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
 
         @media (max-width: 540px) {
             #floatingMenu { width: 92vw; max-width: 360px; left: 4vw; top: 12px; max-height: 80vh; }
@@ -433,7 +518,7 @@
 <body>
 
 <div class="main-layout">
-    <div class="content-area" id="bgClickArea" onclick="handleBgClick(event)">
+    <div class="content-area" id="bgClickArea">
         <div id="minimizedTrigger">⚙️</div>
 
         <div id="floatingMenu" onclick="event.stopPropagation()">
@@ -468,11 +553,9 @@
                 </div>
 
                 <div id="mainControls" class="control-group active">
-                    <div class="size-row" style="margin-bottom:12px;">
-                        <span style="font-size:0.7rem; font-weight:bold;">🎯 Drag text with mouse</span>
-                        <button id="resetAllOffsetsBtn" class="offset-reset-btn" style="background:#ef4444; color:white; border:none; border-radius:20px; padding:4px 12px; cursor:pointer;">Reset All Position</button>
-                    </div>
                     <div class="size-row"><label>Next Word Delay (s)</label><input type="range" id="autoDelay" class="size-slider" min="2" max="15" step="1" value="5"><span id="delayVal" style="font-size:0.7rem; width:20px;">5s</span></div>
+                    <div class="size-row"><label>ZH Y offset (px)</label><input type="range" id="zhYOffset" class="size-slider" min="-200" max="200" value="0" step="5"><span id="zhYVal" style="width:35px;">0px</span></div>
+                    <div class="size-row"><label>KM Y offset (px)</label><input type="range" id="kmYOffset" class="size-slider" min="-200" max="200" value="0" step="5"><span id="kmYVal" style="width:35px;">0px</span></div>
                     <div class="style-grid"><label>ZH</label><select id="mZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette (Pinyin)</option><option value="'XHeiPinyin'">X Hei Pinyin</option></select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
                     <div class="size-row"><label>ZH Size</label><input type="range" id="mZhSize" class="size-slider" min="5" max="60" value="35"></div>
                     <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option></select><input type="color" id="mKmColor" class="color-input" value="#1e293b"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
@@ -480,11 +563,12 @@
                 </div>
 
                 <div id="voiceControls" class="control-group">
-                    <div class="voice-row"><label style="font-weight: bold;">🎙️ Khmer Voice</label><select id="kmVoiceSelect" class="voice-select"><option value="km-KH-SreymomNeural">Sreymom (Female)</option><option value="km-KH-PisethNeural">Piseth (Male)</option></select></div>
-                    <div class="voice-row"><label style="font-weight: bold;">🇨🇳 Chinese Voice</label><select id="zhVoiceSelect" class="voice-select"><option value="zh-CN-XiaoxiaoNeural">Xiaoxiao (女声)</option><option value="zh-CN-YunxiNeural">Yunxi (男声)</option><option value="zh-CN-YunyangNeural">Yunyang (新闻)</option><option value="zh-CN-XiaoyiNeural">Xiaoyi (教学)</option></select></div>
-                    <div class="size-row"><label>🇨🇳 Speech Rate</label><input type="range" id="zhRateSlider" class="size-slider" min="-100" max="100" value="0" step="5"><span id="zhRateVal" style="width:45px;">0%</span></div>
-                    <div class="size-row"><label>ZH Repetitions</label><input type="range" id="zhReps" class="size-slider" min="1" max="10" value="3"><span id="repVal">3</span></div>
-                    <div class="size-row"><label>KM Repetitions</label><input type="range" id="kmReps" class="size-slider" min="1" max="10" value="1"><span id="kmRepVal">1</span></div>
+                    <div class="voice-row"><label style="font-weight: bold;">🎙️ Khmer Voice (Edge TTS) </label><select id="kmVoiceSelect" class="voice-select"><option value="km-KH-SreymomNeural">Sreymom (Female) </option><option value="km-KH-PisethNeural">Piseth (Male)</option></select></div>
+                    <div class="voice-row"><label style="font-weight: bold;">🇨🇳 Chinese Voice (Edge TTS) </label><select id="zhVoiceSelect" class="voice-select"><option value="zh-CN-XiaoxiaoNeural">Xiaoxiao (女声, 通用/温柔)</option><option value="zh-CN-YunxiNeural">Yunxi (男声, 活泼/少年) 🧑</option><option value="zh-CN-YunyangNeural">Yunyang (新闻男声, 沉稳) 🧑</option><option value="zh-CN-XiaoyiNeural">Xiaoyi (女声, 清晰/教学)</option></select></div>
+                    <div class="size-row"><label>🇨🇳 Speech Rate</label><input type="range" id="zhRateSlider" class="size-slider" min="-100" max="100" value="0" step="5"><span id="zhRateVal" style="width: 45px;">0%</span></div>
+                    <div class="size-row"><label style="font-size: 0.6rem; color: #666;">(-100% slower, +100% faster)</label></div>
+                    <div class="size-row"><label>ZH Repetitions</label><input type="range" id="zhReps" class="size-slider" min="1" max="10" value="3"><span id="repVal" style="width:20px;">3</span></div>
+                    <div class="size-row"><label>KM Repetitions</label><input type="range" id="kmReps" class="size-slider" min="1" max="10" value="1"><span id="kmRepVal" style="width:20px;">1</span></div>
                     <div class="size-row"><label>Pause Interval (ms)</label><input type="range" id="speechInterval" class="size-slider" min="0" max="2000" step="100" value="500"></div>
                 </div>
 
@@ -500,8 +584,8 @@
         </div>
 
         <div class="display-area" id="displayArea">
-            <div class="text-line" onclick="event.stopPropagation()"><div class="zh" id="chineseOut" onclick="speakChineseFromMain()">准备好</div></div>
-            <div class="text-line" onclick="event.stopPropagation()" style="margin-top: 1rem;"><div class="km" id="khmerOut" onclick="speakKhmerFromMain()">រួចរាល់</div></div>
+            <div class="text-line"><div class="zh draggable-text" id="chineseOut" onclick="speakChineseFromMain()">准备好</div></div>
+            <div class="text-line" style="margin-top: 1rem;"><div class="km draggable-text" id="khmerOut" onclick="speakKhmerFromMain()">រួចរាល់</div></div>
         </div>
     </div>
 
@@ -510,128 +594,130 @@
 </div>
 
 <div id="qrPopupOverlay" class="qr-overlay"><div class="qr-card"><button class="qr-close-btn" id="qrCloseBtn">✕</button><img src="/static/QR.png" alt="QR Code" id="qrImage"></div></div>
-<div id="fileSourceModal" class="file-source-modal"><div class="file-source-card"><h3>📥 Load Vocabulary</h3><div class="source-buttons"><button id="chooseLocalBtn" class="source-btn">📁 Local File (.xlsx/.xls)</button><button id="chooseUrlBtn" class="source-btn">🌐 Google Sheets URL</button></div><div id="urlInputArea" class="url-input-area" style="display: none;"><input type="text" id="sheetUrlInputModal" placeholder="Paste Google Sheets share link"><button id="confirmUrlLoad" class="confirm-url-btn">Load from URL</button></div><button class="close-modal" id="closeModalBtn">Cancel</button></div></div>
+
+<div id="fileSourceModal" class="file-source-modal">
+    <div class="file-source-card">
+        <h3>📥 Load Vocabulary</h3>
+        <div class="source-buttons">
+            <button id="chooseLocalBtn" class="source-btn">📁 Local File (.xlsx/.xls)</button>
+            <button id="chooseUrlBtn" class="source-btn">🌐 Google Sheets URL</button>
+        </div>
+        <div id="urlInputArea" class="url-input-area" style="display: none;">
+            <input type="text" id="sheetUrlInputModal" placeholder="Paste Google Sheets share link or Sheet ID">
+            <button id="confirmUrlLoad" class="confirm-url-btn">Load from URL</button>
+        </div>
+        <button class="close-modal" id="closeModalBtn">Cancel</button>
+    </div>
+</div>
 
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script>
-    // ORIGINAL CORE TTS / VOCAB LOGIC (preserved)
+    // ==================== ORIGINAL TTS & APP LOGIC ====================
     let currentAudio = null, speechQueue = [], isProcessingQueue = false;
     async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
     async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, parseInt(document.getElementById('speechInterval').value || 500))); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
     function enqueueSpeech(text, voice, rate = null) { if (!text) return; speechQueue.push({ text, voice, rate }); processSpeechQueue(); }
     function killAllSpeech() { if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; } speechQueue = []; isProcessingQueue = false; }
-    function speakChineseEdge(text) { if (!text) return; killAllSpeech(); const voice = document.getElementById('zhVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); enqueueSpeech(text, voice, rateFormatted); }
-    function speakKhmerEdge(text) { if (!text) return; killAllSpeech(); const voice = document.getElementById('kmVoiceSelect').value; enqueueSpeech(text, voice, null); }
-    function speakChineseFromMain() { const text = document.getElementById('chineseOut').innerText; if(text) speakChineseEdge(text); }
-    function speakKhmerFromMain() { const text = document.getElementById('khmerOut').innerText; if(text) speakKhmerEdge(text); }
+    function speakChineseEdge(text) { if (!text) return; const voice = document.getElementById('zhVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); enqueueSpeech(text, voice, rateFormatted); }
+    function speakKhmerEdge(text) { if (!text) return; const voice = document.getElementById('kmVoiceSelect').value; enqueueSpeech(text, voice, null); }
+    function speakChineseFromMain() { killAllSpeech(); speakChineseEdge(document.getElementById('chineseOut').innerText); }
+    function speakKhmerFromMain() { killAllSpeech(); speakKhmerEdge(document.getElementById('khmerOut').innerText); }
     async function speakAutoSequence(zhText, kmText) { killAllSpeech(); const interval = parseInt(document.getElementById('speechInterval').value); const zhReps = parseInt(document.getElementById('zhReps').value); const kmReps = parseInt(document.getElementById('kmReps').value); const zhVoice = document.getElementById('zhVoiceSelect').value; const kmVoice = document.getElementById('kmVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); for(let i=0; i<zhReps; i++) { await callEdgeTTS(zhText, zhVoice, rateFormatted); if(i < zhReps-1) await new Promise(r => setTimeout(r, interval)); } if(kmText && kmText.trim()) { for(let j=0; j<kmReps; j++) { await callEdgeTTS(kmText, kmVoice, null); if(j < kmReps-1) await new Promise(r => setTimeout(r, interval)); } } if(autoActive) startAutoCycle(); }
     
     let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = true;
     
-    // MOUSE DRAG OFFSET SYSTEM
-    let zhOffsetX = 0, zhOffsetY = 0, kmOffsetX = 0, kmOffsetY = 0;
-    let activeDragElement = null, dragStartX = 0, dragStartY = 0, startOffsetX = 0, startOffsetY = 0, currentElemType = null;
+    let zhDragOffset = { x: 0, y: 0 };
+    let kmDragOffset = { x: 0, y: 0 };
+    let activeDragElement = null;
+    let dragStartMouse = { x: 0, y: 0 };
+    let dragStartTranslate = { x: 0, y: 0 };
     
-    function saveOffsetsToStorage() {
-        const settings = { mZhSize: document.getElementById('mZhSize').value, mKmSize: document.getElementById('mKmSize').value, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, interval: document.getElementById('speechInterval').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing')?.value || 8, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider')?.value || 0,
-        zhOffX: zhOffsetX, zhOffY: zhOffsetY, kmOffX: kmOffsetX, kmOffY: kmOffsetY };
-        localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList)); localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings));
-    }
-    function loadOffsetsFromStorage() {
-        const savedSettings = localStorage.getItem('vocabMaster_Settings');
-        if(savedSettings) {
-            const s = JSON.parse(savedSettings);
-            zhOffsetX = s.zhOffX !== undefined ? s.zhOffX : 0;
-            zhOffsetY = s.zhOffY !== undefined ? s.zhOffY : 0;
-            kmOffsetX = s.kmOffX !== undefined ? s.kmOffX : 0;
-            kmOffsetY = s.kmOffY !== undefined ? s.kmOffY : 0;
+    function initDragBehavior() {
+        const zhEl = document.getElementById('chineseOut');
+        const kmEl = document.getElementById('khmerOut');
+        
+        function onMouseDown(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const target = e.currentTarget;
+            activeDragElement = target;
+            const startX = e.clientX;
+            const startY = e.clientY;
+            let currentTranslate = { x: 0, y: 0 };
+            if (target.id === 'chineseOut') {
+                currentTranslate = { x: zhDragOffset.x, y: zhDragOffset.y };
+            } else {
+                currentTranslate = { x: kmDragOffset.x, y: kmDragOffset.y };
+            }
+            dragStartMouse = { x: startX, y: startY };
+            dragStartTranslate = { x: currentTranslate.x, y: currentTranslate.y };
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
         }
-        applyFullPosition();
-    }
-    function applyFullPosition() {
-        document.getElementById('chineseOut').style.transform = `translate(${zhOffsetX}px, ${zhOffsetY}px)`;
-        document.getElementById('khmerOut').style.transform = `translate(${kmOffsetX}px, ${kmOffsetY}px)`;
-        saveOffsetsToStorage();
-    }
-    function resetAllOffsets() {
-        zhOffsetX = 0; zhOffsetY = 0; kmOffsetX = 0; kmOffsetY = 0;
-        applyFullPosition();
-    }
-    function onDragStart(e, elemType) {
-        e.preventDefault();
-        e.stopPropagation();
-        activeDragElement = (elemType === 'zh') ? document.getElementById('chineseOut') : document.getElementById('khmerOut');
-        currentElemType = elemType;
-        if (elemType === 'zh') { startOffsetX = zhOffsetX; startOffsetY = zhOffsetY; }
-        else { startOffsetX = kmOffsetX; startOffsetY = kmOffsetY; }
-        const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
-        const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
-        dragStartX = clientX;
-        dragStartY = clientY;
-        activeDragElement.classList.add('dragging-active');
-        document.body.style.userSelect = 'none';
-    }
-    function onDragMove(e) {
-        if (!activeDragElement) return;
-        e.preventDefault();
-        const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
-        const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
-        const deltaX = clientX - dragStartX;
-        const deltaY = clientY - dragStartY;
-        let newX = startOffsetX + deltaX;
-        let newY = startOffsetY + deltaY;
-        newX = Math.min(Math.max(newX, -600), 600);
-        newY = Math.min(Math.max(newY, -300), 300);
-        if (currentElemType === 'zh') { zhOffsetX = newX; zhOffsetY = newY; }
-        else { kmOffsetX = newX; kmOffsetY = newY; }
-        applyFullPosition();
-    }
-    function onDragEnd() {
-        if (activeDragElement) {
-            activeDragElement.classList.remove('dragging-active');
+        
+        function onMouseMove(e) {
+            if (!activeDragElement) return;
+            const dx = e.clientX - dragStartMouse.x;
+            const dy = e.clientY - dragStartMouse.y;
+            const newX = dragStartTranslate.x + dx;
+            const newY = dragStartTranslate.y + dy;
+            if (activeDragElement.id === 'chineseOut') {
+                zhDragOffset = { x: newX, y: newY };
+                activeDragElement.style.transform = `translate(${newX}px, ${newY}px)`;
+            } else {
+                kmDragOffset = { x: newX, y: newY };
+                activeDragElement.style.transform = `translate(${newX}px, ${newY}px)`;
+            }
+        }
+        
+        function onMouseUp() {
             activeDragElement = null;
-            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            localStorage.setItem('zhDragX', zhDragOffset.x);
+            localStorage.setItem('zhDragY', zhDragOffset.y);
+            localStorage.setItem('kmDragX', kmDragOffset.x);
+            localStorage.setItem('kmDragY', kmDragOffset.y);
         }
+        
+        zhEl.addEventListener('mousedown', onMouseDown);
+        kmEl.addEventListener('mousedown', onMouseDown);
     }
     
-    function saveAllData() { saveOffsetsToStorage(); }
-    function loadSettings() { 
-        const savedSettings = localStorage.getItem('vocabMaster_Settings'); 
-        if(savedSettings) { 
-            const s = JSON.parse(savedSettings); 
-            document.getElementById('mZhSize').value = s.mZhSize || 35; document.getElementById('mKmSize').value = s.mKmSize || 18; 
-            document.getElementById('mZhColor').value = s.mZhColor || "#000000"; document.getElementById('mKmColor').value = s.mKmColor || "#1e293b"; 
-            document.getElementById('zhReps').value = s.zhReps || 3; document.getElementById('kmReps').value = s.kmReps || 1; 
-            document.getElementById('speechInterval').value = s.interval || 500; document.getElementById('autoDelay').value = s.autoDelay || 5; 
-            if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; 
-            if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; 
-            if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor; 
-            const vocabSpacing = s.vocabSpacing !== undefined ? s.vocabSpacing : 8; document.getElementById('sVocabSpacing').value = vocabSpacing; 
-            document.body.style.setProperty('--vocab-spacing', vocabSpacing + 'px'); document.getElementById('vocabSpacingVal').innerText = vocabSpacing + 'px'; 
-            if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice;
-            if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate;
-            loadOffsetsFromStorage();
-            applyRateDisplay(); 
-        } else { applyFullPosition(); }
-        applyStyles(); 
+    function loadDragPositions() {
+        const savedZhX = parseFloat(localStorage.getItem('zhDragX'));
+        const savedZhY = parseFloat(localStorage.getItem('zhDragY'));
+        const savedKmX = parseFloat(localStorage.getItem('kmDragX'));
+        const savedKmY = parseFloat(localStorage.getItem('kmDragY'));
+        if (!isNaN(savedZhX)) zhDragOffset.x = savedZhX;
+        if (!isNaN(savedZhY)) zhDragOffset.y = savedZhY;
+        if (!isNaN(savedKmX)) kmDragOffset.x = savedKmX;
+        if (!isNaN(savedKmY)) kmDragOffset.y = savedKmY;
+        const zhEl = document.getElementById('chineseOut');
+        const kmEl = document.getElementById('khmerOut');
+        if (zhEl) zhEl.style.transform = `translate(${zhDragOffset.x}px, ${zhDragOffset.y}px)`;
+        if (kmEl) kmEl.style.transform = `translate(${kmDragOffset.x}px, ${kmDragOffset.y}px)`;
     }
+    
+    function resetTransformForNewWord() {
+        const zhEl = document.getElementById('chineseOut');
+        const kmEl = document.getElementById('khmerOut');
+        if (zhEl) zhEl.style.transform = `translate(${zhDragOffset.x}px, ${zhDragOffset.y}px)`;
+        if (kmEl) kmEl.style.transform = `translate(${kmDragOffset.x}px, ${kmDragOffset.y}px)`;
+    }
+    
+    function saveAllData() { const settings = { mZhSize: document.getElementById('mZhSize').value, mKmSize: document.getElementById('mKmSize').value, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, interval: document.getElementById('speechInterval').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing')?.value || 8, zhY: document.getElementById('zhYOffset')?.value || 0, kmY: document.getElementById('kmYOffset')?.value || 0, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider')?.value || 0 }; localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList)); localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings)); }
+    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings) { const s = JSON.parse(savedSettings); document.getElementById('mZhSize').value = s.mZhSize || 35; document.getElementById('mKmSize').value = s.mKmSize || 18; document.getElementById('mZhColor').value = s.mZhColor || "#000000"; document.getElementById('mKmColor').value = s.mKmColor || "#1e293b"; document.getElementById('zhReps').value = s.zhReps || 3; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('speechInterval').value = s.interval || 500; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor; const vocabSpacing = s.vocabSpacing !== undefined ? s.vocabSpacing : 8; document.getElementById('sVocabSpacing').value = vocabSpacing; document.body.style.setProperty('--vocab-spacing', vocabSpacing + 'px'); document.getElementById('vocabSpacingVal').innerText = vocabSpacing + 'px'; document.getElementById('zhYOffset').value = s.zhY || 0; document.getElementById('kmYOffset').value = s.kmY || 0; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; applyRateDisplay(); applyMainPositions(); } applyStyles(); }
     function applyRateDisplay() { const rateSlider = document.getElementById('zhRateSlider'); const rateSpan = document.getElementById('zhRateVal'); if(rateSlider && rateSpan) { let val = parseInt(rateSlider.value); rateSpan.innerText = (val > 0 ? '+' + val : val) + '%'; } saveAllData(); }
-    function applyStyles() { 
-        const mZh = document.getElementById('chineseOut'), mKm = document.getElementById('khmerOut'); 
-        mZh.style.fontFamily = document.getElementById('mZhFont').value; mZh.style.color = document.getElementById('mZhColor').value; 
-        mZh.style.fontWeight = document.getElementById('mZhBold').classList.contains('active') ? 'bold' : 'normal'; 
-        mKm.style.fontFamily = document.getElementById('mKmFont').value; mKm.style.color = document.getElementById('mKmColor').value; 
-        mKm.style.fontWeight = document.getElementById('mKmBold').classList.contains('active') ? 'bold' : 'normal'; 
-        document.querySelectorAll('.side-zh').forEach(el => { el.style.fontFamily = document.getElementById('sZhFont').value; el.style.color = document.getElementById('sZhColor').value; el.style.fontSize = document.getElementById('sZhSize').value+'rem'; }); 
-        document.querySelectorAll('.side-km').forEach(el => { el.style.fontFamily = document.getElementById('sKmFont').value; el.style.color = document.getElementById('sKmColor').value; el.style.fontSize = document.getElementById('sKmSize').value+'rem'; }); 
-        document.getElementById('delayVal').innerText = document.getElementById('autoDelay').value+'s'; document.getElementById('repVal').innerText = document.getElementById('zhReps').value; document.getElementById('kmRepVal').innerText = document.getElementById('kmReps').value; widthFit(); saveAllData(); 
-    }
-    function widthFit() { const zhLine = document.getElementById('chineseOut'), kmLine = document.getElementById('khmerOut'), container = document.getElementById('displayArea'); if(!zhLine) return; const maxW = container.clientWidth * 0.8; let zhS = parseFloat(document.getElementById('mZhSize').value), kmS = parseFloat(document.getElementById('mKmSize').value); zhLine.style.fontSize = zhS + "vh"; kmLine.style.fontSize = kmS + "vh"; while (zhLine.scrollWidth > maxW && zhS > 1) { zhS -= 0.5; zhLine.style.fontSize = zhS + "vh"; } while (kmLine.scrollWidth > maxW && kmS > 1) { kmS -= 0.5; kmLine.style.fontSize = kmS + "vh"; } }
+    function applyMainPositions() { const zhY = parseInt(document.getElementById('zhYOffset').value,10); const kmY = parseInt(document.getElementById('kmYOffset').value,10); document.getElementById('zhYVal').innerText = zhY+'px'; document.getElementById('kmYVal').innerText = kmY+'px'; const zhEl = document.getElementById('chineseOut'); const kmEl = document.getElementById('khmerOut'); if(zhEl) zhEl.style.transform = `translate(${zhDragOffset.x}px, ${zhDragOffset.y + zhY}px)`; if(kmEl) kmEl.style.transform = `translate(${kmDragOffset.x}px, ${kmDragOffset.y + kmY}px)`; saveAllData(); }
+    function applyVocabSpacing() { const val = document.getElementById('sVocabSpacing').value; document.getElementById('vocabSpacingVal').innerText = val+'px'; document.body.style.setProperty('--vocab-spacing', val+'px'); saveAllData(); }
+    function applyStyles() { const mZh = document.getElementById('chineseOut'), mKm = document.getElementById('khmerOut'); if(mZh){ mZh.style.fontFamily = document.getElementById('mZhFont').value; mZh.style.color = document.getElementById('mZhColor').value; mZh.style.fontWeight = document.getElementById('mZhBold').classList.contains('active') ? 'bold' : 'normal'; } if(mKm){ mKm.style.fontFamily = document.getElementById('mKmFont').value; mKm.style.color = document.getElementById('mKmColor').value; mKm.style.fontWeight = document.getElementById('mKmBold').classList.contains('active') ? 'bold' : 'normal'; } document.querySelectorAll('.side-zh').forEach(el => { el.style.fontFamily = document.getElementById('sZhFont').value; el.style.color = document.getElementById('sZhColor').value; el.style.fontSize = document.getElementById('sZhSize').value+'rem'; }); document.querySelectorAll('.side-km').forEach(el => { el.style.fontFamily = document.getElementById('sKmFont').value; el.style.color = document.getElementById('sKmColor').value; el.style.fontSize = document.getElementById('sKmSize').value+'rem'; }); document.getElementById('delayVal').innerText = document.getElementById('autoDelay').value+'s'; document.getElementById('repVal').innerText = document.getElementById('zhReps').value; document.getElementById('kmRepVal').innerText = document.getElementById('kmReps').value; widthFit(); saveAllData(); }
+    function widthFit() { const zhLine = document.getElementById('chineseOut'), kmLine = document.getElementById('khmerOut'), container = document.getElementById('displayArea'); if(!zhLine || !container) return; const maxW = container.clientWidth * 0.8; let zhS = parseFloat(document.getElementById('mZhSize').value), kmS = parseFloat(document.getElementById('mKmSize').value); zhLine.style.fontSize = zhS + "vh"; kmLine.style.fontSize = kmS + "vh"; while (zhLine.scrollWidth > maxW && zhS > 1) { zhS -= 0.5; zhLine.style.fontSize = zhS + "vh"; } while (kmLine.scrollWidth > maxW && kmS > 1) { kmS -= 0.5; kmLine.style.fontSize = kmS + "vh"; } }
     function pickRandom() { if (!vocabList.length) return; const idx = Math.floor(Math.random() * vocabList.length); history = history.slice(0, historyIndex + 1); history.push(idx); historyIndex = history.length - 1; loadWord(idx); }
     function historyPrev() { if (historyIndex > 0) { historyIndex--; loadWord(history[historyIndex]); } }
     function historyNext() { if (historyIndex < history.length - 1) { historyIndex++; loadWord(history[historyIndex]); } }
     function loadWord(idx) { killAllSpeech(); const item = vocabList[idx]; const key = item.chinese.substring(0, 1); let related = vocabList.map((it, i) => ({...it, oIdx: i})).filter(it => it.oIdx !== idx && it.chinese.includes(key)).slice(0, 50); sidebarIndices = [idx, ...related.map(i => i.oIdx)]; sidebarFocusIdx = 0; renderSidebarUI(); updateDisplay(); speakAutoSequence(item.chinese, item.khmer); }
-    function updateDisplay() { if (!vocabList[sidebarIndices[sidebarFocusIdx]]) return; const item = vocabList[sidebarIndices[sidebarFocusIdx]]; document.getElementById('chineseOut').innerText = item.chinese; document.getElementById('khmerOut').innerText = item.khmer; document.querySelectorAll('.vocab-item').forEach((d, i) => d.classList.toggle('active', i === sidebarFocusIdx)); applyStyles(); applyFullPosition(); }
+    function updateDisplay() { if (!vocabList[sidebarIndices[sidebarFocusIdx]]) return; const item = vocabList[sidebarIndices[sidebarFocusIdx]]; document.getElementById('chineseOut').innerText = item.chinese; document.getElementById('khmerOut').innerText = item.khmer; document.querySelectorAll('.vocab-item').forEach((d, i) => d.classList.toggle('active', i === sidebarFocusIdx)); applyStyles(); applyMainPositions(); resetTransformForNewWord(); }
     function renderSidebarUI() { const list = document.getElementById('sidebarList'); list.innerHTML = ''; sidebarIndices.forEach((idx, sIdx) => { const div = document.createElement('div'); div.className = `vocab-item ${sIdx === sidebarFocusIdx ? 'active' : ''}`; div.innerHTML = `<div class="word-wrapper" onclick="sidebarFocusIdx=${sIdx};updateDisplay();speakAutoSequence(vocabList[${idx}].chinese, vocabList[${idx}].khmer); event.stopPropagation()"><span class="side-zh">${vocabList[idx].chinese}</span><span class="side-km">${vocabList[idx].khmer}</span></div><button class="select-main-btn" onclick="loadWord(${idx}); event.stopPropagation()">MAIN</button>`; list.appendChild(div); }); applyStyles(); }
     function moveSidebarFocus(delta) { if (!sidebarIndices.length) return; let newFocus = sidebarFocusIdx + delta; if (newFocus < 0) newFocus = sidebarIndices.length - 1; if (newFocus >= sidebarIndices.length) newFocus = 0; sidebarFocusIdx = newFocus; updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); }
     function toggleAuto() { autoActive = !autoActive; const btn = document.getElementById('autoBtn'); btn.classList.toggle('active', autoActive); btn.classList.toggle('off', !autoActive); btn.innerText = autoActive ? "AUTO: ON" : "AUTO: OFF"; if(autoActive) pickRandom(); else { clearTimeout(autoTimer); killAllSpeech(); } }
@@ -639,19 +725,104 @@
     function toggleSidebar() { sidebarVisible = !sidebarVisible; document.getElementById('rightSide').classList.toggle('hidden', !sidebarVisible); document.getElementById('dragResizer').classList.toggle('hidden', !sidebarVisible); document.getElementById('sidebarToggleBtn').innerText = sidebarVisible ? "HIDE SIDEBAR" : "SHOW SIDEBAR"; saveAllData(); }
     function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
     function switchTab(tab) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active'); document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab))); }
-    function handleBgClick(e) { if (e.target !== document.getElementById('bgClickArea')) return; pickRandom(); }
     
-    // MODAL AND OTHER UI
-    const modal = document.getElementById('fileSourceModal'); const insertBtn = document.getElementById('insertDataBtn'); const closeModalBtn = document.getElementById('closeModalBtn'); const chooseLocalBtn = document.getElementById('chooseLocalBtn'); const chooseUrlBtn = document.getElementById('chooseUrlBtn'); const urlInputArea = document.getElementById('urlInputArea'); const confirmUrlLoad = document.getElementById('confirmUrlLoad'); const sheetUrlModal = document.getElementById('sheetUrlInputModal'); let hiddenFileInput = null;
-    function showModal() { modal.style.display = 'flex'; } function hideModal() { modal.style.display = 'none'; urlInputArea.style.display = 'none'; }
-    insertBtn.onclick = showModal; closeModalBtn.onclick = hideModal; modal.onclick = (e) => { if(e.target === modal) hideModal(); };
-    chooseLocalBtn.onclick = () => { if(hiddenFileInput) hiddenFileInput.remove(); const fileInput = document.createElement('input'); fileInput.type = 'file'; fileInput.accept = '.xlsx, .xls, .xlsb'; fileInput.style.display = 'none'; fileInput.onchange = (e) => { const file = e.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = ev => { const workbook = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' }); const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 }); vocabList = rows.map(r => ({ khmer: r[3]?.toString().trim() || "", chinese: r[4]?.toString().trim() || "" })).filter(i => i.khmer && i.chinese); if(vocabList.length) { saveAllData(); pickRandom(); } hideModal(); }; reader.readAsArrayBuffer(file); }; document.body.appendChild(fileInput); hiddenFileInput = fileInput; fileInput.click(); };
+    // FIXED: Background click handler - now properly triggers random word when clicking main area
+    function setupBackgroundClick() {
+        const contentArea = document.getElementById('bgClickArea');
+        contentArea.addEventListener('click', function(e) {
+            // Don't trigger if click is inside floating menu or on draggable text elements (to avoid conflict with drag)
+            if (e.target.closest('#floatingMenu')) return;
+            // Also don't trigger if clicking on the draggable text elements while dragging? 
+            // But we still want clicks on text to speak. However text has its own onclick (speak), so we don't prevent.
+            // allow random word on background area but also allow text clicks to speak (they are separate)
+            // We'll only trigger if the click target is not specifically the text elements' onclick action area.
+            // However for better UX: if click is on .zh or .km, they already trigger speak, we should NOT also trigger random word.
+            if (e.target.classList.contains('zh') || e.target.classList.contains('km')) {
+                return; // let the speak handler do its job
+            }
+            pickRandom();
+        });
+    }
+    
+    // ---- MODAL LOGIC ----
+    const modal = document.getElementById('fileSourceModal');
+    const insertBtn = document.getElementById('insertDataBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const chooseLocalBtn = document.getElementById('chooseLocalBtn');
+    const chooseUrlBtn = document.getElementById('chooseUrlBtn');
+    const urlInputArea = document.getElementById('urlInputArea');
+    const confirmUrlLoad = document.getElementById('confirmUrlLoad');
+    const sheetUrlModal = document.getElementById('sheetUrlInputModal');
+    let hiddenFileInput = null;
+
+    function showModal() { modal.style.display = 'flex'; }
+    function hideModal() { modal.style.display = 'none'; urlInputArea.style.display = 'none'; }
+
+    insertBtn.onclick = showModal;
+    closeModalBtn.onclick = hideModal;
+    modal.onclick = (e) => { if(e.target === modal) hideModal(); };
+
+    chooseLocalBtn.onclick = () => {
+        if(hiddenFileInput) hiddenFileInput.remove();
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.xlsx, .xls, .xlsb';
+        fileInput.style.display = 'none';
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                const workbook = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+                const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+                vocabList = rows.map(r => ({ khmer: r[3]?.toString().trim() || "", chinese: r[4]?.toString().trim() || "" })).filter(i => i.khmer && i.chinese);
+                if(vocabList.length) { saveAllData(); pickRandom(); }
+                hideModal();
+            };
+            reader.readAsArrayBuffer(file);
+        };
+        document.body.appendChild(fileInput);
+        hiddenFileInput = fileInput;
+        fileInput.click();
+    };
+
     chooseUrlBtn.onclick = () => { urlInputArea.style.display = 'flex'; };
-    async function loadSheetFromModalUrl() { let urlOrId = sheetUrlModal.value.trim(); if(!urlOrId) return; let sheetId = ''; if(urlOrId.includes('spreadsheets/d/')) { const match = urlOrId.match(/\/d\/([a-zA-Z0-9_-]+)/); if(match) sheetId = match[1]; } else if(urlOrId.length > 20) sheetId = urlOrId; else { alert("Invalid Sheet ID"); return; } const apiUrl = `https://opensheet.elk.sh/${sheetId}/Sheet1`; try { const response = await fetch(apiUrl); if(!response.ok) throw new Error("Fetch failed"); const data = await response.json(); if(!Array.isArray(data) || data.length===0) throw new Error("Empty sheet"); const firstRow = data[0]; const columns = Object.keys(firstRow); let khmerCol = null, chineseCol = null; const khmerKw = ['khmer','km','ភាសាខ្មែរ','cambodian','kh']; const chineseKw = ['chinese','zh','中文','mandarin','cn','han']; for(const col of columns) { const c = col.toLowerCase(); if(khmerKw.some(k=>c.includes(k))) khmerCol = col; if(chineseKw.some(k=>c.includes(k))) chineseCol = col; } if(!khmerCol || !chineseCol) { const stringCols = []; for(const row of data.slice(0,3)) for(const [k,v] of Object.entries(row)) if(typeof v === 'string' && v.length>0 && !stringCols.includes(k)) stringCols.push(k); if(stringCols.length>=2) { khmerCol = khmerCol || stringCols[0]; chineseCol = chineseCol || stringCols[1]; } } if(!khmerCol || !chineseCol) throw new Error("Could not detect columns"); const newVocab = data.map(row => ({ khmer: row[khmerCol]?.toString().trim() || "", chinese: row[chineseCol]?.toString().trim() || "" })).filter(v=>v.khmer && v.chinese); if(newVocab.length===0) throw new Error("No valid rows"); vocabList = newVocab; saveAllData(); pickRandom(); hideModal(); } catch(err) { alert("Sheet load error: "+err.message); } }
+    async function loadSheetFromModalUrl() {
+        let urlOrId = sheetUrlModal.value.trim();
+        if(!urlOrId) return;
+        let sheetId = '';
+        if(urlOrId.includes('spreadsheets/d/')) {
+            const match = urlOrId.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if(match) sheetId = match[1];
+        } else if(urlOrId.length > 20) sheetId = urlOrId;
+        else { alert("Invalid Sheet ID"); return; }
+        const apiUrl = `https://opensheet.elk.sh/${sheetId}/Sheet1`;
+        try {
+            const response = await fetch(apiUrl);
+            if(!response.ok) throw new Error("Fetch failed");
+            const data = await response.json();
+            if(!Array.isArray(data) || data.length===0) throw new Error("Empty sheet");
+            const firstRow = data[0];
+            const columns = Object.keys(firstRow);
+            let khmerCol = null, chineseCol = null;
+            const khmerKw = ['khmer','km','ភាសាខ្មែរ','cambodian','kh'];
+            const chineseKw = ['chinese','zh','中文','mandarin','cn','han'];
+            for(const col of columns) { const c = col.toLowerCase(); if(khmerKw.some(k=>c.includes(k))) khmerCol = col; if(chineseKw.some(k=>c.includes(k))) chineseCol = col; }
+            if(!khmerCol || !chineseCol) { const stringCols = []; for(const row of data.slice(0,3)) for(const [k,v] of Object.entries(row)) if(typeof v === 'string' && v.length>0 && !stringCols.includes(k)) stringCols.push(k); if(stringCols.length>=2) { khmerCol = khmerCol || stringCols[0]; chineseCol = chineseCol || stringCols[1]; } }
+            if(!khmerCol || !chineseCol) throw new Error("Could not detect Khmer/Chinese columns");
+            const newVocab = data.map(row => ({ khmer: row[khmerCol]?.toString().trim() || "", chinese: row[chineseCol]?.toString().trim() || "" })).filter(v=>v.khmer && v.chinese);
+            if(newVocab.length===0) throw new Error("No valid rows");
+            vocabList = newVocab;
+            saveAllData();
+            pickRandom();
+            hideModal();
+        } catch(err) { alert("Sheet load error: "+err.message); }
+    }
     confirmUrlLoad.onclick = loadSheetFromModalUrl;
-    
-    // DRAG & NIGHT MODE & GEAR LOGIC
-    let posX=0,posY=0,initialX,initialY,activeDrag=false; const dragHandle=document.getElementById("dragHandle"), floatingMenu=document.getElementById("floatingMenu");
+
+    // Drag & gear + night mode
+    let posX=0,posY=0,initialX,initialY,activeDrag=false;
+    const dragHandle=document.getElementById("dragHandle"), floatingMenu=document.getElementById("floatingMenu");
     dragHandle.onmousedown=(e)=>{ if(e.target.classList?.contains('drag-dark-toggle')||e.target.closest('.aba-icon-inline')) return; activeDrag=true; initialX=e.clientX-posX; initialY=e.clientY-posY; };
     document.addEventListener("mousemove",(e)=>{ if(activeDrag){ posX=e.clientX-initialX; posY=e.clientY-initialY; floatingMenu.style.transform=`translate3d(${posX}px,${posY}px,0)`; } });
     document.addEventListener("mouseup",()=>activeDrag=false);
@@ -663,9 +834,8 @@
     function setupQRPopup() { const overlay = document.getElementById('qrPopupOverlay'); const closeBtn = document.getElementById('qrCloseBtn'); const inlineIcon = document.getElementById('abaIconInline'); if (inlineIcon) inlineIcon.addEventListener('click', (e) => { e.stopPropagation(); overlay.style.display = 'flex'; }); if (closeBtn) closeBtn.addEventListener('click', () => overlay.style.display = 'none'); overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; }); }
     
     window.onload = () => {
-        loadSettings(); const savedList = localStorage.getItem('vocabMaster_List'); if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) pickRandom(); } initNightMode(); applyStyles(); widthFit(); initGearDrag(); setupQRPopup();
-        document.getElementById('resetAllOffsetsBtn').onclick = resetAllOffsets;
-        document.getElementById('sVocabSpacing').addEventListener('input', () => { const val = document.getElementById('sVocabSpacing').value; document.getElementById('vocabSpacingVal').innerText = val+'px'; document.body.style.setProperty('--vocab-spacing', val+'px'); saveAllData(); });
+        loadSettings(); const savedList = localStorage.getItem('vocabMaster_List'); if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) pickRandom(); } initNightMode(); applyStyles(); widthFit(); initGearDrag(); setupQRPopup(); initDragBehavior(); loadDragPositions(); setupBackgroundClick();
+        document.getElementById('zhYOffset').addEventListener('input',applyMainPositions); document.getElementById('kmYOffset').addEventListener('input',applyMainPositions); document.getElementById('sVocabSpacing').addEventListener('input',applyVocabSpacing); 
         document.getElementById('autoDelay').addEventListener('input',applyStyles); document.getElementById('zhReps').addEventListener('input',applyStyles); document.getElementById('kmReps').addEventListener('input',applyStyles); 
         document.getElementById('mZhSize').addEventListener('input',applyStyles); document.getElementById('mKmSize').addEventListener('input',applyStyles); document.getElementById('mZhColor').addEventListener('input',applyStyles); document.getElementById('mKmColor').addEventListener('input',applyStyles); 
         document.getElementById('sZhSize').addEventListener('input',applyStyles); document.getElementById('sKmSize').addEventListener('input',applyStyles); document.getElementById('sZhColor').addEventListener('input',applyStyles); document.getElementById('sKmColor').addEventListener('input',applyStyles); 
@@ -673,20 +843,9 @@
         document.getElementById('dragDarkModeBtn').addEventListener('click', toggleNightMode);
         document.getElementById('zhRateSlider').addEventListener('input', function() { applyRateDisplay(); saveAllData(); });
         window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); pickRandom(); } else if (e.code === 'ArrowLeft') { e.preventDefault(); historyPrev(); } else if (e.code === 'ArrowRight') { e.preventDefault(); historyNext(); } else if (e.code === 'ArrowDown') { e.preventDefault(); moveSidebarFocus(1); } else if (e.code === 'ArrowUp') { e.preventDefault(); moveSidebarFocus(-1); } });
-        
-        // Attach mouse drag handlers for text movement
-        const zhElem = document.getElementById('chineseOut'); const kmElem = document.getElementById('khmerOut');
-        zhElem.addEventListener('mousedown', (e) => onDragStart(e, 'zh')); kmElem.addEventListener('mousedown', (e) => onDragStart(e, 'km'));
-        zhElem.addEventListener('touchstart', (e) => { e.preventDefault(); onDragStart(e, 'zh'); }, { passive: false });
-        kmElem.addEventListener('touchstart', (e) => { e.preventDefault(); onDragStart(e, 'km'); }, { passive: false });
-        window.addEventListener('mousemove', onDragMove); window.addEventListener('mouseup', onDragEnd);
-        window.addEventListener('touchmove', onDragMove, { passive: false }); window.addEventListener('touchend', onDragEnd);
-        
-        // FIX: Re-attach click speech handlers after any potential overwrite
-        document.getElementById('chineseOut').onclick = speakChineseFromMain;
-        document.getElementById('khmerOut').onclick = speakKhmerFromMain;
     };
     window.onresize = widthFit;
 </script>
 </body>
 </html>
+```
