@@ -110,6 +110,7 @@
             background-color: var(--bg);
             font-family: 'Inter', system-ui, sans-serif;
             transition: background-color 0.2s ease;
+            touch-action: pan-y pinch-zoom; /* allow vertical scroll but prevent unwanted pan on drag */
         }
 
         body.night-mode {
@@ -260,7 +261,7 @@
             cursor: pointer; 
             transition: background 0.2s;
             position: relative;
-            touch-action: pan-y pinch-zoom; /* Improved touch handling */
+            touch-action: pan-y pinch-zoom; /* allow vertical scroll but keep drag free */
         }
 
         #floatingMenu {
@@ -273,7 +274,6 @@
             flex-direction: column;
             overflow: hidden;
             transition: background 0.2s, border-color 0.2s;
-            touch-action: none; /* avoids conflicts for menu drag */
         }
 
         #panelContent {
@@ -282,7 +282,6 @@
             flex: 1;
             min-height: 0;
             scrollbar-width: thin;
-            -webkit-overflow-scrolling: touch;
         }
 
         .control-group {
@@ -299,7 +298,6 @@
             padding: 0 12px; color: #f8fafc; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
             gap: 8px; white-space: nowrap;
             flex-shrink: 0;
-            touch-action: none;
         }
         
         .drag-title-wrapper {
@@ -393,35 +391,19 @@
             transform: scale(0.96);
         }
 
-        .display-area { 
-            flex-grow: 1; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position: relative; 
-            pointer-events: auto; 
-            background: inherit;
-            touch-action: pan-y pinch-zoom; /* allow vertical scrolling but prevent drag interference: but we handle pan manually on texts */
-        }
-        .text-line { 
-            display: flex; 
-            align-items: center; 
-            gap: 20px; 
-            max-width: 95%; 
-            pointer-events: auto; 
-            user-select: none; 
-            margin: 0.5rem 0;
-            touch-action: none; /* important for touch drag */
-        }
+        .display-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; pointer-events: auto; background: inherit; }
+        .text-line { display: flex; align-items: center; gap: 20px; max-width: 95%; pointer-events: auto; user-select: none; }
         
+        /* IMPROVED: draggable-text now has better touch-action and active area */
         .draggable-text {
             cursor: grab;
             transition: transform 0.05s linear;
             display: inline-block;
             position: relative;
             will-change: transform;
-            touch-action: none; /* crucial: allows touch drag without page scroll */
+            touch-action: none;  /* allows full touch drag on mobile */
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         .draggable-text:active {
             cursor: grabbing;
@@ -434,7 +416,8 @@
             white-space: nowrap;
             display: inline-block;
             position: relative;
-            touch-action: none; /* for direct touch drag */
+            touch-action: none;
+            user-select: none;
         }
         .zh:active, .km:active { cursor: grabbing; }
         .km { line-height: 1.2; }
@@ -444,7 +427,7 @@
         .resizer { transition: opacity 0.3s, background 0.2s; background: #cbd5e1; }
         .resizer.hidden { width: 0 !important; opacity: 0; pointer-events: none; }
 
-        .vocab-list { flex-grow: 1; overflow-y: auto; padding: 10px; -webkit-overflow-scrolling: touch; }
+        .vocab-list { flex-grow: 1; overflow-y: auto; padding: 10px; }
         .vocab-item { 
             padding: 10px 12px; 
             margin-bottom: var(--vocab-spacing, 8px); 
@@ -617,8 +600,8 @@
             #minimizedTrigger { width: 48px; height: 48px; font-size: 24px; }
             .qr-card img { width: 240px; }
             .file-source-card { width: 85%; padding: 20px; }
-            .text-line { gap: 12px; flex-direction: column; }
-            .zh, .km { white-space: normal; word-break: keep-all; text-align: center; max-width: 90vw; }
+            /* better drag area on touch */
+            .draggable-text { touch-action: none; }
         }
     </style>
 </head>
@@ -750,8 +733,7 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script>
-    // ==================== FIXED: Enhanced Drag for Touch & Mouse (Smartphone Drag Anywhere) ====================
-    // Preserving all original logic, but replacing drag with unified handler that supports both touch and mouse.
+    // ==================== ORIGINAL TTS & APP LOGIC (PRESERVED WITH ENHANCED MOBILE DRAG) ====================
     let currentAudio = null, speechQueue = [], isProcessingQueue = false;
     async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
     async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, parseInt(document.getElementById('speechInterval').value || 500))); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
@@ -768,71 +750,83 @@
     let zhDragOffset = { x: 0, y: 0 };
     let kmDragOffset = { x: 0, y: 0 };
     let activeDragElement = null;
-    let dragStartTouch = { x: 0, y: 0 };
+    let dragStartMouse = { x: 0, y: 0 };
     let dragStartTranslate = { x: 0, y: 0 };
     
-    // Unified touch/mouse drag with full support for smartphones
+    // ENHANCED DRAG: supports both mouse AND touch events for mobile
     function initDragBehavior() {
         const zhEl = document.getElementById('chineseOut');
         const kmEl = document.getElementById('khmerOut');
         
-        function getClientCoord(e) {
-            if (e.touches) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        function getClientCoords(e) {
+            if (e.touches && e.touches.length) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
             return { x: e.clientX, y: e.clientY };
         }
         
-        function onPointerStart(e) {
+        function onPointerDown(e) {
             e.preventDefault();
             e.stopPropagation();
-            activeDragElement = e.currentTarget;
-            const coord = getClientCoord(e);
-            let currentTranslate = (activeDragElement.id === 'chineseOut') ? { ...zhDragOffset } : { ...kmDragOffset };
-            dragStartTouch = { x: coord.x, y: coord.y };
+            const target = e.currentTarget;
+            activeDragElement = target;
+            const coords = getClientCoords(e);
+            let currentTranslate = { x: 0, y: 0 };
+            if (target.id === 'chineseOut') {
+                currentTranslate = { x: zhDragOffset.x, y: zhDragOffset.y };
+            } else {
+                currentTranslate = { x: kmDragOffset.x, y: kmDragOffset.y };
+            }
+            dragStartMouse = { x: coords.x, y: coords.y };
             dragStartTranslate = { x: currentTranslate.x, y: currentTranslate.y };
             
-            const moveHandler = (moveEv) => {
-                if (!activeDragElement) return;
-                moveEv.preventDefault();
-                const newCoord = getClientCoord(moveEv);
-                const dx = newCoord.x - dragStartTouch.x;
-                const dy = newCoord.y - dragStartTouch.y;
-                const newX = dragStartTranslate.x + dx;
-                const newY = dragStartTranslate.y + dy;
-                if (activeDragElement.id === 'chineseOut') {
-                    zhDragOffset = { x: newX, y: newY };
-                    activeDragElement.style.transform = `translate(${newX}px, ${newY}px)`;
-                } else {
-                    kmDragOffset = { x: newX, y: newY };
-                    activeDragElement.style.transform = `translate(${newX}px, ${newY}px)`;
-                }
-            };
-            
-            const endHandler = () => {
-                if (activeDragElement) {
-                    localStorage.setItem('zhDragX', zhDragOffset.x);
-                    localStorage.setItem('zhDragY', zhDragOffset.y);
-                    localStorage.setItem('kmDragX', kmDragOffset.x);
-                    localStorage.setItem('kmDragY', kmDragOffset.y);
-                    activeDragElement = null;
-                }
-                window.removeEventListener('mousemove', moveHandler);
-                window.removeEventListener('mouseup', endHandler);
-                window.removeEventListener('touchmove', moveHandler);
-                window.removeEventListener('touchend', endHandler);
-                window.removeEventListener('touchcancel', endHandler);
-            };
-            
-            window.addEventListener('mousemove', moveHandler);
-            window.addEventListener('mouseup', endHandler);
-            window.addEventListener('touchmove', moveHandler, { passive: false });
-            window.addEventListener('touchend', endHandler);
-            window.addEventListener('touchcancel', endHandler);
+            // add global listeners
+            document.addEventListener('mousemove', onPointerMove);
+            document.addEventListener('mouseup', onPointerUp);
+            document.addEventListener('touchmove', onPointerMove, { passive: false });
+            document.addEventListener('touchend', onPointerUp);
+            document.addEventListener('touchcancel', onPointerUp);
         }
         
-        zhEl.addEventListener('mousedown', onPointerStart);
-        kmEl.addEventListener('mousedown', onPointerStart);
-        zhEl.addEventListener('touchstart', onPointerStart, { passive: false });
-        kmEl.addEventListener('touchstart', onPointerStart, { passive: false });
+        function onPointerMove(e) {
+            if (!activeDragElement) return;
+            e.preventDefault();
+            const coords = getClientCoords(e);
+            const dx = coords.x - dragStartMouse.x;
+            const dy = coords.y - dragStartMouse.y;
+            const newX = dragStartTranslate.x + dx;
+            const newY = dragStartTranslate.y + dy;
+            
+            if (activeDragElement.id === 'chineseOut') {
+                zhDragOffset = { x: newX, y: newY };
+                activeDragElement.style.transform = `translate(${newX}px, ${newY}px)`;
+            } else {
+                kmDragOffset = { x: newX, y: newY };
+                activeDragElement.style.transform = `translate(${newX}px, ${newY}px)`;
+            }
+        }
+        
+        function onPointerUp() {
+            if (!activeDragElement) return;
+            if (activeDragElement.id === 'chineseOut') {
+                localStorage.setItem('zhDragX', zhDragOffset.x);
+                localStorage.setItem('zhDragY', zhDragOffset.y);
+            } else {
+                localStorage.setItem('kmDragX', kmDragOffset.x);
+                localStorage.setItem('kmDragY', kmDragOffset.y);
+            }
+            activeDragElement = null;
+            document.removeEventListener('mousemove', onPointerMove);
+            document.removeEventListener('mouseup', onPointerUp);
+            document.removeEventListener('touchmove', onPointerMove);
+            document.removeEventListener('touchend', onPointerUp);
+            document.removeEventListener('touchcancel', onPointerUp);
+        }
+        
+        zhEl.addEventListener('mousedown', onPointerDown);
+        kmEl.addEventListener('mousedown', onPointerDown);
+        zhEl.addEventListener('touchstart', onPointerDown, { passive: false });
+        kmEl.addEventListener('touchstart', onPointerDown, { passive: false });
     }
     
     function loadDragPositions() {
@@ -897,7 +891,7 @@
         });
     }
     
-    // ---- MODAL LOGIC (unchanged) ----
+    // ---- MODAL LOGIC ----
     const modal = document.getElementById('fileSourceModal');
     const insertBtn = document.getElementById('insertDataBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
@@ -973,7 +967,7 @@
     }
     confirmUrlLoad.onclick = loadSheetFromModalUrl;
 
-    // Drag & gear + night mode (unchanged)
+    // Drag & gear + night mode
     let posX=0,posY=0,initialX,initialY,activeDrag=false;
     const dragHandle=document.getElementById("dragHandle"), floatingMenu=document.getElementById("floatingMenu");
     dragHandle.onmousedown=(e)=>{ if(e.target.classList?.contains('drag-dark-toggle')||e.target.closest('.aba-icon-inline')) return; activeDrag=true; initialX=e.clientX-posX; initialY=e.clientY-posY; };
