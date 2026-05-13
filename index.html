@@ -618,21 +618,9 @@
 
                 <div id="mainControls" class="control-group active">
                     <div class="size-row"><label>Next Word Delay (s)</label><input type="range" id="autoDelay" class="size-slider" min="2" max="15" step="1" value="5"><span id="delayVal" style="font-size:0.7rem; width:20px;">5s</span></div>
-                    <div class="style-grid"><label>ZH</label><select id="mZhFont" class="font-select">
-                        <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
-                        <option value="'XHeiPinyin'">X Hei Pinyin</option>
-                        <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
-                        <option value="'HanZhen Wide Standar'">HanZhen Wide Standard</option>
-                        <option value="'Hanyi Extra Bold'">Hanyi Extra Bold</option>
-                    </select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
+                    <div class="style-grid"><label>ZH</label><select id="mZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette (Pinyin)</option><option value="'XHeiPinyin'">X Hei Pinyin</option></select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
                     <div class="size-row"><label>ZH Size</label><input type="range" id="mZhSize" class="size-slider" min="5" max="60" value="35"></div>
-                    <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select">
-                        <option value="'KHLazySmooth'">LazySmooth</option>
-                        <option value="'KHDangrek'">Dangrek</option>
-                        <option value="'MithSalaPali-v2'">MithSalaPali-v2</option>
-                        <option value="'SAMADY KS-V2'">SAMADY KS-V2</option>
-                        <option value="'ROSAPSRA'">ROSAPSRA</option>
-                    </select><input type="color" id="mKmColor" class="color-input" value="#1e293b"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
+                    <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option></select><input type="color" id="mKmColor" class="color-input" value="#1e293b"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
                     <div class="size-row"><label>KM Size</label><input type="range" id="mKmSize" class="size-slider" min="5" max="40" value="18"></div>
                     <div class="size-row" style="justify-content: flex-start; gap: 12px;">
                         <label style="width: auto;">Reset Drag Positions</label>
@@ -652,20 +640,8 @@
 
                 <div id="sideControls" class="control-group">
                     <button id="sidebarToggleBtn" class="btn-main btn-accent" style="margin-bottom:10px; width:100%;" onclick="toggleSidebar()">HIDE SIDEBAR</button>
-                    <div class="side-style-grid"><label>ZH</label><select id="sZhFont" class="font-select">
-                        <option value="'BaguettePinyin'">Baguette</option>
-                        <option value="'XHeiPinyin'">X Hei</option>
-                        <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
-                        <option value="'HanZhen Wide Standar'">HanZhen Wide Standard</option>
-                        <option value="'Hanyi Extra Bold'">Hanyi Extra Bold</option>
-                    </select><input type="color" id="sZhColor" class="color-input" value="#000000"></div>
-                    <div class="side-style-grid"><label>KM</label><select id="sKmFont" class="font-select">
-                        <option value="'KHLazySmooth'">LazySmooth</option>
-                        <option value="'KHDangrek'">Dangrek</option>
-                        <option value="'MithSalaPali-v2'">MithSalaPali-v2</option>
-                        <option value="'SAMADY KS-V2'">SAMADY KS-V2</option>
-                        <option value="'ROSAPSRA'">ROSAPSRA</option>
-                    </select><input type="color" id="sKmColor" class="color-input" value="#475569"></div>
+                    <div class="side-style-grid"><label>ZH</label><select id="sZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette</option><option value="'XHeiPinyin'">X Hei</option></select><input type="color" id="sZhColor" class="color-input" value="#000000"></div>
+                    <div class="side-style-grid"><label>KM</label><select id="sKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option></select><input type="color" id="sKmColor" class="color-input" value="#475569"></div>
                     <div class="size-row"><label>ZH Side Size</label><input type="range" id="sZhSize" class="size-slider" min="0.5" max="4" step="0.1" value="1.1"></div>
                     <div class="size-row"><label>KM Side Size</label><input type="range" id="sKmSize" class="size-slider" min="0.5" max="4" step="0.1" value="0.9"></div>
                     <div class="size-row"><label>📋 Vocab Spacing</label><input type="range" id="sVocabSpacing" class="size-slider" min="0" max="30" step="1" value="8"><span id="vocabSpacingVal">8px</span></div>
