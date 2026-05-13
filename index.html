@@ -1,11 +1,13 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Vocab Master Pro | Edge TTS Studio</title>
     <style>
-        /* ========== CUSTOM WEB FONTS (LOCAL FILES) ========== */
+        /* ========== CUSTOM WEB FONTS (LOCAL FILES - ENHANCED) ========== */
+        /* Chinese Fonts */
         @font-face {
             font-family: 'BaguettePinyin';
             src: url('/static/Fonts/Chinese/pinyin-baguette.woff2') format('woff2');
@@ -16,57 +18,71 @@
             src: url('/static/Fonts/Chinese/x-hei-pinyin.woff2') format('woff2');
             font-display: swap;
         }
-		       @font-face {
+		@font-face {
             font-family: 'Cream Pudding Pinyin';
             src: url('/static/Fonts/Chinese/Cream Pudding Pinyin Font.woff2') format('woff2');
             font-display: swap;
         }
-		        
-		       @font-face {
+		@font-face {
             font-family: 'Hanyi Extra Bold';
             src: url('/static/Fonts/Chinese/Hanyi Extra Bold Round Simplified.woff2') format('woff2');
             font-display: swap;
         }
-				       @font-face {
+		@font-face {
             font-family: 'Pinyin';
             src: url('/static/Fonts/Chinese/FZPY01Edit2026-Regular.woff2') format('woff2');
             font-display: swap;
         }
-					       @font-face {
+		@font-face {
             font-family: 'SingKhmer';
             src: url('/static/Fonts/Chinese/SingKhmerForChinese-Regular.woff2') format('woff2');
             font-display: swap;
         }
-		        
-		       @font-face {
-            font-family: 'HanZhen Wide Standar';
+		@font-face {
+            font-family: 'HanZhen Wide Standard';
             src: url('/static/Fonts/Chinese/Founder Type HanZhen Wide Standard Simplified.woff2') format('woff2');
             font-display: swap;
         }
-		
         @font-face {
-            font-family: 'LazySmooth';
+            font-family: 'Founder Shaoer';
+            src: url('/static/Fonts/Chinese/Founder Shaoer Simplified.woff2') format('woff2');
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Hanyi Changyi';
+            src: url('/static/Fonts/Chinese/Hanyi Changyi Simplified.woff2') format('woff2');
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Yezi Kaiti Pinyin';
+            src: url('/static/Fonts/Chinese/Yezi Factory Kaiti Pinyin.woff2') format('woff2');
+            font-display: swap;
+        }
+
+        /* Khmer Fonts (Enhanced) */
+        @font-face {
+            font-family: 'KHLazySmooth';
             src: url('/static/Fonts/Khmer/KH BL LAZYSMOOTH.woff2') format('woff2');
             font-display: swap;
         }
         @font-face {
-            font-family: 'Dangrek';
-            src: url('/static/Fonts/Khmer/KKH-DANGREK.woff2') format('woff2');
+            font-family: 'KHDangrek';
+            src: url('/static/Fonts/Khmer/KH-DANGREK.woff2') format('woff2');
             font-display: swap;
         }
-		    @font-face {
-            font-family: 'ROSAPSRA';
-            src: url('/static/Fonts/Khmer/KKHMEROSAPSRA.woff2') format('woff2');
+	    @font-face {
+            font-family: 'KHROSAPSRA';
+            src: url('/static/Fonts/Khmer/KHMEROSAPSRA.woff2') format('woff2');
             font-display: swap;
         }
-		    @font-face {
-            font-family: 'MithSalaPali-v2';
-            src: url('/static/Fonts/Khmer/KKh-MithSalaPali-v2.woff2') format('woff2');
+	    @font-face {
+            font-family: 'KHMithSalaPali';
+            src: url('/static/Fonts/Khmer/Kh-MithSalaPali-v2.woff2') format('woff2');
             font-display: swap;
         }
-		    @font-face {
-            font-family: 'SAMADY KS-V2';
-            src: url('/static/Fonts/Khmer/KKHMER SAMADY KS-V2.woff2') format('woff2');
+	    @font-face {
+            font-family: 'KHSAMADY';
+            src: url('/static/Fonts/Khmer/KHMER SAMADY KS-V2.woff2') format('woff2');
             font-display: swap;
         }
 
@@ -244,6 +260,7 @@
             cursor: pointer; 
             transition: background 0.2s;
             position: relative;
+            touch-action: pan-y pinch-zoom; /* Improved touch handling */
         }
 
         #floatingMenu {
@@ -256,6 +273,7 @@
             flex-direction: column;
             overflow: hidden;
             transition: background 0.2s, border-color 0.2s;
+            touch-action: none; /* avoids conflicts for menu drag */
         }
 
         #panelContent {
@@ -264,6 +282,7 @@
             flex: 1;
             min-height: 0;
             scrollbar-width: thin;
+            -webkit-overflow-scrolling: touch;
         }
 
         .control-group {
@@ -280,6 +299,7 @@
             padding: 0 12px; color: #f8fafc; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
             gap: 8px; white-space: nowrap;
             flex-shrink: 0;
+            touch-action: none;
         }
         
         .drag-title-wrapper {
@@ -373,8 +393,27 @@
             transform: scale(0.96);
         }
 
-        .display-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; pointer-events: auto; background: inherit; }
-        .text-line { display: flex; align-items: center; gap: 20px; max-width: 95%; pointer-events: auto; user-select: none; }
+        .display-area { 
+            flex-grow: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative; 
+            pointer-events: auto; 
+            background: inherit;
+            touch-action: pan-y pinch-zoom; /* allow vertical scrolling but prevent drag interference: but we handle pan manually on texts */
+        }
+        .text-line { 
+            display: flex; 
+            align-items: center; 
+            gap: 20px; 
+            max-width: 95%; 
+            pointer-events: auto; 
+            user-select: none; 
+            margin: 0.5rem 0;
+            touch-action: none; /* important for touch drag */
+        }
         
         .draggable-text {
             cursor: grab;
@@ -382,6 +421,7 @@
             display: inline-block;
             position: relative;
             will-change: transform;
+            touch-action: none; /* crucial: allows touch drag without page scroll */
         }
         .draggable-text:active {
             cursor: grabbing;
@@ -394,6 +434,7 @@
             white-space: nowrap;
             display: inline-block;
             position: relative;
+            touch-action: none; /* for direct touch drag */
         }
         .zh:active, .km:active { cursor: grabbing; }
         .km { line-height: 1.2; }
@@ -403,7 +444,7 @@
         .resizer { transition: opacity 0.3s, background 0.2s; background: #cbd5e1; }
         .resizer.hidden { width: 0 !important; opacity: 0; pointer-events: none; }
 
-        .vocab-list { flex-grow: 1; overflow-y: auto; padding: 10px; }
+        .vocab-list { flex-grow: 1; overflow-y: auto; padding: 10px; -webkit-overflow-scrolling: touch; }
         .vocab-item { 
             padding: 10px 12px; 
             margin-bottom: var(--vocab-spacing, 8px); 
@@ -576,6 +617,8 @@
             #minimizedTrigger { width: 48px; height: 48px; font-size: 24px; }
             .qr-card img { width: 240px; }
             .file-source-card { width: 85%; padding: 20px; }
+            .text-line { gap: 12px; flex-direction: column; }
+            .zh, .km { white-space: normal; word-break: keep-all; text-align: center; max-width: 90vw; }
         }
     </style>
 </head>
@@ -618,9 +661,26 @@
 
                 <div id="mainControls" class="control-group active">
                     <div class="size-row"><label>Next Word Delay (s)</label><input type="range" id="autoDelay" class="size-slider" min="2" max="15" step="1" value="5"><span id="delayVal" style="font-size:0.7rem; width:20px;">5s</span></div>
-                    <div class="style-grid"><label>ZH</label><select id="mZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette (Pinyin)</option><option value="'XHeiPinyin'">X Hei Pinyin</option></select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
+                    <div class="style-grid"><label>ZH</label><select id="mZhFont" class="font-select">
+                        <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
+                        <option value="'XHeiPinyin'">X Hei Pinyin</option>
+                        <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
+                        <option value="'Pinyin'">FZPY01 Pinyin</option>
+                        <option value="'HanZhen Wide Standard'">HanZhen Wide Standard</option>
+                        <option value="'Founder Shaoer'">Founder Shaoer</option>
+                        <option value="'Hanyi Changyi'">Hanyi Changyi</option>
+                        <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
+                        <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
+                        <option value="'SingKhmer'">SingKhmerForChinese</option>
+                    </select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
                     <div class="size-row"><label>ZH Size</label><input type="range" id="mZhSize" class="size-slider" min="5" max="60" value="35"></div>
-                    <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option></select><input type="color" id="mKmColor" class="color-input" value="#1e293b"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
+                    <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select">
+                        <option value="'KHLazySmooth'">LazySmooth</option>
+                        <option value="'KHDangrek'">Dangrek</option>
+                        <option value="'KHROSAPSRA'">Rosapsra</option>
+                        <option value="'KHMithSalaPali'">MithSalaPali</option>
+                        <option value="'KHSAMADY'">Samady KS</option>
+                    </select><input type="color" id="mKmColor" class="color-input" value="#1e293b"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
                     <div class="size-row"><label>KM Size</label><input type="range" id="mKmSize" class="size-slider" min="5" max="40" value="18"></div>
                     <div class="size-row" style="justify-content: flex-start; gap: 12px;">
                         <label style="width: auto;">Reset Drag Positions</label>
@@ -640,8 +700,20 @@
 
                 <div id="sideControls" class="control-group">
                     <button id="sidebarToggleBtn" class="btn-main btn-accent" style="margin-bottom:10px; width:100%;" onclick="toggleSidebar()">HIDE SIDEBAR</button>
-                    <div class="side-style-grid"><label>ZH</label><select id="sZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette</option><option value="'XHeiPinyin'">X Hei</option></select><input type="color" id="sZhColor" class="color-input" value="#000000"></div>
-                    <div class="side-style-grid"><label>KM</label><select id="sKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option></select><input type="color" id="sKmColor" class="color-input" value="#475569"></div>
+                    <div class="side-style-grid"><label>ZH</label><select id="sZhFont" class="font-select">
+                        <option value="'BaguettePinyin'">Baguette</option>
+                        <option value="'XHeiPinyin'">X Hei</option>
+                        <option value="'Cream Pudding Pinyin'">Cream Pudding</option>
+                        <option value="'Pinyin'">FZPY01</option>
+                        <option value="'HanZhen Wide Standard'">HanZhen Wide</option>
+                    </select><input type="color" id="sZhColor" class="color-input" value="#000000"></div>
+                    <div class="side-style-grid"><label>KM</label><select id="sKmFont" class="font-select">
+                        <option value="'KHLazySmooth'">LazySmooth</option>
+                        <option value="'KHDangrek'">Dangrek</option>
+                        <option value="'KHROSAPSRA'">Rosapsra</option>
+                        <option value="'KHMithSalaPali'">MithSalaPali</option>
+                        <option value="'KHSAMADY'">Samady KS</option>
+                    </select><input type="color" id="sKmColor" class="color-input" value="#475569"></div>
                     <div class="size-row"><label>ZH Side Size</label><input type="range" id="sZhSize" class="size-slider" min="0.5" max="4" step="0.1" value="1.1"></div>
                     <div class="size-row"><label>KM Side Size</label><input type="range" id="sKmSize" class="size-slider" min="0.5" max="4" step="0.1" value="0.9"></div>
                     <div class="size-row"><label>📋 Vocab Spacing</label><input type="range" id="sVocabSpacing" class="size-slider" min="0" max="30" step="1" value="8"><span id="vocabSpacingVal">8px</span></div>
@@ -678,7 +750,8 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script>
-    // ==================== ORIGINAL TTS & APP LOGIC ====================
+    // ==================== FIXED: Enhanced Drag for Touch & Mouse (Smartphone Drag Anywhere) ====================
+    // Preserving all original logic, but replacing drag with unified handler that supports both touch and mouse.
     let currentAudio = null, speechQueue = [], isProcessingQueue = false;
     async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
     async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, parseInt(document.getElementById('speechInterval').value || 500))); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
@@ -695,59 +768,71 @@
     let zhDragOffset = { x: 0, y: 0 };
     let kmDragOffset = { x: 0, y: 0 };
     let activeDragElement = null;
-    let dragStartMouse = { x: 0, y: 0 };
+    let dragStartTouch = { x: 0, y: 0 };
     let dragStartTranslate = { x: 0, y: 0 };
     
+    // Unified touch/mouse drag with full support for smartphones
     function initDragBehavior() {
         const zhEl = document.getElementById('chineseOut');
         const kmEl = document.getElementById('khmerOut');
         
-        function onMouseDown(e) {
+        function getClientCoord(e) {
+            if (e.touches) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            return { x: e.clientX, y: e.clientY };
+        }
+        
+        function onPointerStart(e) {
             e.preventDefault();
             e.stopPropagation();
-            const target = e.currentTarget;
-            activeDragElement = target;
-            const startX = e.clientX;
-            const startY = e.clientY;
-            let currentTranslate = { x: 0, y: 0 };
-            if (target.id === 'chineseOut') {
-                currentTranslate = { x: zhDragOffset.x, y: zhDragOffset.y };
-            } else {
-                currentTranslate = { x: kmDragOffset.x, y: kmDragOffset.y };
-            }
-            dragStartMouse = { x: startX, y: startY };
+            activeDragElement = e.currentTarget;
+            const coord = getClientCoord(e);
+            let currentTranslate = (activeDragElement.id === 'chineseOut') ? { ...zhDragOffset } : { ...kmDragOffset };
+            dragStartTouch = { x: coord.x, y: coord.y };
             dragStartTranslate = { x: currentTranslate.x, y: currentTranslate.y };
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
+            
+            const moveHandler = (moveEv) => {
+                if (!activeDragElement) return;
+                moveEv.preventDefault();
+                const newCoord = getClientCoord(moveEv);
+                const dx = newCoord.x - dragStartTouch.x;
+                const dy = newCoord.y - dragStartTouch.y;
+                const newX = dragStartTranslate.x + dx;
+                const newY = dragStartTranslate.y + dy;
+                if (activeDragElement.id === 'chineseOut') {
+                    zhDragOffset = { x: newX, y: newY };
+                    activeDragElement.style.transform = `translate(${newX}px, ${newY}px)`;
+                } else {
+                    kmDragOffset = { x: newX, y: newY };
+                    activeDragElement.style.transform = `translate(${newX}px, ${newY}px)`;
+                }
+            };
+            
+            const endHandler = () => {
+                if (activeDragElement) {
+                    localStorage.setItem('zhDragX', zhDragOffset.x);
+                    localStorage.setItem('zhDragY', zhDragOffset.y);
+                    localStorage.setItem('kmDragX', kmDragOffset.x);
+                    localStorage.setItem('kmDragY', kmDragOffset.y);
+                    activeDragElement = null;
+                }
+                window.removeEventListener('mousemove', moveHandler);
+                window.removeEventListener('mouseup', endHandler);
+                window.removeEventListener('touchmove', moveHandler);
+                window.removeEventListener('touchend', endHandler);
+                window.removeEventListener('touchcancel', endHandler);
+            };
+            
+            window.addEventListener('mousemove', moveHandler);
+            window.addEventListener('mouseup', endHandler);
+            window.addEventListener('touchmove', moveHandler, { passive: false });
+            window.addEventListener('touchend', endHandler);
+            window.addEventListener('touchcancel', endHandler);
         }
         
-        function onMouseMove(e) {
-            if (!activeDragElement) return;
-            const dx = e.clientX - dragStartMouse.x;
-            const dy = e.clientY - dragStartMouse.y;
-            const newX = dragStartTranslate.x + dx;
-            const newY = dragStartTranslate.y + dy;
-            if (activeDragElement.id === 'chineseOut') {
-                zhDragOffset = { x: newX, y: newY };
-                activeDragElement.style.transform = `translate(${newX}px, ${newY}px)`;
-            } else {
-                kmDragOffset = { x: newX, y: newY };
-                activeDragElement.style.transform = `translate(${newX}px, ${newY}px)`;
-            }
-        }
-        
-        function onMouseUp() {
-            activeDragElement = null;
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-            localStorage.setItem('zhDragX', zhDragOffset.x);
-            localStorage.setItem('zhDragY', zhDragOffset.y);
-            localStorage.setItem('kmDragX', kmDragOffset.x);
-            localStorage.setItem('kmDragY', kmDragOffset.y);
-        }
-        
-        zhEl.addEventListener('mousedown', onMouseDown);
-        kmEl.addEventListener('mousedown', onMouseDown);
+        zhEl.addEventListener('mousedown', onPointerStart);
+        kmEl.addEventListener('mousedown', onPointerStart);
+        zhEl.addEventListener('touchstart', onPointerStart, { passive: false });
+        kmEl.addEventListener('touchstart', onPointerStart, { passive: false });
     }
     
     function loadDragPositions() {
@@ -807,14 +892,12 @@
         const contentArea = document.getElementById('bgClickArea');
         contentArea.addEventListener('click', function(e) {
             if (e.target.closest('#floatingMenu')) return;
-            if (e.target.classList.contains('zh') || e.target.classList.contains('km')) {
-                return;
-            }
+            if (e.target.classList.contains('zh') || e.target.classList.contains('km')) return;
             pickRandom();
         });
     }
     
-    // ---- MODAL LOGIC ----
+    // ---- MODAL LOGIC (unchanged) ----
     const modal = document.getElementById('fileSourceModal');
     const insertBtn = document.getElementById('insertDataBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
@@ -890,7 +973,7 @@
     }
     confirmUrlLoad.onclick = loadSheetFromModalUrl;
 
-    // Drag & gear + night mode
+    // Drag & gear + night mode (unchanged)
     let posX=0,posY=0,initialX,initialY,activeDrag=false;
     const dragHandle=document.getElementById("dragHandle"), floatingMenu=document.getElementById("floatingMenu");
     dragHandle.onmousedown=(e)=>{ if(e.target.classList?.contains('drag-dark-toggle')||e.target.closest('.aba-icon-inline')) return; activeDrag=true; initialX=e.clientX-posX; initialY=e.clientY-posY; };
@@ -919,3 +1002,4 @@
 </script>
 </body>
 </html>
+```
