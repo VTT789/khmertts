@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,67 +7,81 @@
     <title>Vocab Master Pro | Edge TTS Studio</title>
     <style>
         /* ========== CUSTOM WEB FONTS (LOCAL FILES) ========== */
+        /* --- Chinese Fonts (static/Fonts/Chinese/) --- */
+        @font-face {
+            font-family: 'Cream Pudding Pinyin';
+            src: url('/static/Fonts/Chinese/Cream Pudding Pinyin Font.woff2') format('woff2');
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'FZPY01Edit2026';
+            src: url('/static/Fonts/Chinese/FZPY01Edit2026-Regular.woff2') format('woff2');
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Founder Shaoer';
+            src: url('/static/Fonts/Chinese/Founder Shaoer Simplified.woff2') format('woff2');
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Founder HanZhen Wide';
+            src: url('/static/Fonts/Chinese/Founder Type HanZhen Wide Standard Simplified.woff2') format('woff2');
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Hanyi Changyi';
+            src: url('/static/Fonts/Chinese/Hanyi Changyi Simplified.woff2') format('woff2');
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Hanyi Extra Bold Round';
+            src: url('/static/Fonts/Chinese/Hanyi Extra Bold Round Simplified.woff2') format('woff2');
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'SingKhmerForChinese';
+            src: url('/static/Fonts/Chinese/SingKhmerForChinese-Regular.woff2') format('woff2');
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Yezi Factory Kaiti Pinyin';
+            src: url('/static/Fonts/Chinese/Yezi Factory Kaiti Pinyin.woff2') format('woff2');
+            font-display: swap;
+        }
         @font-face {
             font-family: 'BaguettePinyin';
-            src: url('/static/pinyin-baguette.woff2') format('woff2');
+            src: url('/static/Fonts/Chinese/pinyin-baguette.woff2') format('woff2');
             font-display: swap;
         }
         @font-face {
             font-family: 'XHeiPinyin';
-            src: url('/static/x-hei-pinyin.woff2') format('woff2');
+            src: url('/static/Fonts/Chinese/x-hei-pinyin.woff2') format('woff2');
             font-display: swap;
         }
-		       @font-face {
-            font-family: 'Cream Pudding Pinyin';
-            src: url('/static/Cream Pudding Pinyin Font.woff2') format('woff2');
-            font-display: swap;
-        }
-		        
-		       @font-face {
-            font-family: 'Hanyi Extra Bold';
-            src: url('/static/Hanyi Extra Bold Round Simplified.woff2') format('woff2');
-            font-display: swap;
-        }
-				       @font-face {
-            font-family: 'Pinyin';
-            src: url('/static/FZPY01Edit2026-Regular.woff2') format('woff2');
-            font-display: swap;
-        }
-					       @font-face {
-            font-family: 'SingKhmer';
-            src: url('/static/SingKhmerForChinese-Regular.woff2') format('woff2');
-            font-display: swap;
-        }
-		        
-		       @font-face {
-            font-family: 'HanZhen Wide Standar';
-            src: url('/static/Founder Type HanZhen Wide Standard Simplified.woff2') format('woff2');
-            font-display: swap;
-        }
-		
+        /* --- Khmer Fonts (static/Fonts/Khmer/) --- */
         @font-face {
             font-family: 'KHLazySmooth';
-            src: url('/static/KH BL LAZYSMOOTH.woff2') format('woff2');
+            src: url('/static/Fonts/Khmer/KH BL LAZYSMOOTH.woff2') format('woff2');
             font-display: swap;
         }
         @font-face {
             font-family: 'KHDangrek';
-            src: url('/static/KH-DANGREK.woff2') format('woff2');
+            src: url('/static/Fonts/Khmer/KH-DANGREK.woff2') format('woff2');
             font-display: swap;
         }
-		    @font-face {
-            font-family: 'ROSAPSRA';
-            src: url('/static/KHMEROSAPSRA.woff2') format('woff2');
+        @font-face {
+            font-family: 'KHMER SAMADY KS';
+            src: url('/static/Fonts/Khmer/KHMER SAMADY KS-V2.woff2') format('woff2');
             font-display: swap;
         }
-		    @font-face {
-            font-family: 'MithSalaPali-v2';
-            src: url('/static/Kh-MithSalaPali-v2.woff2') format('woff2');
+        @font-face {
+            font-family: 'KHMEROSAPSRA';
+            src: url('/static/Fonts/Khmer/KHMEROSAPSRA.woff2') format('woff2');
             font-display: swap;
         }
-		    @font-face {
-            font-family: 'SAMADY KS-V2';
-            src: url('/static/KHMER SAMADY KS-V2.woff2') format('woff2');
+        @font-face {
+            font-family: 'KhMithSalaPali';
+            src: url('/static/Fonts/Khmer/Kh-MithSalaPali-v2.woff2') format('woff2');
             font-display: swap;
         }
 
@@ -226,12 +241,6 @@
         body.night-mode .confirm-url-btn {
             background: #2563eb;
         }
-        body.night-mode .offset-reset-btn {
-            background: #dc2626 !important;
-        }
-        body.night-mode .offset-reset-btn:hover {
-            background: #b91c1c !important;
-        }
 
         .main-layout { display: flex; height: 100vh; width: 100vw; overflow: hidden; position: relative; }
         .content-area { 
@@ -355,23 +364,6 @@
         .color-input { width: 100%; height: 24px; border: none; cursor: pointer; background: none; padding: 0; }
         .bold-toggle { cursor: pointer; font-weight: bold; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; font-size: 0.65rem; padding: 4px 0; transition: all 0.2s; }
         .bold-toggle.active { background: #1e293b; color: white; border-color: #1e293b; }
-
-        .offset-reset-btn {
-            background: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 4px 12px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            font-weight: bold;
-            transition: all 0.2s;
-            margin-left: 8px;
-        }
-        .offset-reset-btn:hover {
-            background: #dc2626;
-            transform: scale(0.96);
-        }
 
         .display-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; pointer-events: auto; background: inherit; }
         .text-line { display: flex; align-items: center; gap: 20px; max-width: 95%; pointer-events: auto; user-select: none; }
@@ -618,26 +610,12 @@
 
                 <div id="mainControls" class="control-group active">
                     <div class="size-row"><label>Next Word Delay (s)</label><input type="range" id="autoDelay" class="size-slider" min="2" max="15" step="1" value="5"><span id="delayVal" style="font-size:0.7rem; width:20px;">5s</span></div>
-                    <div class="style-grid"><label>ZH</label><select id="mZhFont" class="font-select">
-                        <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
-                        <option value="'XHeiPinyin'">X Hei Pinyin</option>
-                        <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
-                        <option value="'HanZhen Wide Standar'">HanZhen Wide Standard</option>
-                        <option value="'Hanyi Extra Bold'">Hanyi Extra Bold</option>
-                    </select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
+                    <div class="size-row"><label>ZH Y offset (px)</label><input type="range" id="zhYOffset" class="size-slider" min="-200" max="200" value="0" step="5"><span id="zhYVal" style="width:35px;">0px</span></div>
+                    <div class="size-row"><label>KM Y offset (px)</label><input type="range" id="kmYOffset" class="size-slider" min="-200" max="200" value="0" step="5"><span id="kmYVal" style="width:35px;">0px</span></div>
+                    <div class="style-grid"><label>ZH</label><select id="mZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette (Pinyin)</option><option value="'XHeiPinyin'">X Hei Pinyin</option><option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option><option value="'FZPY01Edit2026'">FZPY01Edit2026</option><option value="'Founder Shaoer'">Founder Shaoer</option><option value="'Founder HanZhen Wide'">Founder HanZhen Wide</option><option value="'Hanyi Changyi'">Hanyi Changyi</option><option value="'Hanyi Extra Bold Round'">Hanyi Extra Bold Round</option><option value="'SingKhmerForChinese'">SingKhmerForChinese</option><option value="'Yezi Factory Kaiti Pinyin'">Yezi Factory Kaiti</option></select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
                     <div class="size-row"><label>ZH Size</label><input type="range" id="mZhSize" class="size-slider" min="5" max="60" value="35"></div>
-                    <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select">
-                        <option value="'KHLazySmooth'">LazySmooth</option>
-                        <option value="'KHDangrek'">Dangrek</option>
-                        <option value="'MithSalaPali-v2'">MithSalaPali-v2</option>
-                        <option value="'SAMADY KS-V2'">SAMADY KS-V2</option>
-                        <option value="'ROSAPSRA'">ROSAPSRA</option>
-                    </select><input type="color" id="mKmColor" class="color-input" value="#1e293b"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
+                    <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option><option value="'KHMER SAMADY KS'">SAMADY KS</option><option value="'KHMEROSAPSRA'">KHMEROSAPSRA</option><option value="'KhMithSalaPali'">KhMithSalaPali</option></select><input type="color" id="mKmColor" class="color-input" value="#1e293b"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
                     <div class="size-row"><label>KM Size</label><input type="range" id="mKmSize" class="size-slider" min="5" max="40" value="18"></div>
-                    <div class="size-row" style="justify-content: flex-start; gap: 12px;">
-                        <label style="width: auto;">Reset Drag Positions</label>
-                        <button id="resetAllOffsetsBtn" class="offset-reset-btn">⟳</button>
-                    </div>
                 </div>
 
                 <div id="voiceControls" class="control-group">
@@ -652,20 +630,8 @@
 
                 <div id="sideControls" class="control-group">
                     <button id="sidebarToggleBtn" class="btn-main btn-accent" style="margin-bottom:10px; width:100%;" onclick="toggleSidebar()">HIDE SIDEBAR</button>
-                    <div class="side-style-grid"><label>ZH</label><select id="sZhFont" class="font-select">
-                        <option value="'BaguettePinyin'">Baguette</option>
-                        <option value="'XHeiPinyin'">X Hei</option>
-                        <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
-                        <option value="'HanZhen Wide Standar'">HanZhen Wide Standard</option>
-                        <option value="'Hanyi Extra Bold'">Hanyi Extra Bold</option>
-                    </select><input type="color" id="sZhColor" class="color-input" value="#000000"></div>
-                    <div class="side-style-grid"><label>KM</label><select id="sKmFont" class="font-select">
-                        <option value="'KHLazySmooth'">LazySmooth</option>
-                        <option value="'KHDangrek'">Dangrek</option>
-                        <option value="'MithSalaPali-v2'">MithSalaPali-v2</option>
-                        <option value="'SAMADY KS-V2'">SAMADY KS-V2</option>
-                        <option value="'ROSAPSRA'">ROSAPSRA</option>
-                    </select><input type="color" id="sKmColor" class="color-input" value="#475569"></div>
+                    <div class="side-style-grid"><label>ZH</label><select id="sZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette</option><option value="'XHeiPinyin'">X Hei</option><option value="'Cream Pudding Pinyin'">Cream Pudding</option><option value="'FZPY01Edit2026'">FZPY01Edit2026</option><option value="'Founder Shaoer'">Founder Shaoer</option><option value="'Founder HanZhen Wide'">HanZhen Wide</option><option value="'Hanyi Changyi'">Hanyi Changyi</option><option value="'Hanyi Extra Bold Round'">Extra Bold Round</option><option value="'SingKhmerForChinese'">SingKhmerForChinese</option><option value="'Yezi Factory Kaiti Pinyin'">Yezi Kaiti</option></select><input type="color" id="sZhColor" class="color-input" value="#000000"></div>
+                    <div class="side-style-grid"><label>KM</label><select id="sKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option><option value="'KHMER SAMADY KS'">SAMADY KS</option><option value="'KHMEROSAPSRA'">KHMEROSAPSRA</option><option value="'KhMithSalaPali'">KhMithSalaPali</option></select><input type="color" id="sKmColor" class="color-input" value="#475569"></div>
                     <div class="size-row"><label>ZH Side Size</label><input type="range" id="sZhSize" class="size-slider" min="0.5" max="4" step="0.1" value="1.1"></div>
                     <div class="size-row"><label>KM Side Size</label><input type="range" id="sKmSize" class="size-slider" min="0.5" max="4" step="0.1" value="0.9"></div>
                     <div class="size-row"><label>📋 Vocab Spacing</label><input type="range" id="sVocabSpacing" class="size-slider" min="0" max="30" step="1" value="8"><span id="vocabSpacingVal">8px</span></div>
@@ -702,7 +668,7 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script>
-    // ==================== ORIGINAL TTS & APP LOGIC ====================
+    // ==================== ORIGINAL TTS & APP LOGIC (unchanged) ====================
     let currentAudio = null, speechQueue = [], isProcessingQueue = false;
     async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
     async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, parseInt(document.getElementById('speechInterval').value || 500))); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
@@ -789,19 +755,6 @@
         if (kmEl) kmEl.style.transform = `translate(${kmDragOffset.x}px, ${kmDragOffset.y}px)`;
     }
     
-    function resetAllDragOffsets() {
-        zhDragOffset = { x: 0, y: 0 };
-        kmDragOffset = { x: 0, y: 0 };
-        const zhEl = document.getElementById('chineseOut');
-        const kmEl = document.getElementById('khmerOut');
-        if (zhEl) zhEl.style.transform = `translate(0px, 0px)`;
-        if (kmEl) kmEl.style.transform = `translate(0px, 0px)`;
-        localStorage.setItem('zhDragX', 0);
-        localStorage.setItem('zhDragY', 0);
-        localStorage.setItem('kmDragX', 0);
-        localStorage.setItem('kmDragY', 0);
-    }
-    
     function resetTransformForNewWord() {
         const zhEl = document.getElementById('chineseOut');
         const kmEl = document.getElementById('khmerOut');
@@ -809,16 +762,18 @@
         if (kmEl) kmEl.style.transform = `translate(${kmDragOffset.x}px, ${kmDragOffset.y}px)`;
     }
     
-    function saveAllData() { const settings = { mZhSize: document.getElementById('mZhSize').value, mKmSize: document.getElementById('mKmSize').value, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, interval: document.getElementById('speechInterval').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing')?.value || 8, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider')?.value || 0 }; localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList)); localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings)); }
-    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings) { const s = JSON.parse(savedSettings); document.getElementById('mZhSize').value = s.mZhSize || 35; document.getElementById('mKmSize').value = s.mKmSize || 18; document.getElementById('mZhColor').value = s.mZhColor || "#000000"; document.getElementById('mKmColor').value = s.mKmColor || "#1e293b"; document.getElementById('zhReps').value = s.zhReps || 3; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('speechInterval').value = s.interval || 500; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor; const vocabSpacing = s.vocabSpacing !== undefined ? s.vocabSpacing : 8; document.getElementById('sVocabSpacing').value = vocabSpacing; document.body.style.setProperty('--vocab-spacing', vocabSpacing + 'px'); document.getElementById('vocabSpacingVal').innerText = vocabSpacing + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; applyRateDisplay(); } applyStyles(); }
+    function saveAllData() { const settings = { mZhSize: document.getElementById('mZhSize').value, mKmSize: document.getElementById('mKmSize').value, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, interval: document.getElementById('speechInterval').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing')?.value || 8, zhY: document.getElementById('zhYOffset')?.value || 0, kmY: document.getElementById('kmYOffset')?.value || 0, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider')?.value || 0 }; localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList)); localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings)); }
+    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings) { const s = JSON.parse(savedSettings); document.getElementById('mZhSize').value = s.mZhSize || 35; document.getElementById('mKmSize').value = s.mKmSize || 18; document.getElementById('mZhColor').value = s.mZhColor || "#000000"; document.getElementById('mKmColor').value = s.mKmColor || "#1e293b"; document.getElementById('zhReps').value = s.zhReps || 3; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('speechInterval').value = s.interval || 500; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor; const vocabSpacing = s.vocabSpacing !== undefined ? s.vocabSpacing : 8; document.getElementById('sVocabSpacing').value = vocabSpacing; document.body.style.setProperty('--vocab-spacing', vocabSpacing + 'px'); document.getElementById('vocabSpacingVal').innerText = vocabSpacing + 'px'; document.getElementById('zhYOffset').value = s.zhY || 0; document.getElementById('kmYOffset').value = s.kmY || 0; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; applyRateDisplay(); applyMainPositions(); } applyStyles(); }
     function applyRateDisplay() { const rateSlider = document.getElementById('zhRateSlider'); const rateSpan = document.getElementById('zhRateVal'); if(rateSlider && rateSpan) { let val = parseInt(rateSlider.value); rateSpan.innerText = (val > 0 ? '+' + val : val) + '%'; } saveAllData(); }
+    function applyMainPositions() { const zhY = parseInt(document.getElementById('zhYOffset').value,10); const kmY = parseInt(document.getElementById('kmYOffset').value,10); document.getElementById('zhYVal').innerText = zhY+'px'; document.getElementById('kmYVal').innerText = kmY+'px'; const zhEl = document.getElementById('chineseOut'); const kmEl = document.getElementById('khmerOut'); if(zhEl) zhEl.style.transform = `translate(${zhDragOffset.x}px, ${zhDragOffset.y + zhY}px)`; if(kmEl) kmEl.style.transform = `translate(${kmDragOffset.x}px, ${kmDragOffset.y + kmY}px)`; saveAllData(); }
+    function applyVocabSpacing() { const val = document.getElementById('sVocabSpacing').value; document.getElementById('vocabSpacingVal').innerText = val+'px'; document.body.style.setProperty('--vocab-spacing', val+'px'); saveAllData(); }
     function applyStyles() { const mZh = document.getElementById('chineseOut'), mKm = document.getElementById('khmerOut'); if(mZh){ mZh.style.fontFamily = document.getElementById('mZhFont').value; mZh.style.color = document.getElementById('mZhColor').value; mZh.style.fontWeight = document.getElementById('mZhBold').classList.contains('active') ? 'bold' : 'normal'; } if(mKm){ mKm.style.fontFamily = document.getElementById('mKmFont').value; mKm.style.color = document.getElementById('mKmColor').value; mKm.style.fontWeight = document.getElementById('mKmBold').classList.contains('active') ? 'bold' : 'normal'; } document.querySelectorAll('.side-zh').forEach(el => { el.style.fontFamily = document.getElementById('sZhFont').value; el.style.color = document.getElementById('sZhColor').value; el.style.fontSize = document.getElementById('sZhSize').value+'rem'; }); document.querySelectorAll('.side-km').forEach(el => { el.style.fontFamily = document.getElementById('sKmFont').value; el.style.color = document.getElementById('sKmColor').value; el.style.fontSize = document.getElementById('sKmSize').value+'rem'; }); document.getElementById('delayVal').innerText = document.getElementById('autoDelay').value+'s'; document.getElementById('repVal').innerText = document.getElementById('zhReps').value; document.getElementById('kmRepVal').innerText = document.getElementById('kmReps').value; widthFit(); saveAllData(); }
     function widthFit() { const zhLine = document.getElementById('chineseOut'), kmLine = document.getElementById('khmerOut'), container = document.getElementById('displayArea'); if(!zhLine || !container) return; const maxW = container.clientWidth * 0.8; let zhS = parseFloat(document.getElementById('mZhSize').value), kmS = parseFloat(document.getElementById('mKmSize').value); zhLine.style.fontSize = zhS + "vh"; kmLine.style.fontSize = kmS + "vh"; while (zhLine.scrollWidth > maxW && zhS > 1) { zhS -= 0.5; zhLine.style.fontSize = zhS + "vh"; } while (kmLine.scrollWidth > maxW && kmS > 1) { kmS -= 0.5; kmLine.style.fontSize = kmS + "vh"; } }
     function pickRandom() { if (!vocabList.length) return; const idx = Math.floor(Math.random() * vocabList.length); history = history.slice(0, historyIndex + 1); history.push(idx); historyIndex = history.length - 1; loadWord(idx); }
     function historyPrev() { if (historyIndex > 0) { historyIndex--; loadWord(history[historyIndex]); } }
     function historyNext() { if (historyIndex < history.length - 1) { historyIndex++; loadWord(history[historyIndex]); } }
     function loadWord(idx) { killAllSpeech(); const item = vocabList[idx]; const key = item.chinese.substring(0, 1); let related = vocabList.map((it, i) => ({...it, oIdx: i})).filter(it => it.oIdx !== idx && it.chinese.includes(key)).slice(0, 50); sidebarIndices = [idx, ...related.map(i => i.oIdx)]; sidebarFocusIdx = 0; renderSidebarUI(); updateDisplay(); speakAutoSequence(item.chinese, item.khmer); }
-    function updateDisplay() { if (!vocabList[sidebarIndices[sidebarFocusIdx]]) return; const item = vocabList[sidebarIndices[sidebarFocusIdx]]; document.getElementById('chineseOut').innerText = item.chinese; document.getElementById('khmerOut').innerText = item.khmer; document.querySelectorAll('.vocab-item').forEach((d, i) => d.classList.toggle('active', i === sidebarFocusIdx)); applyStyles(); resetTransformForNewWord(); }
+    function updateDisplay() { if (!vocabList[sidebarIndices[sidebarFocusIdx]]) return; const item = vocabList[sidebarIndices[sidebarFocusIdx]]; document.getElementById('chineseOut').innerText = item.chinese; document.getElementById('khmerOut').innerText = item.khmer; document.querySelectorAll('.vocab-item').forEach((d, i) => d.classList.toggle('active', i === sidebarFocusIdx)); applyStyles(); applyMainPositions(); resetTransformForNewWord(); }
     function renderSidebarUI() { const list = document.getElementById('sidebarList'); list.innerHTML = ''; sidebarIndices.forEach((idx, sIdx) => { const div = document.createElement('div'); div.className = `vocab-item ${sIdx === sidebarFocusIdx ? 'active' : ''}`; div.innerHTML = `<div class="word-wrapper" onclick="sidebarFocusIdx=${sIdx};updateDisplay();speakAutoSequence(vocabList[${idx}].chinese, vocabList[${idx}].khmer); event.stopPropagation()"><span class="side-zh">${vocabList[idx].chinese}</span><span class="side-km">${vocabList[idx].khmer}</span></div><button class="select-main-btn" onclick="loadWord(${idx}); event.stopPropagation()">MAIN</button>`; list.appendChild(div); }); applyStyles(); }
     function moveSidebarFocus(delta) { if (!sidebarIndices.length) return; let newFocus = sidebarFocusIdx + delta; if (newFocus < 0) newFocus = sidebarIndices.length - 1; if (newFocus >= sidebarIndices.length) newFocus = 0; sidebarFocusIdx = newFocus; updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); }
     function toggleAuto() { autoActive = !autoActive; const btn = document.getElementById('autoBtn'); btn.classList.toggle('active', autoActive); btn.classList.toggle('off', !autoActive); btn.innerText = autoActive ? "AUTO: ON" : "AUTO: OFF"; if(autoActive) pickRandom(); else { clearTimeout(autoTimer); killAllSpeech(); } }
@@ -929,8 +884,7 @@
     
     window.onload = () => {
         loadSettings(); const savedList = localStorage.getItem('vocabMaster_List'); if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) pickRandom(); } initNightMode(); applyStyles(); widthFit(); initGearDrag(); setupQRPopup(); initDragBehavior(); loadDragPositions(); setupBackgroundClick();
-        document.getElementById('resetAllOffsetsBtn').addEventListener('click', resetAllDragOffsets);
-        document.getElementById('sVocabSpacing').addEventListener('input',function(){ const val = this.value; document.getElementById('vocabSpacingVal').innerText = val+'px'; document.body.style.setProperty('--vocab-spacing', val+'px'); saveAllData(); });
+        document.getElementById('zhYOffset').addEventListener('input',applyMainPositions); document.getElementById('kmYOffset').addEventListener('input',applyMainPositions); document.getElementById('sVocabSpacing').addEventListener('input',applyVocabSpacing); 
         document.getElementById('autoDelay').addEventListener('input',applyStyles); document.getElementById('zhReps').addEventListener('input',applyStyles); document.getElementById('kmReps').addEventListener('input',applyStyles); 
         document.getElementById('mZhSize').addEventListener('input',applyStyles); document.getElementById('mKmSize').addEventListener('input',applyStyles); document.getElementById('mZhColor').addEventListener('input',applyStyles); document.getElementById('mKmColor').addEventListener('input',applyStyles); 
         document.getElementById('sZhSize').addEventListener('input',applyStyles); document.getElementById('sKmSize').addEventListener('input',applyStyles); document.getElementById('sZhColor').addEventListener('input',applyStyles); document.getElementById('sKmColor').addEventListener('input',applyStyles); 
@@ -943,3 +897,4 @@
 </script>
 </body>
 </html>
+```
