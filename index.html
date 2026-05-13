@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Vocab Master Pro | Edge TTS Studio</title>
     <style>
-        /* ========== CUSTOM WEB FONTS (LOCAL FILES - ENHANCED) ========== */
-        /* Chinese Fonts */
+        /* ========== CUSTOM WEB FONTS (LOCAL FILES) ========== */
         @font-face {
             font-family: 'BaguettePinyin';
             src: url('/static/Fonts/Chinese/pinyin-baguette.woff2') format('woff2');
@@ -17,71 +16,57 @@
             src: url('/static/Fonts/Chinese/x-hei-pinyin.woff2') format('woff2');
             font-display: swap;
         }
-		@font-face {
+		       @font-face {
             font-family: 'Cream Pudding Pinyin';
             src: url('/static/Fonts/Chinese/Cream Pudding Pinyin Font.woff2') format('woff2');
             font-display: swap;
         }
-		@font-face {
+		        
+		       @font-face {
             font-family: 'Hanyi Extra Bold';
             src: url('/static/Fonts/Chinese/Hanyi Extra Bold Round Simplified.woff2') format('woff2');
             font-display: swap;
         }
-		@font-face {
+				       @font-face {
             font-family: 'Pinyin';
             src: url('/static/Fonts/Chinese/FZPY01Edit2026-Regular.woff2') format('woff2');
             font-display: swap;
         }
-		@font-face {
+					       @font-face {
             font-family: 'SingKhmer';
             src: url('/static/Fonts/Chinese/SingKhmerForChinese-Regular.woff2') format('woff2');
             font-display: swap;
         }
-		@font-face {
-            font-family: 'HanZhen Wide Standard';
+		        
+		       @font-face {
+            font-family: 'HanZhen Wide Standar';
             src: url('/static/Fonts/Chinese/Founder Type HanZhen Wide Standard Simplified.woff2') format('woff2');
             font-display: swap;
         }
+		
         @font-face {
-            font-family: 'Founder Shaoer';
-            src: url('/static/Fonts/Chinese/Founder Shaoer Simplified.woff2') format('woff2');
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Hanyi Changyi';
-            src: url('/static/Fonts/Chinese/Hanyi Changyi Simplified.woff2') format('woff2');
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'Yezi Kaiti Pinyin';
-            src: url('/static/Fonts/Chinese/Yezi Factory Kaiti Pinyin.woff2') format('woff2');
-            font-display: swap;
-        }
-
-        /* Khmer Fonts (Enhanced) */
-        @font-face {
-            font-family: 'KHLazySmooth';
+            font-family: 'LazySmooth';
             src: url('/static/Fonts/Khmer/KH BL LAZYSMOOTH.woff2') format('woff2');
             font-display: swap;
         }
         @font-face {
-            font-family: 'KHDangrek';
-            src: url('/static/Fonts/Khmer/KH-DANGREK.woff2') format('woff2');
+            font-family: 'Dangrek';
+            src: url('/static/Fonts/Khmer/KKH-DANGREK.woff2') format('woff2');
             font-display: swap;
         }
-	    @font-face {
-            font-family: 'KHROSAPSRA';
-            src: url('/static/Fonts/Khmer/KHMEROSAPSRA.woff2') format('woff2');
+		    @font-face {
+            font-family: 'ROSAPSRA';
+            src: url('/static/Fonts/Khmer/KKHMEROSAPSRA.woff2') format('woff2');
             font-display: swap;
         }
-	    @font-face {
-            font-family: 'KHMithSalaPali';
-            src: url('/static/Fonts/Khmer/Kh-MithSalaPali-v2.woff2') format('woff2');
+		    @font-face {
+            font-family: 'MithSalaPali-v2';
+            src: url('/static/Fonts/Khmer/KKh-MithSalaPali-v2.woff2') format('woff2');
             font-display: swap;
         }
-	    @font-face {
-            font-family: 'KHSAMADY';
-            src: url('/static/Fonts/Khmer/KHMER SAMADY KS-V2.woff2') format('woff2');
+		    @font-face {
+            font-family: 'SAMADY KS-V2';
+            src: url('/static/Fonts/Khmer/KKHMER SAMADY KS-V2.woff2') format('woff2');
             font-display: swap;
         }
 
@@ -633,26 +618,9 @@
 
                 <div id="mainControls" class="control-group active">
                     <div class="size-row"><label>Next Word Delay (s)</label><input type="range" id="autoDelay" class="size-slider" min="2" max="15" step="1" value="5"><span id="delayVal" style="font-size:0.7rem; width:20px;">5s</span></div>
-                    <div class="style-grid"><label>ZH</label><select id="mZhFont" class="font-select">
-                        <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
-                        <option value="'XHeiPinyin'">X Hei Pinyin</option>
-                        <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
-                        <option value="'Pinyin'">FZPY01 Pinyin</option>
-                        <option value="'HanZhen Wide Standard'">HanZhen Wide Standard</option>
-                        <option value="'Founder Shaoer'">Founder Shaoer</option>
-                        <option value="'Hanyi Changyi'">Hanyi Changyi</option>
-                        <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
-                        <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
-                        <option value="'SingKhmer'">SingKhmerForChinese</option>
-                    </select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
+                    <div class="style-grid"><label>ZH</label><select id="mZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette (Pinyin)</option><option value="'XHeiPinyin'">X Hei Pinyin</option></select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
                     <div class="size-row"><label>ZH Size</label><input type="range" id="mZhSize" class="size-slider" min="5" max="60" value="35"></div>
-                    <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select">
-                        <option value="'KHLazySmooth'">LazySmooth</option>
-                        <option value="'KHDangrek'">Dangrek</option>
-                        <option value="'KHROSAPSRA'">Rosapsra</option>
-                        <option value="'KHMithSalaPali'">MithSalaPali</option>
-                        <option value="'KHSAMADY'">Samady KS</option>
-                    </select><input type="color" id="mKmColor" class="color-input" value="#1e293b"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
+                    <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option></select><input type="color" id="mKmColor" class="color-input" value="#1e293b"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
                     <div class="size-row"><label>KM Size</label><input type="range" id="mKmSize" class="size-slider" min="5" max="40" value="18"></div>
                     <div class="size-row" style="justify-content: flex-start; gap: 12px;">
                         <label style="width: auto;">Reset Drag Positions</label>
@@ -672,20 +640,8 @@
 
                 <div id="sideControls" class="control-group">
                     <button id="sidebarToggleBtn" class="btn-main btn-accent" style="margin-bottom:10px; width:100%;" onclick="toggleSidebar()">HIDE SIDEBAR</button>
-                    <div class="side-style-grid"><label>ZH</label><select id="sZhFont" class="font-select">
-                        <option value="'BaguettePinyin'">Baguette</option>
-                        <option value="'XHeiPinyin'">X Hei</option>
-                        <option value="'Cream Pudding Pinyin'">Cream Pudding</option>
-                        <option value="'Pinyin'">FZPY01</option>
-                        <option value="'HanZhen Wide Standard'">HanZhen Wide</option>
-                    </select><input type="color" id="sZhColor" class="color-input" value="#000000"></div>
-                    <div class="side-style-grid"><label>KM</label><select id="sKmFont" class="font-select">
-                        <option value="'KHLazySmooth'">LazySmooth</option>
-                        <option value="'KHDangrek'">Dangrek</option>
-                        <option value="'KHROSAPSRA'">Rosapsra</option>
-                        <option value="'KHMithSalaPali'">MithSalaPali</option>
-                        <option value="'KHSAMADY'">Samady KS</option>
-                    </select><input type="color" id="sKmColor" class="color-input" value="#475569"></div>
+                    <div class="side-style-grid"><label>ZH</label><select id="sZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette</option><option value="'XHeiPinyin'">X Hei</option></select><input type="color" id="sZhColor" class="color-input" value="#000000"></div>
+                    <div class="side-style-grid"><label>KM</label><select id="sKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option></select><input type="color" id="sKmColor" class="color-input" value="#475569"></div>
                     <div class="size-row"><label>ZH Side Size</label><input type="range" id="sZhSize" class="size-slider" min="0.5" max="4" step="0.1" value="1.1"></div>
                     <div class="size-row"><label>KM Side Size</label><input type="range" id="sKmSize" class="size-slider" min="0.5" max="4" step="0.1" value="0.9"></div>
                     <div class="size-row"><label>📋 Vocab Spacing</label><input type="range" id="sVocabSpacing" class="size-slider" min="0" max="30" step="1" value="8"><span id="vocabSpacingVal">8px</span></div>
@@ -722,7 +678,7 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script>
-    // ==================== ORIGINAL TTS & APP LOGIC (PRESERVED WITH ENHANCED FONTS) ====================
+    // ==================== ORIGINAL TTS & APP LOGIC ====================
     let currentAudio = null, speechQueue = [], isProcessingQueue = false;
     async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
     async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, parseInt(document.getElementById('speechInterval').value || 500))); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
