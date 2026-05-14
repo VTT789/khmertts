@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -110,7 +109,7 @@
             background-color: var(--bg);
             font-family: 'Inter', system-ui, sans-serif;
             transition: background-color 0.2s ease;
-            touch-action: pan-y pinch-zoom; /* allow vertical scroll but prevent unwanted pan on drag */
+            touch-action: pan-y pinch-zoom;
         }
 
         body.night-mode {
@@ -261,7 +260,7 @@
             cursor: pointer; 
             transition: background 0.2s;
             position: relative;
-            touch-action: pan-y pinch-zoom; /* allow vertical scroll but keep drag free */
+            touch-action: pan-y pinch-zoom;
         }
 
         #floatingMenu {
@@ -394,14 +393,13 @@
         .display-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; pointer-events: auto; background: inherit; }
         .text-line { display: flex; align-items: center; gap: 20px; max-width: 95%; pointer-events: auto; user-select: none; }
         
-        /* IMPROVED: draggable-text now has better touch-action and active area */
         .draggable-text {
             cursor: grab;
             transition: transform 0.05s linear;
             display: inline-block;
             position: relative;
             will-change: transform;
-            touch-action: none;  /* allows full touch drag on mobile */
+            touch-action: none;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
@@ -600,7 +598,6 @@
             #minimizedTrigger { width: 48px; height: 48px; font-size: 24px; }
             .qr-card img { width: 240px; }
             .file-source-card { width: 85%; padding: 20px; }
-            /* better drag area on touch */
             .draggable-text { touch-action: none; }
         }
     </style>
@@ -733,7 +730,7 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script>
-    // ==================== ORIGINAL TTS & APP LOGIC (PRESERVED WITH ENHANCED MOBILE DRAG) ====================
+    // ==================== ORIGINAL TTS & APP LOGIC (PRESERVED WITH ENHANCED MOBILE DRAG + CLICK FIX) ====================
     let currentAudio = null, speechQueue = [], isProcessingQueue = false;
     async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
     async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, parseInt(document.getElementById('speechInterval').value || 500))); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
@@ -752,8 +749,9 @@
     let activeDragElement = null;
     let dragStartMouse = { x: 0, y: 0 };
     let dragStartTranslate = { x: 0, y: 0 };
+    let dragPerformed = false;  // Flag to detect if actual dragging occurred
     
-    // ENHANCED DRAG: supports both mouse AND touch events for mobile
+    // ENHANCED DRAG: supports both mouse AND touch events for mobile, plus click detection
     function initDragBehavior() {
         const zhEl = document.getElementById('chineseOut');
         const kmEl = document.getElementById('khmerOut');
@@ -766,10 +764,11 @@
         }
         
         function onPointerDown(e) {
-            e.preventDefault();
+            e.preventDefault();   // prevent text selection / scrolling while dragging
             e.stopPropagation();
             const target = e.currentTarget;
             activeDragElement = target;
+            dragPerformed = false;   // reset drag flag
             const coords = getClientCoords(e);
             let currentTranslate = { x: 0, y: 0 };
             if (target.id === 'chineseOut') {
@@ -780,7 +779,6 @@
             dragStartMouse = { x: coords.x, y: coords.y };
             dragStartTranslate = { x: currentTranslate.x, y: currentTranslate.y };
             
-            // add global listeners
             document.addEventListener('mousemove', onPointerMove);
             document.addEventListener('mouseup', onPointerUp);
             document.addEventListener('touchmove', onPointerMove, { passive: false });
@@ -794,6 +792,10 @@
             const coords = getClientCoords(e);
             const dx = coords.x - dragStartMouse.x;
             const dy = coords.y - dragStartMouse.y;
+            // If moved more than a few pixels, consider it a drag
+            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+                dragPerformed = true;
+            }
             const newX = dragStartTranslate.x + dx;
             const newY = dragStartTranslate.y + dy;
             
@@ -806,8 +808,9 @@
             }
         }
         
-        function onPointerUp() {
+        function onPointerUp(e) {
             if (!activeDragElement) return;
+            // Save final positions if drag occurred
             if (activeDragElement.id === 'chineseOut') {
                 localStorage.setItem('zhDragX', zhDragOffset.x);
                 localStorage.setItem('zhDragY', zhDragOffset.y);
@@ -815,7 +818,19 @@
                 localStorage.setItem('kmDragX', kmDragOffset.x);
                 localStorage.setItem('kmDragY', kmDragOffset.y);
             }
+            
+            // If no drag movement happened, manually trigger the click handler to speak
+            if (!dragPerformed) {
+                // Simulate a click on the element to trigger the speech function
+                if (activeDragElement.id === 'chineseOut') {
+                    speakChineseFromMain();
+                } else if (activeDragElement.id === 'khmerOut') {
+                    speakKhmerFromMain();
+                }
+            }
+            
             activeDragElement = null;
+            // Clean up listeners
             document.removeEventListener('mousemove', onPointerMove);
             document.removeEventListener('mouseup', onPointerUp);
             document.removeEventListener('touchmove', onPointerMove);
@@ -996,4 +1011,3 @@
 </script>
 </body>
 </html>
-```
