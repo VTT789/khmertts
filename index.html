@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -428,9 +429,10 @@
             gap: 2px 6px;
             max-width: 94vw;
             margin: 0 auto;
+            transition: gap 0.1s ease;
         }
         
-        /* Draggable text for Khmer (unchanged) */
+        /* Draggable text for Khmer */
         .km, .draggable-text {
             display: inline-block;
             white-space: nowrap;
@@ -679,7 +681,7 @@
                         <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
                         <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
                         <option value="'SingKhmer'">SingKhmerForChinese</option>
-                    </select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
+                    </select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyRubyPinyin()">B</div></div>
                     <div class="size-row"><label>ZH Size</label><input type="range" id="mZhSize" class="size-slider" min="5" max="60" value="35"></div>
                     <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select">
                         <option value="'KHLazySmooth'">LazySmooth</option>
@@ -687,7 +689,7 @@
                         <option value="'KHROSAPSRA'">Rosapsra</option>
                         <option value="'KHMithSalaPali'">MithSalaPali</option>
                         <option value="'KHSAMADY'">Samady KS</option>
-                    </select><input type="color" id="mKmColor" class="color-input" value="#1e293b"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
+                    </select><input type="color" id="mKmColor" class="color-input" value="#1e293b"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); resizeMainContainer()">B</div></div>
                     <div class="size-row"><label>KM Size</label><input type="range" id="mKmSize" class="size-slider" min="5" max="40" value="18"></div>
                 </div>
 
@@ -755,7 +757,7 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script>
-    // --- Original TTS + Core App logic (preserved) plus Ruby Pinyin Render ---
+    // --- TTS + Core App logic preserved, Ruby Pinyin with smart text shrink to prevent overflow ---
     let currentAudio = null, speechQueue = [], isProcessingQueue = false;
     async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
     async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, parseInt(document.getElementById('speechInterval').value || 500))); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
@@ -776,6 +778,53 @@
             if(charSpan) text += charSpan.innerText;
         }
         return text;
+    }
+
+    // Smart shrink: adjust ruby container font scale to fit display area without overflow
+    function resizeMainContainer() {
+        const rubyContainer = document.getElementById('rubyChineseContainer');
+        const kmEl = document.getElementById('khmerOut');
+        const displayArea = document.getElementById('displayArea');
+        if(!displayArea) return;
+        const maxWidth = displayArea.clientWidth * 0.92;
+        
+        // Khmer shrink
+        if(kmEl) {
+            let kmBaseVH = parseFloat(document.getElementById('mKmSize').value);
+            let kmAttempt = kmBaseVH;
+            kmEl.style.fontSize = kmAttempt + 'vh';
+            kmEl.style.fontFamily = document.getElementById('mKmFont').value;
+            kmEl.style.color = document.getElementById('mKmColor').value;
+            kmEl.style.fontWeight = document.getElementById('mKmBold').classList.contains('active') ? 'bold' : 'normal';
+            let safe = 0;
+            while(kmEl.scrollWidth > maxWidth && kmAttempt > 4 && safe++ < 15) {
+                kmAttempt -= 0.5;
+                kmEl.style.fontSize = kmAttempt + 'vh';
+            }
+        }
+        
+        // Ruby Chinese shrink: we need to temporarily check container width
+        if(rubyContainer && rubyContainer.children.length > 0) {
+            let zhBaseVH = parseFloat(document.getElementById('mZhSize').value);
+            let currentFontVH = zhBaseVH;
+            // Store original font sizes temporarily to test
+            const chars = rubyContainer.querySelectorAll('.ruby-character');
+            const pinyins = rubyContainer.querySelectorAll('.ruby-pinyin');
+            const applyTestSize = (vh) => {
+                chars.forEach(c => c.style.fontSize = vh + 'vh');
+                const ratio = parseFloat(document.getElementById('mPinyinSize').value);
+                pinyins.forEach(p => p.style.fontSize = (vh * ratio) + 'vh');
+            };
+            applyTestSize(currentFontVH);
+            let safeCount = 0;
+            while(rubyContainer.scrollWidth > maxWidth && currentFontVH > 7 && safeCount++ < 20) {
+                currentFontVH -= 0.8;
+                applyTestSize(currentFontVH);
+            }
+            // final sync with stored value (visual only)
+            document.getElementById('mZhSize').value = currentFontVH;
+        }
+        saveAllData();
     }
 
     function applyRubyPinyin() {
@@ -825,32 +874,59 @@
         document.getElementById('rubySpacingVal').innerText = charSpacing + 'px';
         resizeMainContainer();
     }
-    
-    function resizeMainContainer() {
-        const container = document.getElementById('rubyChineseContainer');
-        const kmEl = document.getElementById('khmerOut');
-        const maxWidth = (document.getElementById('displayArea')?.clientWidth || window.innerWidth) * 0.9;
-        if(kmEl) {
-            let kmSize = parseFloat(document.getElementById('mKmSize').value);
-            kmEl.style.fontSize = kmSize + 'vh';
-            kmEl.style.fontFamily = document.getElementById('mKmFont').value;
-            kmEl.style.color = document.getElementById('mKmColor').value;
-            kmEl.style.fontWeight = document.getElementById('mKmBold').classList.contains('active') ? 'bold' : 'normal';
-        }
-        if(container) container.style.maxWidth = maxWidth + 'px';
-    }
 
     let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = true;
     let kmDragOffset = { x: 0, y: 0 };
     let activeDragElement = null, dragStartMouse = { x: 0, y: 0 }, dragStartTranslate = { x: 0, y: 0 }, dragPerformed = false;
     
     function loadWord(idx) { killAllSpeech(); const item = vocabList[idx]; const key = item.chinese.substring(0, 1); let related = vocabList.map((it, i) => ({...it, oIdx: i})).filter(it => it.oIdx !== idx && it.chinese.includes(key)).slice(0, 50); sidebarIndices = [idx, ...related.map(i => i.oIdx)]; sidebarFocusIdx = 0; renderSidebarUI(); updateDisplay(); speakAutoSequence(item.chinese, item.khmer); }
-    function updateDisplay() { if (!vocabList[sidebarIndices[sidebarFocusIdx]]) return; const item = vocabList[sidebarIndices[sidebarFocusIdx]]; const rubyContainer = document.getElementById('rubyChineseContainer'); if(rubyContainer && item.chinese) { rubyContainer.innerHTML = ''; const chars = item.chinese.split(''); const pinyinArr = pinyinPro.pinyin(item.chinese, { toneType: 'symbol', type: 'array' }); const zhBase = parseFloat(document.getElementById('mZhSize').value); const ratio = parseFloat(document.getElementById('mPinyinSize').value); const spacing = parseInt(document.getElementById('rubySpacing').value); rubyContainer.style.gap = spacing + 'px'; chars.forEach((ch, idx) => { const rubyDiv = document.createElement('div'); rubyDiv.className = 'ruby-zh'; rubyDiv.style.display = 'inline-flex'; rubyDiv.style.flexDirection = 'column'; rubyDiv.style.alignItems = 'center'; const pSpan = document.createElement('span'); pSpan.className = 'ruby-pinyin'; pSpan.innerText = pinyinArr[idx] || ''; pSpan.style.fontFamily = document.getElementById('mPinyinFont').value; pSpan.style.color = document.getElementById('mPinyinColor').value; pSpan.style.fontWeight = document.getElementById('mPinyinBold').classList.contains('active') ? 'bold' : 'normal'; pSpan.style.fontSize = (zhBase * ratio) + 'vh'; const cSpan = document.createElement('span'); cSpan.className = 'ruby-character'; cSpan.innerText = ch; cSpan.style.fontFamily = document.getElementById('mZhFont').value; cSpan.style.color = document.getElementById('mZhColor').value; cSpan.style.fontWeight = document.getElementById('mZhBold').classList.contains('active') ? 'bold' : 'normal'; cSpan.style.fontSize = zhBase + 'vh'; rubyDiv.appendChild(pSpan); rubyDiv.appendChild(cSpan); rubyContainer.appendChild(rubyDiv); }); } document.getElementById('khmerOut').innerText = item.khmer; document.querySelectorAll('.vocab-item').forEach((d, i) => d.classList.toggle('active', i === sidebarFocusIdx)); resizeMainContainer(); saveAllData(); }
+    function updateDisplay() { 
+        if (!vocabList[sidebarIndices[sidebarFocusIdx]]) return; 
+        const item = vocabList[sidebarIndices[sidebarFocusIdx]]; 
+        const rubyContainer = document.getElementById('rubyChineseContainer');
+        if(rubyContainer && item.chinese) {
+            rubyContainer.innerHTML = '';
+            const chars = item.chinese.split('');
+            const pinyinArr = pinyinPro.pinyin(item.chinese, { toneType: 'symbol', type: 'array' });
+            const zhBase = parseFloat(document.getElementById('mZhSize').value);
+            const ratio = parseFloat(document.getElementById('mPinyinSize').value);
+            const spacing = parseInt(document.getElementById('rubySpacing').value);
+            rubyContainer.style.gap = spacing + 'px';
+            chars.forEach((ch, idx) => {
+                const rubyDiv = document.createElement('div');
+                rubyDiv.className = 'ruby-zh';
+                rubyDiv.style.display = 'inline-flex';
+                rubyDiv.style.flexDirection = 'column';
+                rubyDiv.style.alignItems = 'center';
+                const pSpan = document.createElement('span');
+                pSpan.className = 'ruby-pinyin';
+                pSpan.innerText = pinyinArr[idx] || '';
+                pSpan.style.fontFamily = document.getElementById('mPinyinFont').value;
+                pSpan.style.color = document.getElementById('mPinyinColor').value;
+                pSpan.style.fontWeight = document.getElementById('mPinyinBold').classList.contains('active') ? 'bold' : 'normal';
+                pSpan.style.fontSize = (zhBase * ratio) + 'vh';
+                const cSpan = document.createElement('span');
+                cSpan.className = 'ruby-character';
+                cSpan.innerText = ch;
+                cSpan.style.fontFamily = document.getElementById('mZhFont').value;
+                cSpan.style.color = document.getElementById('mZhColor').value;
+                cSpan.style.fontWeight = document.getElementById('mZhBold').classList.contains('active') ? 'bold' : 'normal';
+                cSpan.style.fontSize = zhBase + 'vh';
+                rubyDiv.appendChild(pSpan);
+                rubyDiv.appendChild(cSpan);
+                rubyContainer.appendChild(rubyDiv);
+            });
+        }
+        document.getElementById('khmerOut').innerText = item.khmer;
+        document.querySelectorAll('.vocab-item').forEach((d, i) => d.classList.toggle('active', i === sidebarFocusIdx));
+        resizeMainContainer();
+        saveAllData(); 
+    }
     function renderSidebarUI() { const list = document.getElementById('sidebarList'); list.innerHTML = ''; sidebarIndices.forEach((idx, sIdx) => { const div = document.createElement('div'); div.className = `vocab-item ${sIdx === sidebarFocusIdx ? 'active' : ''}`; div.innerHTML = `<div class="word-wrapper" onclick="sidebarFocusIdx=${sIdx};updateDisplay();speakAutoSequence(vocabList[${idx}].chinese, vocabList[${idx}].khmer); event.stopPropagation()"><span class="side-zh">${vocabList[idx].chinese}</span><span class="side-km">${vocabList[idx].khmer}</span></div><button class="select-main-btn" onclick="loadWord(${idx}); event.stopPropagation()">MAIN</button>`; list.appendChild(div); }); applySidebarStyles(); }
     function applySidebarStyles() { document.querySelectorAll('.side-zh').forEach(el => { el.style.fontFamily = document.getElementById('sZhFont').value; el.style.color = document.getElementById('sZhColor').value; el.style.fontSize = document.getElementById('sZhSize').value+'rem'; }); document.querySelectorAll('.side-km').forEach(el => { el.style.fontFamily = document.getElementById('sKmFont').value; el.style.color = document.getElementById('sKmColor').value; el.style.fontSize = document.getElementById('sKmSize').value+'rem'; }); }
-    function applyStyles() { updateDisplay(); applySidebarStyles(); resizeMainContainer(); saveAllData(); }
+    function applyStyles() { applyRubyPinyin(); applySidebarStyles(); resizeMainContainer(); saveAllData(); }
     function saveAllData() { const settings = { mZhSize: document.getElementById('mZhSize').value, mKmSize: document.getElementById('mKmSize').value, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, interval: document.getElementById('speechInterval').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing')?.value || 8, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider')?.value || 0, mPinyinFont: document.getElementById('mPinyinFont').value, mPinyinColor: document.getElementById('mPinyinColor').value, mPinyinSize: document.getElementById('mPinyinSize').value, mPinyinBold: document.getElementById('mPinyinBold').classList.contains('active'), rubySpacing: document.getElementById('rubySpacing').value }; localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList)); localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings)); }
-    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings) { const s = JSON.parse(savedSettings); document.getElementById('mZhSize').value = s.mZhSize || 35; document.getElementById('mKmSize').value = s.mKmSize || 18; document.getElementById('mZhColor').value = s.mZhColor || "#000000"; document.getElementById('mKmColor').value = s.mKmColor || "#1e293b"; document.getElementById('zhReps').value = s.zhReps || 3; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('speechInterval').value = s.interval || 500; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor; const vocabSpacing = s.vocabSpacing !== undefined ? s.vocabSpacing : 8; document.getElementById('sVocabSpacing').value = vocabSpacing; document.body.style.setProperty('--vocab-spacing', vocabSpacing + 'px'); document.getElementById('vocabSpacingVal').innerText = vocabSpacing + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.mPinyinFont) document.getElementById('mPinyinFont').value = s.mPinyinFont; if(s.mPinyinColor) document.getElementById('mPinyinColor').value = s.mPinyinColor; if(s.mPinyinSize) document.getElementById('mPinyinSize').value = s.mPinyinSize; if(s.mPinyinBold !== undefined) { const boldEl = document.getElementById('mPinyinBold'); if(s.mPinyinBold) boldEl.classList.add('active'); else boldEl.classList.remove('active'); } if(s.rubySpacing) document.getElementById('rubySpacing').value = s.rubySpacing; } applyStyles(); applyRateDisplay(); }
+    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings) { const s = JSON.parse(savedSettings); document.getElementById('mZhSize').value = s.mZhSize || 35; document.getElementById('mKmSize').value = s.mKmSize || 18; document.getElementById('mZhColor').value = s.mZhColor || "#000000"; document.getElementById('mKmColor').value = s.mKmColor || "#1e293b"; document.getElementById('zhReps').value = s.zhReps || 3; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('speechInterval').value = s.interval || 500; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor; const vocabSpacing = s.vocabSpacing !== undefined ? s.vocabSpacing : 8; document.getElementById('sVocabSpacing').value = vocabSpacing; document.body.style.setProperty('--vocab-spacing', vocabSpacing + 'px'); document.getElementById('vocabSpacingVal').innerText = vocabSpacing + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.mPinyinFont) document.getElementById('mPinyinFont').value = s.mPinyinFont; if(s.mPinyinColor) document.getElementById('mPinyinColor').value = s.mPinyinColor; if(s.mPinyinSize) document.getElementById('mPinyinSize').value = s.mPinyinSize; if(s.mPinyinBold !== undefined) { const boldEl = document.getElementById('mPinyinBold'); if(s.mPinyinBold) boldEl.classList.add('active'); else boldEl.classList.remove('active'); } if(s.rubySpacing) document.getElementById('rubySpacing').value = s.rubySpacing; } applyRubyPinyin(); applyRateDisplay(); }
     function applyRateDisplay() { const rateSlider = document.getElementById('zhRateSlider'); const rateSpan = document.getElementById('zhRateVal'); if(rateSlider && rateSpan) { let val = parseInt(rateSlider.value); rateSpan.innerText = (val > 0 ? '+' + val : val) + '%'; } saveAllData(); }
     function pickRandom() { if (!vocabList.length) return; const idx = Math.floor(Math.random() * vocabList.length); history = history.slice(0, historyIndex + 1); history.push(idx); historyIndex = history.length - 1; loadWord(idx); }
     function historyPrev() { if (historyIndex > 0) { historyIndex--; loadWord(history[historyIndex]); } }
@@ -875,3 +951,4 @@
 </script>
 </body>
 </html>
+```
