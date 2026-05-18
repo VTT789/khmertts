@@ -28,11 +28,7 @@
             src: url('/static/Fonts/Chinese/Hanyi Extra Bold Round Simplified.woff2') format('woff2');
             font-display: swap;
         }
-		@font-face {
-            font-family: 'Pinyin';
-            src: url('/static/Fonts/Chinese/FZPY01Edit2026-Regular.woff2') format('woff2');
-            font-display: swap;
-        }
+
 		@font-face {
             font-family: 'SingKhmer';
             src: url('/static/Fonts/Chinese/SingKhmerForChinese-Regular.woff2') format('woff2');
@@ -56,6 +52,11 @@
         @font-face {
             font-family: 'Yezi Kaiti Pinyin';
             src: url('/static/Fonts/Chinese/Yezi Factory Kaiti Pinyin.woff2') format('woff2');
+            font-display: swap;
+        }
+		        @font-face {
+            font-family: 'Yezi Kaiti Pinyin';
+            src: url('/static/Fonts/Chinese/TensentypeBiShunJ-Regular.woff2') format('woff2');
             font-display: swap;
         }
 
@@ -83,6 +84,16 @@
 	    @font-face {
             font-family: 'KHSAMADY';
             src: url('/static/Fonts/Khmer/KHMER SAMADY KS-V2.woff2') format('woff2');
+            font-display: swap;
+        }
+			    @font-face {
+            font-family: 'KHSAMADY';
+            src: url('/static/Fonts/Khmer/Khvirakmonomodern-Regular.woff2') format('woff2');
+            font-display: swap;
+        }
+					    @font-face {
+            font-family: 'KHSAMADY';
+            src: url('/static/Fonts/Khmer/KhmerArrowEdit-Regular.woff2') format('woff2');
             font-display: swap;
         }
 
@@ -710,13 +721,13 @@
                         <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
                         <option value="'XHeiPinyin'">X Hei Pinyin</option>
                         <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
-                        <option value="'Pinyin'">FZPY01 Pinyin</option>
+                        <option value="'Pinyin'">TensentypeBiShunJ-Regular</option>
                         <option value="'HanZhen Wide Standard'">HanZhen Wide Standard</option>
                         <option value="'Founder Shaoer'">Founder Shaoer</option>
                         <option value="'Hanyi Changyi'">Hanyi Changyi</option>
                         <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
                         <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
-                        <option value="'SingKhmer'">SingKhmerForChinese</option>
+                   
                     </select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
                     <div class="size-row"><label>ZH Size</label><input type="range" id="mZhSize" class="size-slider" min="5" max="60" value="35"></div>
                     <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select">
@@ -725,6 +736,8 @@
                         <option value="'KHROSAPSRA'">Rosapsra</option>
                         <option value="'KHMithSalaPali'">MithSalaPali</option>
                         <option value="'KHSAMADY'">Samady KS</option>
+						 <option value="'KHSAMADY'">Khvirakmonomodern-Regular</option>
+						  <option value="'KHSAMADY'">KhmerArrowEdit-Regular</option>
                     </select><input type="color" id="mKmColor" class="color-input" value="#1e293b"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
                     <div class="size-row"><label>KM Size</label><input type="range" id="mKmSize" class="size-slider" min="5" max="40" value="18"></div>
                     <div class="size-row" style="justify-content: flex-start; gap: 12px;">
@@ -749,7 +762,7 @@
                         <option value="'BaguettePinyin'">Baguette</option>
                         <option value="'XHeiPinyin'">X Hei</option>
                         <option value="'Cream Pudding Pinyin'">Cream Pudding</option>
-                        <option value="'Pinyin'">FZPY01</option>
+                  
                         <option value="'HanZhen Wide Standard'">HanZhen Wide</option>
                     </select><input type="color" id="sZhColor" class="color-input" value="#000000"></div>
                     <div class="side-style-grid"><label>KM</label><select id="sKmFont" class="font-select">
@@ -767,20 +780,21 @@
                 <div id="pinyinControls" class="control-group">
                     <div class="pinyin-style-grid"><label>Font 1</label><select id="pinyinFont" class="font-select">
                         <option value="inherit">Default (inherit)</option>
-                        <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
+                         <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
                         <option value="'XHeiPinyin'">X Hei Pinyin</option>
-                        <option value="'Pinyin'">FZPY01 Pinyin</option>
+                        <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
+                        <option value="'HanZhen Wide Standard'">HanZhen Wide Standard</option>
+                        <option value="'Founder Shaoer'">Founder Shaoer</option>
+                        <option value="'Hanyi Changyi'">Hanyi Changyi</option>
                         <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
+                        <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
                     </select><input type="color" id="pinyinColor" class="color-input" value="#f97316"><div id="pinyinBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyPinyinStyles()">B</div></div>
                     <div class="size-row"><label>Pinyin 1 Size (px)</label><input type="range" id="pinyinSizePx" class="size-slider" min="8" max="70" value="14"><span id="pinyinSizeVal" style="width:30px;">14px</span></div>
                     
                     <!-- New controls for chineseOut2 pinyin tones -->
                     <div class="pinyin-style-grid" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;"><label>Font 2</label><select id="pinyinFont2" class="font-select">
                         <option value="inherit">Default (inherit)</option>
-                        <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
-                        <option value="'XHeiPinyin'">X Hei Pinyin</option>
-                        <option value="'Pinyin'">FZPY01 Pinyin</option>
-                        <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
+						 <option value="'SingKhmer'">SingKhmerForChinese</option>
                     </select><input type="color" id="pinyinColor2" class="color-input" value="#f97316"><div id="pinyinBold2" class="bold-toggle active" onclick="this.classList.toggle('active'); applyPinyinStyles2()">B</div></div>
                     <div class="size-row"><label>Pinyin 2 Size (px)</label><input type="range" id="pinyinSizePx2" class="size-slider" min="8" max="70" value="14"><span id="pinyinSizeVal2" style="width:30px;">14px</span></div>
                     
