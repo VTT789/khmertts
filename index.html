@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -393,6 +392,7 @@
 
         .display-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; pointer-events: auto; background: inherit; gap: 1.5rem; }
         .text-line { display: flex; align-items: center; justify-content: center; max-width: 95%; pointer-events: auto; user-select: none; }
+        .text-line.hidden-line { display: none; }
         
         /* Pinyin-enhanced Chinese container (reusable) */
         .pinyin-word-container {
@@ -631,6 +631,7 @@
             display: flex;
             gap: 8px;
             margin: 12px 0 8px 0;
+            flex-wrap: wrap;
         }
         .vis-toggle-btn {
             flex: 1;
@@ -656,6 +657,15 @@
         body.night-mode .vis-toggle-btn.active {
             background: #3b82f6;
             color: white;
+        }
+
+        /* Hide ZH controls when first line is hidden */
+        .zh-controls-hidden {
+            display: none !important;
+        }
+        /* Hide Pinyin controls when first line is hidden */
+        .pinyin-controls-hidden {
+            display: none !important;
         }
 
         @media (max-width: 540px) {
@@ -709,19 +719,22 @@
 
                 <div id="mainControls" class="control-group active">
                     <div class="size-row"><label>Next Word Delay (s)</label><input type="range" id="autoDelay" class="size-slider" min="2" max="15" step="1" value="5"><span id="delayVal" style="font-size:0.7rem; width:20px;">5s</span></div>
-                    <div class="style-grid"><label>ZH</label><select id="mZhFont" class="font-select">
-                        <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
-                        <option value="'XHeiPinyin'">X Hei Pinyin</option>
-                        <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
-                        <option value="'Pinyin'">FZPY01 Pinyin</option>
-                        <option value="'HanZhen Wide Standard'">HanZhen Wide Standard</option>
-                        <option value="'Founder Shaoer'">Founder Shaoer</option>
-                        <option value="'Hanyi Changyi'">Hanyi Changyi</option>
-                        <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
-                        <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
-                        <option value="'SingKhmer'">SingKhmerForChinese</option>
-                    </select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
-                    <div class="size-row"><label>ZH Size</label><input type="range" id="mZhSize" class="size-slider" min="5" max="60" value="35"></div>
+                    <!-- ZH Controls wrapper (will be hidden when first line is hidden) -->
+                    <div id="zhMainControls">
+                        <div class="style-grid"><label>ZH</label><select id="mZhFont" class="font-select">
+                            <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
+                            <option value="'XHeiPinyin'">X Hei Pinyin</option>
+                            <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
+                            <option value="'Pinyin'">FZPY01 Pinyin</option>
+                            <option value="'HanZhen Wide Standard'">HanZhen Wide Standard</option>
+                            <option value="'Founder Shaoer'">Founder Shaoer</option>
+                            <option value="'Hanyi Changyi'">Hanyi Changyi</option>
+                            <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
+                            <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
+                            <option value="'SingKhmer'">SingKhmerForChinese</option>
+                        </select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
+                        <div class="size-row"><label>ZH Size</label><input type="range" id="mZhSize" class="size-slider" min="5" max="60" value="35"></div>
+                    </div>
                     <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select">
                         <option value="'KHLazySmooth'">LazySmooth</option>
                         <option value="'KHDangrek'">Dangrek</option>
@@ -768,31 +781,47 @@
                 </div>
 
                 <div id="pinyinControls" class="control-group">
-                    <div class="pinyin-style-grid"><label>Font</label><select id="pinyinFont" class="font-select">
-                        <option value="inherit">Default (inherit)</option>
-                        <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
-                        <option value="'XHeiPinyin'">X Hei Pinyin</option>
-                        <option value="'Pinyin'">FZPY01 Pinyin</option>
-                        <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
-                    </select><input type="color" id="pinyinColor" class="color-input" value="#f97316"><div id="pinyinBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyPinyinStyles()">B</div></div>
-                    <div class="size-row"><label>Pinyin Size (px)</label><input type="range" id="pinyinSizePx" class="size-slider" min="8" max="70" value="14"><span id="pinyinSizeVal" style="width:30px;">14px</span></div>
-                    <div class="size-row"><label>Spacing (px)</label><input type="range" id="pinyinSpacing" class="size-slider" min="0" max="51" value="12"><span id="pinyinSpacingVal" style="width:30px;">12px</span></div>
-                    <!-- NEW: Font control for third Chinese line (chineseOut3) -->
-                    <div class="style-grid" style="grid-template-columns: 35px 1fr 40px; margin-top: 12px;">
-                        <label>3rd Line Font</label>
-                        <select id="thirdZhFont" class="font-select">
-                            <option value="'SingKhmer'">SingKhmerForChinese (default)</option>
+                    <!-- Pinyin Controls wrapper (hidden when first line is hidden) -->
+                    <div id="pinyinControlsWrapper">
+                        <div class="pinyin-style-grid"><label>Pinyin Font</label><select id="pinyinFont" class="font-select">
+                            <option value="inherit">Default (inherit)</option>
                             <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
                             <option value="'XHeiPinyin'">X Hei Pinyin</option>
-                            <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
                             <option value="'Pinyin'">FZPY01 Pinyin</option>
-                            <option value="'HanZhen Wide Standard'">HanZhen Wide Standard</option>
-                            <option value="'Founder Shaoer'">Founder Shaoer</option>
-                            <option value="'Hanyi Changyi'">Hanyi Changyi</option>
                             <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
-                            <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
-                        </select>
-                        <div style="width:40px;"></div>
+                        </select><input type="color" id="pinyinColor" class="color-input" value="#f97316"><div id="pinyinBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyPinyinStyles()">B</div></div>
+                        <div class="size-row"><label>Pinyin Size (px)</label><input type="range" id="pinyinSizePx" class="size-slider" min="8" max="70" value="14"><span id="pinyinSizeVal" style="width:30px;">14px</span></div>
+                        <div class="size-row"><label>Character Spacing (px)</label><input type="range" id="pinyinSpacing" class="size-slider" min="0" max="51" value="12"><span id="pinyinSpacingVal" style="width:30px;">12px</span></div>
+                        <div class="size-row"><label style="color: var(--accent);">↳ 3rd Line Spacing matches this value</label></div>
+                    </div>
+                    
+                    <!-- 1st Line Hide/Show Button -->
+                    <button id="toggleFirstLineBtn" class="vis-toggle-btn" style="margin-top: 6px; width: 100%;">👁️ Hide 1st Line</button>
+                    
+                    <!-- 3rd Line Controls -->
+                    <div style="border-top: 1px solid var(--border); margin: 12px 0 8px 0; padding-top: 8px;">
+                        <div style="font-weight: bold; font-size: 0.7rem; margin-bottom: 8px;">🎨 3rd Line Chinese (chineseOut3)</div>
+                        <div id="thirdLineControls">
+                            <div class="pinyin-style-grid">
+                                <label>Font</label>
+                                <select id="thirdZhFont" class="font-select">
+                                    <option value="'SingKhmer'">SingKhmerForChinese (default)</option>
+                                    <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
+                                    <option value="'XHeiPinyin'">X Hei Pinyin</option>
+                                    <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
+                                    <option value="'Pinyin'">FZPY01 Pinyin</option>
+                                    <option value="'HanZhen Wide Standard'">HanZhen Wide Standard</option>
+                                    <option value="'Founder Shaoer'">Founder Shaoer</option>
+                                    <option value="'Hanyi Changyi'">Hanyi Changyi</option>
+                                    <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
+                                    <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
+                                </select>
+                                <input type="color" id="thirdZhColor" class="color-input" value="#000000">
+                                <div id="thirdZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div>
+                            </div>
+                            <div class="size-row"><label>Size (vh)</label><input type="range" id="thirdZhSize" class="size-slider" min="5" max="60" value="35"><span id="thirdZhSizeVal" style="width:30px;">35vh</span></div>
+                        </div>
+                        <button id="toggleThirdLineBtn" class="vis-toggle-btn" style="margin-top: 6px; width: 100%;">👁️ Hide 3rd Line & Controls</button>
                     </div>
                     <div class="visibility-toggles">
                         <button id="toggleChineseCharBtn" class="vis-toggle-btn active" style="display:none;">🔤 Hide Chinese (chineseOut)</button>
@@ -803,10 +832,10 @@
         </div>
 
         <div class="display-area" id="displayArea">
-            <div class="text-line"><div class="zh draggable-text hide-chinese-char" id="chineseOut">准备好</div></div>
+            <div class="text-line" id="firstLineContainer"><div class="zh draggable-text hide-chinese-char" id="chineseOut">准备好</div></div>
             <div class="text-line"><div class="km draggable-text" id="khmerOut">រួចរាល់</div></div>
             <div class="text-line"><div class="zh draggable-text hide-pinyin" id="chineseOut2">准备好</div></div>
-            <div class="text-line"><div class="zh draggable-text hide-pinyin" id="chineseOut3">准备好</div></div>
+            <div class="text-line" id="thirdLineContainer"><div class="zh draggable-text hide-pinyin" id="chineseOut3">准备好</div></div>
         </div>
     </div>
 
@@ -819,7 +848,7 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script>
-    // ========== OPTIMIZED + 3RD LINE FONT CONTROL ==========
+    // ========== HIDE 1ST LINE ALSO HIDES PINYIN CONTROLS ==========
     let currentAudio = null, speechQueue = [], isProcessingQueue = false;
     async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
     async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, parseInt(document.getElementById('speechInterval').value || 500))); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
@@ -865,27 +894,47 @@
     function applyChineseStylesToContainer(containerId) {
         const container = document.getElementById(containerId);
         if (!container) return;
-        let font, color, isBold;
         if (containerId === 'chineseOut3') {
-            // use dedicated third-line font control
-            font = document.getElementById('thirdZhFont').value;
-            color = document.getElementById('mZhColor').value;
-            isBold = document.getElementById('mZhBold').classList.contains('active');
+            const font = document.getElementById('thirdZhFont').value;
+            const color = document.getElementById('thirdZhColor').value;
+            const isBold = document.getElementById('thirdZhBold').classList.contains('active');
+            container.style.fontFamily = font;
+            container.style.color = color;
+            container.style.fontWeight = isBold ? 'bold' : 'normal';
         } else {
-            font = document.getElementById('mZhFont').value;
-            color = document.getElementById('mZhColor').value;
-            isBold = document.getElementById('mZhBold').classList.contains('active');
+            const font = document.getElementById('mZhFont').value;
+            const color = document.getElementById('mZhColor').value;
+            const isBold = document.getElementById('mZhBold').classList.contains('active');
+            container.style.fontFamily = font;
+            container.style.color = color;
+            container.style.fontWeight = isBold ? 'bold' : 'normal';
         }
-        container.style.fontFamily = font;
-        container.style.color = color;
-        container.style.fontWeight = isBold ? 'bold' : 'normal';
-        container.style.fontSize = ''; // controlled by widthFit
+    }
+    
+    function applyThirdLineSize() {
+        const sizeVh = parseFloat(document.getElementById('thirdZhSize').value);
+        const container = document.getElementById('chineseOut3');
+        if (container) container.style.fontSize = sizeVh + 'vh';
+        document.getElementById('thirdZhSizeVal').innerText = sizeVh + 'vh';
+    }
+    
+    function applyThirdLineSpacing() {
+        const spacing = document.getElementById('pinyinSpacing').value;
+        const container = document.getElementById('chineseOut3');
+        if (container) {
+            const wordContainers = container.querySelectorAll('.pinyin-word-container');
+            wordContainers.forEach(wc => {
+                wc.style.gap = `4px ${spacing}px`;
+            });
+        }
     }
     
     function applyAllChineseStyles() {
         applyChineseStylesToContainer('chineseOut');
         applyChineseStylesToContainer('chineseOut2');
         applyChineseStylesToContainer('chineseOut3');
+        applyThirdLineSize();
+        applyThirdLineSpacing();
     }
 
     function applyPinyinStyles() {
@@ -906,6 +955,7 @@
         });
         document.getElementById('pinyinSizeVal').innerText = pinyinSize + 'px';
         document.getElementById('pinyinSpacingVal').innerText = pinyinSpacing + 'px';
+        applyThirdLineSpacing();
         saveAllData();
     }
     
@@ -913,7 +963,7 @@
     function widthFit() {
         if (resizeDebounce) clearTimeout(resizeDebounce);
         resizeDebounce = setTimeout(() => {
-            const containers = [document.getElementById('chineseOut'), document.getElementById('chineseOut2'), document.getElementById('chineseOut3')];
+            const containers = [document.getElementById('chineseOut'), document.getElementById('chineseOut2')];
             const kmLine = document.getElementById('khmerOut');
             const area = document.getElementById('displayArea');
             if(!containers[0] || !area) return;
@@ -932,6 +982,7 @@
             }
             attempts = 0;
             while (kmLine.scrollWidth > maxW && kmSize > 1 && attempts++ < 15) { kmSize -= 0.5; kmLine.style.fontSize = kmSize + "vh"; }
+            applyThirdLineSize();
         }, 20);
     }
     
@@ -1000,7 +1051,11 @@
             pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value,
             pinyinBold: document.getElementById('pinyinBold').classList.contains('active'),
             pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value,
-            thirdZhFont: document.getElementById('thirdZhFont').value
+            thirdZhFont: document.getElementById('thirdZhFont').value, thirdZhColor: document.getElementById('thirdZhColor').value,
+            thirdZhBold: document.getElementById('thirdZhBold').classList.contains('active'),
+            thirdZhSize: document.getElementById('thirdZhSize').value,
+            firstLineVisible: !document.getElementById('firstLineContainer').classList.contains('hidden-line'),
+            thirdLineVisible: !document.getElementById('thirdLineContainer').classList.contains('hidden-line')
         };
         localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList));
         localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings));
@@ -1051,10 +1106,88 @@
             if(s.pinyinSizePx) document.getElementById('pinyinSizePx').value = s.pinyinSizePx;
             if(s.pinyinSpacing) document.getElementById('pinyinSpacing').value = s.pinyinSpacing;
             if(s.thirdZhFont) document.getElementById('thirdZhFont').value = s.thirdZhFont;
-            else document.getElementById('thirdZhFont').value = "'SingKhmer'";
+            if(s.thirdZhColor) document.getElementById('thirdZhColor').value = s.thirdZhColor;
+            if(s.thirdZhBold !== undefined) {
+                const btn = document.getElementById('thirdZhBold');
+                if(s.thirdZhBold) btn.classList.add('active');
+                else btn.classList.remove('active');
+            }
+            if(s.thirdZhSize) document.getElementById('thirdZhSize').value = s.thirdZhSize;
+            // First line visibility (and hide ZH controls + Pinyin controls)
+            const firstLineContainer = document.getElementById('firstLineContainer');
+            const firstLineBtn = document.getElementById('toggleFirstLineBtn');
+            const zhControls = document.getElementById('zhMainControls');
+            const pinyinWrapper = document.getElementById('pinyinControlsWrapper');
+            if(s.firstLineVisible !== undefined) {
+                if(!s.firstLineVisible) {
+                    firstLineContainer.classList.add('hidden-line');
+                    if(zhControls) zhControls.classList.add('zh-controls-hidden');
+                    if(pinyinWrapper) pinyinWrapper.classList.add('pinyin-controls-hidden');
+                    if(firstLineBtn) firstLineBtn.innerText = '👁️ Show 1st Line';
+                } else {
+                    firstLineContainer.classList.remove('hidden-line');
+                    if(zhControls) zhControls.classList.remove('zh-controls-hidden');
+                    if(pinyinWrapper) pinyinWrapper.classList.remove('pinyin-controls-hidden');
+                    if(firstLineBtn) firstLineBtn.innerText = '👁️ Hide 1st Line';
+                }
+            }
+            // Third line visibility
+            const thirdLineContainer = document.getElementById('thirdLineContainer');
+            const thirdLineControls = document.getElementById('thirdLineControls');
+            const thirdLineBtn = document.getElementById('toggleThirdLineBtn');
+            if(s.thirdLineVisible !== undefined) {
+                if(!s.thirdLineVisible) {
+                    thirdLineContainer.classList.add('hidden-line');
+                    if(thirdLineControls) thirdLineControls.style.display = 'none';
+                    if(thirdLineBtn) thirdLineBtn.innerText = '👁️ Show 3rd Line & Controls';
+                } else {
+                    thirdLineContainer.classList.remove('hidden-line');
+                    if(thirdLineControls) thirdLineControls.style.display = '';
+                    if(thirdLineBtn) thirdLineBtn.innerText = '👁️ Hide 3rd Line & Controls';
+                }
+            }
         }
         applyStyles();
         applyPinyinStyles();
+    }
+    
+    function toggleFirstLineVisibility() {
+        const container = document.getElementById('firstLineContainer');
+        const btn = document.getElementById('toggleFirstLineBtn');
+        const zhControls = document.getElementById('zhMainControls');
+        const pinyinWrapper = document.getElementById('pinyinControlsWrapper');
+        if (!container) return;
+        const isHidden = container.classList.contains('hidden-line');
+        if (!isHidden) {
+            container.classList.add('hidden-line');
+            if(zhControls) zhControls.classList.add('zh-controls-hidden');
+            if(pinyinWrapper) pinyinWrapper.classList.add('pinyin-controls-hidden');
+            btn.innerText = '👁️ Show 1st Line';
+        } else {
+            container.classList.remove('hidden-line');
+            if(zhControls) zhControls.classList.remove('zh-controls-hidden');
+            if(pinyinWrapper) pinyinWrapper.classList.remove('pinyin-controls-hidden');
+            btn.innerText = '👁️ Hide 1st Line';
+        }
+        saveAllData();
+    }
+    
+    function toggleThirdLineVisibility() {
+        const container = document.getElementById('thirdLineContainer');
+        const controlsDiv = document.getElementById('thirdLineControls');
+        const toggleBtn = document.getElementById('toggleThirdLineBtn');
+        if (!container || !controlsDiv) return;
+        const isHidden = container.classList.contains('hidden-line');
+        if (!isHidden) {
+            container.classList.add('hidden-line');
+            controlsDiv.style.display = 'none';
+            toggleBtn.innerText = '👁️ Show 3rd Line & Controls';
+        } else {
+            container.classList.remove('hidden-line');
+            controlsDiv.style.display = '';
+            toggleBtn.innerText = '👁️ Hide 3rd Line & Controls';
+        }
+        saveAllData();
     }
     
     function toggleHideChineseChars() { const el = document.getElementById('chineseOut'); el.classList.toggle('hide-chinese-char'); updateToggleButtonsState(); saveAllData(); }
@@ -1117,8 +1250,14 @@
         document.getElementById('pinyinFont').addEventListener('change', applyPinyinStyles);
         document.getElementById('pinyinColor').addEventListener('input', applyPinyinStyles);
         document.getElementById('pinyinSizePx').addEventListener('input', applyPinyinStyles);
-        document.getElementById('pinyinSpacing').addEventListener('input', applyPinyinStyles);
+        document.getElementById('pinyinSpacing').addEventListener('input', function() { applyPinyinStyles(); applyThirdLineSpacing(); saveAllData(); });
         document.getElementById('thirdZhFont').addEventListener('change', applyStyles);
+        document.getElementById('thirdZhColor').addEventListener('input', applyStyles);
+        document.getElementById('thirdZhSize').addEventListener('input', function() { applyThirdLineSize(); saveAllData(); });
+        const toggleFirstBtn = document.getElementById('toggleFirstLineBtn');
+        if (toggleFirstBtn) toggleFirstBtn.addEventListener('click', toggleFirstLineVisibility);
+        const toggleThirdBtn = document.getElementById('toggleThirdLineBtn');
+        if (toggleThirdBtn) toggleThirdBtn.addEventListener('click', toggleThirdLineVisibility);
         window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); pickRandom(); } else if (e.code === 'ArrowLeft') { e.preventDefault(); historyPrev(); } else if (e.code === 'ArrowRight') { e.preventDefault(); historyNext(); } else if (e.code === 'ArrowDown') { e.preventDefault(); moveSidebarFocus(1); } else if (e.code === 'ArrowUp') { e.preventDefault(); moveSidebarFocus(-1); } });
         if(vocabList.length) updateDisplay();
         updateToggleButtonsState(); applyPinyinStyles();
