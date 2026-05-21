@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Vocab Master Pro | Drag + Zoom + Speech (iOS fix)</title>
+    <title>Vocab Master Pro | Drag + Zoom + TTS Fix</title>
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
     <style>
         /* ========== CUSTOM WEB FONTS ========== */
@@ -903,7 +903,7 @@
                                 <input type="color" id="pinyinColor" value="#f97316">
                                 <div id="pinyinBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyPinyinStyles()">B</div>
                             </div>
-                            <div class="size-row"><label>Size (px)</label><input type="range" id="pinyinSizePx" min="8" max="28" value="14"><span id="pinyinSizeVal">14px</span></div>
+                            <div class="size-row"><label>Size (px)</label><input type="range" id="pinyinSizePx" min="8" max="60" value="14"><span id="pinyinSizeVal">14px</span></div>
                             <div class="size-row"><label>Spacing (px)</label><input type="range" id="pinyinSpacing" min="0" max="51" value="12"><span id="pinyinSpacingVal">12px</span></div>
                         </div>
                         
@@ -930,7 +930,7 @@
                                     <input type="color" id="bottomCharColor" value="#3b82f6">
                                     <div id="bottomBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyBottomStyles()">B</div>
                                 </div>
-                                <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" min="8" max="28" value="14"><span id="bottomSizeVal">14px</span></div>
+                                <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" min="8" max="60" value="14"><span id="bottomSizeVal">14px</span></div>
                             </div>
                         </div>
                     </div>
@@ -956,64 +956,33 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script>
-    // ========== SPEECH WITH FALLBACK (iOS compatible) + TAP TO SPEAK ==========
+    // ========== FIXED: TTS SPEECH ON CLICK/TAP ==========
     let currentAudio = null, speechQueue = [], isProcessingQueue = false;
-    
-    // Fallback speech synthesis (works on iOS)
-    function webSpeechSynthesize(text, lang = 'zh-CN', rate = 1) {
-        return new Promise((resolve) => {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = lang;
-            utterance.rate = rate;
-            utterance.onend = () => resolve();
-            utterance.onerror = () => resolve();
-            window.speechSynthesis.cancel(); // stop any ongoing speech
-            window.speechSynthesis.speak(utterance);
-        });
-    }
-    
-    async function callEdgeTTS(text, voice, ratePercent = null) {
-        if (!text) return Promise.resolve();
-        // Try Edge TTS first, fallback to Web Speech on failure
-        try {
-            let formData = new URLSearchParams();
-            formData.append('text', text);
-            formData.append('voice', voice);
-            if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent);
-            const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() });
-            if (!response.ok) throw new Error();
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const audio = new Audio();
-            audio.src = url;
-            return new Promise((resolve, reject) => {
-                audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
-                audio.onerror = () => reject();
-                audio.play().catch(reject);
-                if (currentAudio && !currentAudio.paused) currentAudio.pause();
-                currentAudio = audio;
-            });
-        } catch (err) {
-            console.warn("Edge TTS failed, using Web Speech fallback", err);
-            // fallback to Web Speech API
-            const lang = voice.startsWith('zh') ? 'zh-CN' : 'km';
-            let rate = 1;
-            if (ratePercent) {
-                let val = parseInt(ratePercent);
-                if (!isNaN(val)) rate = 1 + (val / 100);
-                rate = Math.min(2, Math.max(0.5, rate));
-            }
-            return webSpeechSynthesize(text, lang, rate);
-        }
-    }
-    
+    async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
     async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, parseInt(document.getElementById('speechInterval').value || 500))); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
     function enqueueSpeech(text, voice, rate = null) { if (!text) return; speechQueue.push({ text, voice, rate }); processSpeechQueue(); }
-    function killAllSpeech() { if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; } speechQueue = []; isProcessingQueue = false; window.speechSynthesis.cancel(); }
+    function killAllSpeech() { if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; } speechQueue = []; isProcessingQueue = false; }
     function speakChineseEdge(text) { if (!text) return; const voice = document.getElementById('zhVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); enqueueSpeech(text, voice, rateFormatted); }
     function speakKhmerEdge(text) { if (!text) return; const voice = document.getElementById('kmVoiceSelect').value; enqueueSpeech(text, voice, null); }
-    function speakChineseFromMain() { const container = document.getElementById('chineseWord'); const plainText = container ? container.getAttribute('data-plain') || '' : ''; if(plainText) { killAllSpeech(); speakChineseEdge(plainText); } }
-    function speakKhmerFromMain() { const container = document.getElementById('khmerWord'); const plainText = container ? container.innerText : ''; if(plainText) { killAllSpeech(); speakKhmerEdge(plainText); } }
+    
+    // Simple click-to-speech functions
+    function speakChineseFromMain() { 
+        const container = document.getElementById('chineseWord'); 
+        const plainText = container ? container.getAttribute('data-plain') || '' : ''; 
+        if(plainText) { 
+            killAllSpeech(); 
+            speakChineseEdge(plainText); 
+        } 
+    }
+    function speakKhmerFromMain() { 
+        const container = document.getElementById('khmerWord'); 
+        const plainText = container ? container.innerText : ''; 
+        if(plainText) { 
+            killAllSpeech(); 
+            speakKhmerEdge(plainText); 
+        } 
+    }
+    
     async function speakAutoSequence(zhText, kmText) { killAllSpeech(); const interval = parseInt(document.getElementById('speechInterval').value); const zhReps = parseInt(document.getElementById('zhReps').value); const kmReps = parseInt(document.getElementById('kmReps').value); const zhVoice = document.getElementById('zhVoiceSelect').value; const kmVoice = document.getElementById('kmVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); for(let i=0; i<zhReps; i++) { await callEdgeTTS(zhText, zhVoice, rateFormatted); if(i < zhReps-1) await new Promise(r => setTimeout(r, interval)); } if(kmText && kmText.trim()) { for(let j=0; j<kmReps; j++) { await callEdgeTTS(kmText, kmVoice, null); if(j < kmReps-1) await new Promise(r => setTimeout(r, interval)); } } if(autoActive) startAutoCycle(); }
     
     const tripleHtmlCache = new Map();
@@ -1150,19 +1119,25 @@
         }
     }
     
-    // ========== ELEMENT‑SPECIFIC ZOOM (Wheel & Pinch) ==========
+    // ========== ELEMENT‑SPECIFIC ZOOM ==========
     function attachZoomToElement(element, type) {
         if (!element) return;
         element.addEventListener('wheel', (e) => {
             if (e.ctrlKey) {
                 e.preventDefault();
                 const delta = e.deltaY > 0 ? -1 : 1;
-                if (type === 'chinese') setChineseFontSize(currentChineseFontSize + delta);
-                else setKhmerFontSize(currentKhmerFontSize + delta);
+                if (type === 'chinese') {
+                    setChineseFontSize(currentChineseFontSize + delta);
+                } else {
+                    setKhmerFontSize(currentKhmerFontSize + delta);
+                }
             }
         }, { passive: false });
         
-        let initialDistance = 0, initialSize = 0, pinchActive = false;
+        let initialDistance = 0;
+        let initialSize = 0;
+        let pinchActive = false;
+        
         const onTouchStart = (e) => {
             if (e.touches.length === 2) {
                 e.preventDefault();
@@ -1173,6 +1148,7 @@
                 pinchActive = true;
             }
         };
+        
         const onTouchMove = (e) => {
             if (pinchActive && e.touches.length === 2) {
                 e.preventDefault();
@@ -1182,19 +1158,27 @@
                 if (initialDistance > 0) {
                     const scale = newDistance / initialDistance;
                     let newSize = initialSize * scale;
-                    if (type === 'chinese') setChineseFontSize(Math.round(newSize));
-                    else setKhmerFontSize(Math.round(newSize));
+                    if (type === 'chinese') {
+                        setChineseFontSize(Math.round(newSize));
+                    } else {
+                        setKhmerFontSize(Math.round(newSize));
+                    }
                 }
             }
         };
-        const onTouchEnd = () => { pinchActive = false; initialDistance = 0; };
+        
+        const onTouchEnd = (e) => {
+            pinchActive = false;
+            initialDistance = 0;
+        };
+        
         element.addEventListener('touchstart', onTouchStart, { passive: false });
         element.addEventListener('touchmove', onTouchMove, { passive: false });
         element.addEventListener('touchend', onTouchEnd);
         element.addEventListener('touchcancel', onTouchEnd);
     }
     
-    // ========== DRAG SYSTEM (with tap detection) ==========
+    // ========== DRAG SYSTEM ==========
     let chineseElement = null;
     let khmerElement = null;
     let chineseX = 50, chineseY = 40;
@@ -1210,7 +1194,6 @@
     let dragStartBottomX = 0, dragStartBottomY = 0;
     let longPressTimer = null;
     let pressStartX = 0, pressStartY = 0;
-    let pressStartTime = 0;
     let hasMovedDuringPress = false;
     const canvas = document.getElementById('displayArea');
     
@@ -1315,6 +1298,12 @@
         chineseElement.style.cursor = 'grab';
         chineseElement.addEventListener('mousedown', onPointerDown);
         chineseElement.addEventListener('touchstart', onPointerDown, { passive: false });
+        
+        // SPEECH: click/tap on Chinese word
+        chineseElement.addEventListener('click', (e) => {
+            e.stopPropagation();
+            speakChineseFromMain();
+        });
     }
     
     function onPointerDown(e) {
@@ -1324,7 +1313,6 @@
         const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
         pressStartX = clientX;
         pressStartY = clientY;
-        pressStartTime = Date.now();
         hasMovedDuringPress = false;
         longPressTimer = setTimeout(async () => {
             if (!hasMovedDuringPress && !dragActive) {
@@ -1352,14 +1340,8 @@
         }
     }
     
-    function onPressEnd(e) {
+    function onPressEnd() {
         if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-        // Check for tap (no drag, short press)
-        if (!dragActive && !hasMovedDuringPress && (Date.now() - pressStartTime) < 200) {
-            // It's a tap – trigger speech for the tapped element
-            if (e.target.closest('.chinese-word')) speakChineseFromMain();
-            else if (e.target.closest('.khmer-text')) speakKhmerFromMain();
-        }
         window.removeEventListener('mousemove', onPressMove);
         window.removeEventListener('touchmove', onPressMove);
         window.removeEventListener('mouseup', onPressEnd);
@@ -1437,8 +1419,12 @@
     
     function onGlobalDragEnd() {
         if (!dragActive) return;
-        if (dragType === 'word') chineseElement.style.cursor = 'grab';
-        else chineseElement.style.opacity = '';
+        if (dragType === 'word') {
+            chineseElement.style.cursor = 'grab';
+        } else {
+            chineseElement.style.opacity = '';
+            chineseElement.style.cursor = 'grab';
+        }
         saveAllDragPositions();
         dragActive = false;
         dragType = null;
@@ -1456,6 +1442,12 @@
         khmerElement.style.top = khmerY + '%';
         khmerElement.style.transform = 'translate(-50%, -50%)';
         khmerElement.style.cursor = 'grab';
+        
+        // SPEECH: click/tap on Khmer word
+        khmerElement.addEventListener('click', (e) => {
+            e.stopPropagation();
+            speakKhmerFromMain();
+        });
         
         let khmerDragActive = false;
         let khmerStartMouseX, khmerStartMouseY, khmerStartLeft, khmerStartTop;
@@ -1600,7 +1592,7 @@
     function switchTab(tab) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active'); document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab))); }
     function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
     
-    // ========== FILE LOADER (mobile compatible) ==========
+    // ========== FILE LOADER ==========
     const modal = document.getElementById('fileSourceModal'), insertBtn = document.getElementById('insertDataBtn'), closeModalBtn = document.getElementById('closeModalBtn'), chooseLocalBtn = document.getElementById('chooseLocalBtn'), chooseUrlBtn = document.getElementById('chooseUrlBtn'), urlInputArea = document.getElementById('urlInputArea'), confirmUrlLoad = document.getElementById('confirmUrlLoad'), sheetUrlModal = document.getElementById('sheetUrlInputModal');
     function showModal() { modal.style.display = 'flex'; } function hideModal() { modal.style.display = 'none'; urlInputArea.style.display = 'none'; }
     insertBtn.onclick = showModal; closeModalBtn.onclick = hideModal; modal.onclick = (e) => { if(e.target === modal) hideModal(); };
