@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Vocab Master Pro | Fixed Speech + Drag + Random/Normal Mode</title>
+    <title>Vocab Master Pro | Fixed Speech + Drag + Auto-Shrink</title>
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
     <style>
         /* ========== CUSTOM WEB FONTS ========== */
@@ -410,6 +409,8 @@
             will-change: left, top;
             white-space: nowrap;
             touch-action: none;
+            max-width: 90vw;
+            overflow-x: visible;
         }
         .chinese-word:active { cursor: grabbing; }
         .char-block { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; white-space: nowrap; }
@@ -463,6 +464,8 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
             will-change: left, top;
             touch-action: none;
+            max-width: 90vw;
+            overflow-x: visible;
         }
         .khmer-text:active { cursor: grabbing; }
 
@@ -924,7 +927,7 @@
                             <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
                             <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
                             <option value="'SingKhmer'">SingKhmerForChinese</option>
-                        </select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyChineseMainStyle()">B</div></div>
+                        </select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyChineseMainStyle(); shrinkChineseToFit()">B</div></div>
                         <div class="size-row"><label>Main Char Size (vh)</label><input type="range" id="mZhSize" class="size-slider" min="10" max="150" value="42"><span id="mZhSizeVal">42vh</span></div>
                     </div>
                     <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select">
@@ -976,7 +979,7 @@
                                 <input type="color" id="pinyinColor" value="#f97316">
                                 <div id="pinyinBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyPinyinStyles()">B</div>
                             </div>
-                            <div class="size-row"><label>Size (px)</label><input type="range" id="pinyinSizePx" min="15" max="90" value="14"><span id="pinyinSizeVal">14px</span></div>
+                            <div class="size-row"><label>Size (px)</label><input type="range" id="pinyinSizePx" min="20" max="100" value="14"><span id="pinyinSizeVal">14px</span></div>
                             <div class="size-row"><label>Spacing (px)</label><input type="range" id="pinyinSpacing" min="0" max="51" value="12"><span id="pinyinSpacingVal">12px</span></div>
                         </div>
                         <div style="border-top: 1px solid var(--border); margin: 12px 0 8px 0; padding-top: 8px;">
@@ -1002,7 +1005,7 @@
                                     <input type="color" id="bottomCharColor" value="#3b82f6">
                                     <div id="bottomBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyBottomStyles()">B</div>
                                 </div>
-                                <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" min="15" max="90" value="14"><span id="bottomSizeVal">14px</span></div>
+                                <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" min="10" max="100" value="14"><span id="bottomSizeVal">14px</span></div>
                             </div>
                         </div>
                     </div>
@@ -1091,6 +1094,7 @@
         applyBottomStyles();
         applyLayerTransforms();
         applyTextVisibility();
+        shrinkChineseToFit();
     }
     function applyTextVisibility() {
         const container = document.getElementById('chineseWord');
@@ -1116,6 +1120,7 @@
             el.style.fontWeight = isBold ? 'bold' : 'normal';
         });
         document.getElementById('mZhSizeVal').innerText = currentChineseFontSize + 'vh';
+        shrinkChineseToFit();
     }
     function setChineseFontSize(newSize) {
         newSize = Math.max(10, Math.min(150, newSize));
@@ -1124,6 +1129,7 @@
         document.getElementById('mZhSize').value = currentChineseFontSize;
         document.getElementById('mZhSizeVal').innerText = currentChineseFontSize + 'vh';
         saveAllData();
+        shrinkChineseToFit();
     }
     function applyPinyinStyles() {
         const pinyinFont = document.getElementById('pinyinFont').value;
@@ -1141,6 +1147,7 @@
         document.getElementById('pinyinSizeVal').innerText = pinyinSize + 'px';
         document.getElementById('pinyinSpacingVal').innerText = pinyinSpacing + 'px';
         saveAllData();
+        shrinkChineseToFit();
     }
     function applyBottomStyles() {
         const container = document.getElementById('chineseWord');
@@ -1157,6 +1164,7 @@
         });
         document.getElementById('bottomSizeVal').innerText = bottomSize + 'px';
         saveAllData();
+        shrinkChineseToFit();
     }
     let currentKhmerFontSize = 18;
     function setKhmerFontSize(newSize) {
@@ -1168,11 +1176,62 @@
         document.getElementById('mKmSize').value = currentKhmerFontSize;
         document.getElementById('mKmSizeVal').innerText = currentKhmerFontSize + 'vh';
         saveAllData();
+        shrinkKhmerToFit();
     }
     function updateKhmerDisplay(text) {
         const container = document.getElementById('khmerWord');
-        if (container) { container.innerText = text; setKhmerFontSize(currentKhmerFontSize); }
+        if (container) { container.innerText = text; setKhmerFontSize(currentKhmerFontSize); shrinkKhmerToFit(); }
     }
+    
+    // ========== AUTO-SHRINK TEXT TO FIT (NO WRAP, NO OVERFLOW) ==========
+    function shrinkChineseToFit() {
+        const element = document.getElementById('chineseWord');
+        if (!element || !element.parentElement) return;
+        const parentRect = document.getElementById('displayArea').getBoundingClientRect();
+        const maxWidth = parentRect.width * 0.85;
+        if (maxWidth <= 0) return;
+        let currentFontVh = currentChineseFontSize;
+        let minVh = 8;
+        let found = false;
+        for (let testVh = currentFontVh; testVh >= minVh; testVh -= 1) {
+            element.style.fontSize = testVh + 'vh';
+            const scrollWidth = element.scrollWidth;
+            if (scrollWidth <= maxWidth || testVh === minVh) {
+                if (testVh !== currentFontVh) {
+                    element.style.fontSize = testVh + 'vh';
+                }
+                found = true;
+                break;
+            }
+        }
+        if (!found) element.style.fontSize = minVh + 'vh';
+    }
+    
+    function shrinkKhmerToFit() {
+        const element = document.getElementById('khmerWord');
+        if (!element || !element.parentElement) return;
+        const parentRect = document.getElementById('displayArea').getBoundingClientRect();
+        const maxWidth = parentRect.width * 0.85;
+        if (maxWidth <= 0) return;
+        let currentVh = currentKhmerFontSize;
+        let minVh = 5;
+        for (let testVh = currentVh; testVh >= minVh; testVh -= 1) {
+            element.style.fontSize = testVh + 'vh';
+            if (element.scrollWidth <= maxWidth || testVh === minVh) {
+                if (testVh !== currentVh) element.style.fontSize = testVh + 'vh';
+                break;
+            }
+        }
+    }
+    
+    let resizeDebounce;
+    window.addEventListener('resize', () => {
+        if (resizeDebounce) clearTimeout(resizeDebounce);
+        resizeDebounce = setTimeout(() => {
+            shrinkChineseToFit();
+            shrinkKhmerToFit();
+        }, 100);
+    });
     
     // ========== MODE, PAGINATION, AUTO-SCROLL ==========
     let appMode = 'random';
@@ -1422,8 +1481,8 @@
         if (khmerElement) { khmerElement.style.left = khmerX + '%'; khmerElement.style.top = khmerY + '%'; }
         applyLayerTransforms();
     }
-    function resetChinesePosition() { chineseX = 50; chineseY = 40; if (chineseElement) { chineseElement.style.left = '50%'; chineseElement.style.top = '40%'; } saveAllDragPositions(); }
-    function resetKhmerPosition() { khmerX = 50; khmerY = 70; if (khmerElement) { khmerElement.style.left = '50%'; khmerElement.style.top = '70%'; } saveAllDragPositions(); }
+    function resetChinesePosition() { chineseX = 50; chineseY = 40; if (chineseElement) { chineseElement.style.left = '50%'; chineseElement.style.top = '40%'; } saveAllDragPositions(); shrinkChineseToFit(); }
+    function resetKhmerPosition() { khmerX = 50; khmerY = 70; if (khmerElement) { khmerElement.style.left = '50%'; khmerElement.style.top = '70%'; } saveAllDragPositions(); shrinkKhmerToFit(); }
     function resetLayerOffsets() { topLayerX = 0; topLayerY = 0; bottomLayerX = 0; bottomLayerY = 0; applyLayerTransforms(); saveAllDragPositions(); }
     function showLayerChoiceModal() { return new Promise((resolve) => {
         const modalDiv = document.createElement('div');
@@ -1453,7 +1512,6 @@
         chineseElement.style.top = chineseY + '%';
         chineseElement.style.transform = 'translate(-50%, -50%)';
         chineseElement.style.cursor = 'grab';
-        // Speech on click/tap - uses separate click listener that works even after drag
         chineseElement.addEventListener('click', (e) => {
             e.stopPropagation();
             speakChineseFromMain();
@@ -1489,7 +1547,6 @@
         }
     }
     function onPressEnd() {
-        // FIX: detect simple tap (no drag, no long press) and speak
         if (longPressTimer !== null && !dragActive && !hasMovedDuringPress) {
             speakChineseFromMain();
         }
@@ -1561,6 +1618,8 @@
         window.removeEventListener('mouseup', onGlobalDragEnd);
         window.removeEventListener('touchmove', onGlobalDragMove);
         window.removeEventListener('touchend', onGlobalDragEnd);
+        shrinkChineseToFit();
+        shrinkKhmerToFit();
     }
     function initKhmerDrag() {
         khmerElement = document.getElementById('khmerWord');
@@ -1575,7 +1634,7 @@
             speakKhmerFromMain();
         });
         let khmerDragActive = false, khmerStartMouseX, khmerStartMouseY, khmerStartLeft, khmerStartTop;
-        let khmerMoved = false;  // track movement to detect tap
+        let khmerMoved = false;
         const onStart = (e) => {
             e.preventDefault(); e.stopPropagation();
             khmerDragActive = true; khmerMoved = false;
@@ -1602,15 +1661,13 @@
             const onEnd = () => {
                 khmerDragActive = false;
                 khmerElement.style.cursor = 'grab';
-                if (!khmerMoved) {
-                    // tap detected: speak Khmer
-                    speakKhmerFromMain();
-                }
+                if (!khmerMoved) { speakKhmerFromMain(); }
                 saveAllDragPositions();
                 window.removeEventListener('mousemove', onMove);
                 window.removeEventListener('mouseup', onEnd);
                 window.removeEventListener('touchmove', onMove);
                 window.removeEventListener('touchend', onEnd);
+                shrinkKhmerToFit();
             };
             window.addEventListener('mousemove', onMove);
             window.addEventListener('mouseup', onEnd);
@@ -1756,6 +1813,8 @@
         document.getElementById('khmerWord').innerText = item.khmer;
         document.querySelectorAll('.vocab-item').forEach((d, i) => d.classList.toggle('active', i === sidebarFocusIdx));
         applyStyles();
+        shrinkKhmerToFit();
+        shrinkChineseToFit();
     }
     function applySidebarStyles() {
         document.querySelectorAll('.side-zh').forEach(el => { el.style.fontFamily = document.getElementById('sZhFont').value; el.style.color = document.getElementById('sZhColor').value; el.style.fontSize = document.getElementById('sZhSize').value+'rem'; });
@@ -1769,6 +1828,8 @@
         document.getElementById('kmRepVal').innerText = document.getElementById('kmReps').value;
         applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles();
         saveAllData();
+        shrinkKhmerToFit();
+        shrinkChineseToFit();
     }
     function toggleAuto() { autoActive = !autoActive; const btn = document.getElementById('autoBtn'); btn.classList.toggle('active', autoActive); btn.classList.toggle('off', !autoActive); btn.innerText = autoActive ? "AUTO: ON" : "AUTO: OFF"; if(autoActive) pickRandom(); else { clearTimeout(autoTimer); killAllSpeech(); } }
     function startAutoCycle() { clearTimeout(autoTimer); autoTimer = setTimeout(() => { if(autoActive) pickRandom(); }, parseInt(document.getElementById('autoDelay').value)*1000); }
@@ -1995,11 +2056,10 @@
             else if (e.code === 'ArrowUp') { e.preventDefault(); moveSidebarFocus(-1); }
         });
         if(vocabList.length) updateDisplay();
-        setTimeout(() => { loadAllDragPositions(); }, 100);
+        setTimeout(() => { loadAllDragPositions(); shrinkChineseToFit(); shrinkKhmerToFit(); }, 100);
     };
     function moveSidebarFocus(delta) { if (!sidebarIndices.length) return; let newFocus = sidebarFocusIdx + delta; if (newFocus < 0) newFocus = sidebarIndices.length - 1; if (newFocus >= sidebarIndices.length) newFocus = 0; sidebarFocusIdx = newFocus; updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); }
     window.historyPrev = historyPrev; window.historyNext = historyNext; window.moveSidebarFocus = moveSidebarFocus; window.toggleAuto = toggleAuto; window.toggleSidebar = toggleSidebar; window.switchTab = switchTab; window.toggleMenu = toggleMenu; window.pickRandom = pickRandom; window.loadWordByMode = loadWordByMode;
 </script>
 </body>
 </html>
-```
