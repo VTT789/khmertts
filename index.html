@@ -976,7 +976,7 @@
                                 <input type="color" id="pinyinColor" value="#f97316">
                                 <div id="pinyinBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyPinyinStyles()">B</div>
                             </div>
-                            <div class="size-row"><label>Size (px)</label><input type="range" id="pinyinSizePx" min="8" max="28" value="14"><span id="pinyinSizeVal">14px</span></div>
+                            <div class="size-row"><label>Size (px)</label><input type="range" id="pinyinSizePx" min="15" max="90" value="14"><span id="pinyinSizeVal">14px</span></div>
                             <div class="size-row"><label>Spacing (px)</label><input type="range" id="pinyinSpacing" min="0" max="51" value="12"><span id="pinyinSpacingVal">12px</span></div>
                         </div>
                         <div style="border-top: 1px solid var(--border); margin: 12px 0 8px 0; padding-top: 8px;">
@@ -1002,7 +1002,7 @@
                                     <input type="color" id="bottomCharColor" value="#3b82f6">
                                     <div id="bottomBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyBottomStyles()">B</div>
                                 </div>
-                                <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" min="8" max="28" value="14"><span id="bottomSizeVal">14px</span></div>
+                                <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" min="15" max="90" value="14"><span id="bottomSizeVal">14px</span></div>
                             </div>
                         </div>
                     </div>
@@ -1489,6 +1489,10 @@
         }
     }
     function onPressEnd() {
+        // FIX: detect simple tap (no drag, no long press) and speak
+        if (longPressTimer !== null && !dragActive && !hasMovedDuringPress) {
+            speakChineseFromMain();
+        }
         if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
         window.removeEventListener('mousemove', onPressMove);
         window.removeEventListener('touchmove', onPressMove);
@@ -1571,9 +1575,10 @@
             speakKhmerFromMain();
         });
         let khmerDragActive = false, khmerStartMouseX, khmerStartMouseY, khmerStartLeft, khmerStartTop;
+        let khmerMoved = false;  // track movement to detect tap
         const onStart = (e) => {
             e.preventDefault(); e.stopPropagation();
-            khmerDragActive = true;
+            khmerDragActive = true; khmerMoved = false;
             const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
             const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
             khmerStartMouseX = clientX; khmerStartMouseY = clientY;
@@ -1584,6 +1589,7 @@
                 const cx = e2.clientX ?? (e2.touches ? e2.touches[0].clientX : 0);
                 const cy = e2.clientY ?? (e2.touches ? e2.touches[0].clientY : 0);
                 const dx = cx - khmerStartMouseX, dy = cy - khmerStartMouseY;
+                if (!khmerMoved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) khmerMoved = true;
                 const canvasRect = canvas.getBoundingClientRect();
                 let originalPxX = (khmerStartLeft / 100) * canvasRect.width;
                 let originalPxY = (khmerStartTop / 100) * canvasRect.height;
@@ -1596,6 +1602,10 @@
             const onEnd = () => {
                 khmerDragActive = false;
                 khmerElement.style.cursor = 'grab';
+                if (!khmerMoved) {
+                    // tap detected: speak Khmer
+                    speakKhmerFromMain();
+                }
                 saveAllDragPositions();
                 window.removeEventListener('mousemove', onMove);
                 window.removeEventListener('mouseup', onEnd);
@@ -1992,3 +2002,4 @@
 </script>
 </body>
 </html>
+```
