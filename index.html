@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Vocab Master Pro | Drag + Zoom + TTS Fix</title>
+    <title>Vocab Master Pro | Random + Normal | Default Fonts & Draggable Menu</title>
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
     <style>
         /* ========== CUSTOM WEB FONTS ========== */
@@ -392,7 +392,6 @@
 
         .display-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; pointer-events: auto; background: inherit; gap: 2rem; overflow: visible; }
         
-        /* Chinese Word Container - NO WRAP */
         .chinese-word {
             position: absolute;
             display: flex;
@@ -412,16 +411,7 @@
             touch-action: none;
         }
         .chinese-word:active { cursor: grabbing; }
-
-        .char-block {
-            display: inline-flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            white-space: nowrap;
-        }
-
+        .char-block { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; white-space: nowrap; }
         .pinyin-top {
             font-size: 0.35em;
             color: #f97316;
@@ -435,7 +425,6 @@
             transition: none;
         }
         body.night-mode .pinyin-top { color: #fbbf24; }
-
         .chinese-main {
             font-weight: 700;
             color: white;
@@ -444,7 +433,6 @@
             font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui;
             text-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
-
         .chinese-bottom {
             font-size: 0.35em;
             font-weight: 500;
@@ -456,8 +444,6 @@
             transition: none;
         }
         body.night-mode .chinese-bottom { color: #60a5fa; }
-
-        /* Khmer Text */
         .khmer-text {
             position: absolute;
             cursor: grab;
@@ -492,7 +478,7 @@
         .sidebar.hidden { width: 0 !important; min-width: 0 !important; border: none; transform: translateX(100%); overflow: hidden; }
         .sidebar .sidebar-close-btn {
             position: absolute;
-            top: -15px;
+            top: -8px;
             left: -15px;
             width: 30px;
             height: 30px;
@@ -514,6 +500,72 @@
             transform: scale(1.05);
             background: var(--danger);
         }
+        .sidebar-mode-buttons {
+            display: flex;
+            gap: 8px;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            background: inherit;
+            align-items: center;
+        }
+        .mode-icon-btn {
+            flex: 1;
+            background: var(--tab-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+        }
+        .mode-icon-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .search-icon-btn {
+            background: var(--tab-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            width: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .search-icon-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+        .pagination-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            margin-top: 4px;
+        }
+        .pagination-btn {
+            background: var(--tab-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .pagination-info {
+            font-size: 0.7rem;
+            align-self: center;
+        }
+        .sidebar-controls-hidden {
+            display: none !important;
+        }
         .resizer { transition: opacity 0.3s, background 0.2s; background: #cbd5e1; }
         .resizer.hidden { width: 0 !important; opacity: 0; pointer-events: none; }
 
@@ -532,6 +584,18 @@
         }
         .vocab-item.active { border: 2px solid var(--accent); background: #eff6ff; }
         body.night-mode .vocab-item.active { background: #1e3a8a; }
+        .side-number {
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: var(--text-secondary);
+            margin-right: 8px;
+            min-width: 32px;
+        }
+        .word-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
         .side-zh { font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis; }
         .side-km { font-size: 0.85rem; opacity: 0.8; white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis; }
         .select-main-btn { background: #e2e8f0; border: none; border-radius: 20px; padding: 4px 12px; font-size: 0.65rem; font-weight: bold; cursor: pointer; margin-left: 8px; transition: all 0.2s; }
@@ -564,30 +628,43 @@
             box-shadow: 0 25px 50px rgba(0,0,0,0.3);
             animation: fadeInUp 0.2s ease;
         }
-        .file-source-card h3 {
-            margin: 0 0 18px 0;
-            font-size: 1.5rem;
-            font-weight: 700;
+        .search-popup {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 20px;
+            width: 340px;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
         }
-        .source-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .source-btn {
-            background: #eef2ff;
-            border: none;
-            padding: 12px;
+        .search-popup input {
+            width: 100%;
+            padding: 10px;
             border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s;
+            border: 1px solid var(--border);
+            font-size: 1rem;
+            margin-bottom: 16px;
+            background: var(--input-bg);
+            color: var(--text-primary);
         }
-        .source-btn:hover {
-            background: #d9e2ff;
-            transform: scale(0.98);
+        .search-results {
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+        }
+        .search-result-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .search-result-item:hover {
+            background: var(--accent);
+            color: white;
+        }
+        .close-search {
+            margin-top: 12px;
+            background: #475569;
         }
         .url-input-area {
             margin: 12px 0;
@@ -703,7 +780,6 @@
             border-color: var(--accent);
         }
 
-        /* Modal overlay for layer selection */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -764,7 +840,6 @@
             to { opacity: 1; transform: scale(1); }
         }
 
-        /* Section hide/show */
         .section-header {
             display: flex;
             justify-content: space-between;
@@ -784,12 +859,6 @@
             border-radius: 20px;
             transition: all 0.2s;
         }
-        .toggle-section-btn:hover {
-            background: rgba(0,0,0,0.1);
-        }
-        .section-content {
-            transition: all 0.2s;
-        }
         .section-content.hidden {
             display: none;
         }
@@ -799,7 +868,7 @@
             .chinese-word { gap: 4px 8px; padding: 8px 12px; }
             .pinyin-top, .chinese-bottom { font-size: 0.3em; }
             .khmer-text { font-size: 22px; padding: 8px 12px; }
-            .sidebar .sidebar-close-btn { top: -12px; left: -12px; width: 26px; height: 26px; font-size: 16px; }
+            .sidebar .sidebar-close-btn { top: -8px; left: -12px; width: 26px; height: 26px; font-size: 16px; }
             .choice-modal { min-width: 280px; padding: 20px; }
         }
     </style>
@@ -829,7 +898,7 @@
                 </div>
                 
                 <div class="nav-row">
-                    <button class="btn-main btn-accent" onclick="pickRandom()">RANDOM (Space)</button>
+                    <button id="modeToggleBtn" class="btn-main btn-accent" onclick="toggleAppMode()">RANDOM (Space)</button>
                     <button id="autoBtn" class="btn-main btn-toggle off" onclick="toggleAuto()">AUTO: OFF</button>
                 </div>
 
@@ -849,7 +918,7 @@
                             <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
                             <option value="'Pinyin'">FZPY01 Pinyin</option>
                             <option value="'HanZhen Wide Standard'">HanZhen Wide Standard</option>
-                            <option value="'Founder Shaoer'">Founder Shaoer</option>
+                            <option value="'Founder Shaoer'" selected>Founder Shaoer</option>
                             <option value="'Hanyi Changyi'">Hanyi Changyi</option>
                             <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
                             <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
@@ -878,11 +947,13 @@
 
                 <div id="sideControls" class="control-group">
                     <button id="sidebarToggleBtn" class="btn-main btn-accent" style="margin-bottom:10px; width:100%;" onclick="toggleSidebar()">HIDE SIDEBAR</button>
-                    <div class="side-style-grid"><label>ZH</label><select id="sZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette</option><option value="'XHeiPinyin'">X Hei</option><option value="'Cream Pudding Pinyin'">Cream Pudding</option><option value="'Pinyin'">FZPY01</option></select><input type="color" id="sZhColor" value="#000000"></div>
-                    <div class="side-style-grid"><label>KM</label><select id="sKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option><option value="'KHROSAPSRA'">Rosapsra</option><option value="'KHMithSalaPali'">MithSalaPali</option></select><input type="color" id="sKmColor" value="#475569"></div>
-                    <div class="size-row"><label>ZH Side Size</label><input type="range" id="sZhSize" min="0.5" max="4" step="0.1" value="1.1"></div>
-                    <div class="size-row"><label>KM Side Size</label><input type="range" id="sKmSize" min="0.5" max="4" step="0.1" value="0.9"></div>
-                    <div class="size-row"><label>📋 Vocab Spacing</label><input type="range" id="sVocabSpacing" min="0" max="30" step="1" value="8"><span id="vocabSpacingVal">8px</span></div>
+                    <div id="sidebarControlsContainer">
+                        <div class="side-style-grid"><label>ZH</label><select id="sZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette</option><option value="'XHeiPinyin'">X Hei</option><option value="'Cream Pudding Pinyin'">Cream Pudding</option><option value="'Pinyin'">FZPY01</option></select><input type="color" id="sZhColor" value="#000000"></div>
+                        <div class="side-style-grid"><label>KM</label><select id="sKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option><option value="'KHROSAPSRA'">Rosapsra</option><option value="'KHMithSalaPali'">MithSalaPali</option></select><input type="color" id="sKmColor" value="#475569"></div>
+                        <div class="size-row"><label>ZH Side Size</label><input type="range" id="sZhSize" min="0.5" max="4" step="0.1" value="1.1"></div>
+                        <div class="size-row"><label>KM Side Size</label><input type="range" id="sKmSize" min="0.5" max="4" step="0.1" value="0.9"></div>
+                        <div class="size-row"><label>📋 Vocab Spacing</label><input type="range" id="sVocabSpacing" min="0" max="30" step="1" value="8"><span id="vocabSpacingVal">8px</span></div>
+                    </div>
                 </div>
 
                 <div id="pinyinControls" class="control-group">
@@ -899,14 +970,14 @@
                                     <option value="'BaguettePinyin'">Baguette</option>
                                     <option value="'XHeiPinyin'">X Hei</option>
                                     <option value="'Pinyin'">FZPY01</option>
+                                    <option value="'Founder Shaoer'" selected>Founder Shaoer</option>
                                 </select>
                                 <input type="color" id="pinyinColor" value="#f97316">
                                 <div id="pinyinBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyPinyinStyles()">B</div>
                             </div>
-                            <div class="size-row"><label>Size (px)</label><input type="range" id="pinyinSizePx" min="8" max="60" value="14"><span id="pinyinSizeVal">14px</span></div>
+                            <div class="size-row"><label>Size (px)</label><input type="range" id="pinyinSizePx" min="8" max="28" value="14"><span id="pinyinSizeVal">14px</span></div>
                             <div class="size-row"><label>Spacing (px)</label><input type="range" id="pinyinSpacing" min="0" max="51" value="12"><span id="pinyinSpacingVal">12px</span></div>
                         </div>
-                        
                         <div style="border-top: 1px solid var(--border); margin: 12px 0 8px 0; padding-top: 8px;">
                             <div class="section-header">
                                 <span class="section-title">🔷 Bottom Small Character</span>
@@ -930,7 +1001,7 @@
                                     <input type="color" id="bottomCharColor" value="#3b82f6">
                                     <div id="bottomBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyBottomStyles()">B</div>
                                 </div>
-                                <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" min="8" max="60" value="14"><span id="bottomSizeVal">14px</span></div>
+                                <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" min="8" max="28" value="14"><span id="bottomSizeVal">14px</span></div>
                             </div>
                         </div>
                     </div>
@@ -947,6 +1018,12 @@
     <div class="resizer" id="dragResizer" style="width:12px; cursor:col-resize; background:#e2e8f0; z-index:10;"></div>
     <div class="sidebar" id="rightSide">
         <button class="sidebar-close-btn" id="sidebarCloseBtn">✕</button>
+        <div class="sidebar-mode-buttons">
+            <button id="modeRandomBtn" class="mode-icon-btn active">🎲 RANDOM</button>
+            <button id="modeNormalBtn" class="mode-icon-btn">📋 NORMAL</button>
+            <button id="searchBtn" class="search-icon-btn" title="Search vocabulary">🔍</button>
+        </div>
+        <div id="paginationContainer" style="display: none;"></div>
         <div class="vocab-list" id="sidebarList"></div>
     </div>
 </div>
@@ -956,7 +1033,7 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script>
-    // ========== FIXED: TTS SPEECH ON CLICK/TAP ==========
+    // ========== FULL FEATURE: RANDOM/NORMAL + SEARCH + PAGE BUTTONS + AUTO-SCROLL + SIDEBAR CONTROLS HIDE ==========
     let currentAudio = null, speechQueue = [], isProcessingQueue = false;
     async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
     async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, parseInt(document.getElementById('speechInterval').value || 500))); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
@@ -964,25 +1041,8 @@
     function killAllSpeech() { if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; } speechQueue = []; isProcessingQueue = false; }
     function speakChineseEdge(text) { if (!text) return; const voice = document.getElementById('zhVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); enqueueSpeech(text, voice, rateFormatted); }
     function speakKhmerEdge(text) { if (!text) return; const voice = document.getElementById('kmVoiceSelect').value; enqueueSpeech(text, voice, null); }
-    
-    // Simple click-to-speech functions
-    function speakChineseFromMain() { 
-        const container = document.getElementById('chineseWord'); 
-        const plainText = container ? container.getAttribute('data-plain') || '' : ''; 
-        if(plainText) { 
-            killAllSpeech(); 
-            speakChineseEdge(plainText); 
-        } 
-    }
-    function speakKhmerFromMain() { 
-        const container = document.getElementById('khmerWord'); 
-        const plainText = container ? container.innerText : ''; 
-        if(plainText) { 
-            killAllSpeech(); 
-            speakKhmerEdge(plainText); 
-        } 
-    }
-    
+    function speakChineseFromMain() { const container = document.getElementById('chineseWord'); const plainText = container ? container.getAttribute('data-plain') || '' : ''; if(plainText) { killAllSpeech(); speakChineseEdge(plainText); } }
+    function speakKhmerFromMain() { const container = document.getElementById('khmerWord'); const plainText = container ? container.innerText : ''; if(plainText) { killAllSpeech(); speakKhmerEdge(plainText); } }
     async function speakAutoSequence(zhText, kmText) { killAllSpeech(); const interval = parseInt(document.getElementById('speechInterval').value); const zhReps = parseInt(document.getElementById('zhReps').value); const kmReps = parseInt(document.getElementById('kmReps').value); const zhVoice = document.getElementById('zhVoiceSelect').value; const kmVoice = document.getElementById('kmVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); for(let i=0; i<zhReps; i++) { await callEdgeTTS(zhText, zhVoice, rateFormatted); if(i < zhReps-1) await new Promise(r => setTimeout(r, interval)); } if(kmText && kmText.trim()) { for(let j=0; j<kmReps; j++) { await callEdgeTTS(kmText, kmVoice, null); if(j < kmReps-1) await new Promise(r => setTimeout(r, interval)); } } if(autoActive) startAutoCycle(); }
     
     const tripleHtmlCache = new Map();
@@ -1020,7 +1080,6 @@
         applyLayerTransforms();
         applyTextVisibility();
     }
-    
     function applyTextVisibility() {
         const container = document.getElementById('chineseWord');
         if (!container) return;
@@ -1031,7 +1090,6 @@
     }
     
     let currentChineseFontSize = 42;
-    
     function applyChineseMainStyle() {
         const container = document.getElementById('chineseWord');
         if (!container) return;
@@ -1047,39 +1105,31 @@
         });
         document.getElementById('mZhSizeVal').innerText = currentChineseFontSize + 'vh';
     }
-    
     function setChineseFontSize(newSize) {
-        const container = document.getElementById('chineseWord');
-        if (!container) return;
         newSize = Math.max(10, Math.min(150, newSize));
         currentChineseFontSize = newSize;
-        container.style.fontSize = currentChineseFontSize + 'vh';
+        document.getElementById('chineseWord').style.fontSize = currentChineseFontSize + 'vh';
         document.getElementById('mZhSize').value = currentChineseFontSize;
         document.getElementById('mZhSizeVal').innerText = currentChineseFontSize + 'vh';
         saveAllData();
     }
-    
     function applyPinyinStyles() {
         const pinyinFont = document.getElementById('pinyinFont').value;
         const pinyinColor = document.getElementById('pinyinColor').value;
         const isPinyinBold = document.getElementById('pinyinBold').classList.contains('active');
         const pinyinSize = document.getElementById('pinyinSizePx').value;
         const pinyinSpacing = document.getElementById('pinyinSpacing').value;
-        
         document.querySelectorAll('.pinyin-top').forEach(el => {
             if(pinyinFont !== 'inherit') el.style.fontFamily = pinyinFont;
             el.style.color = pinyinColor;
             el.style.fontWeight = isPinyinBold ? 'bold' : 'normal';
             el.style.fontSize = pinyinSize + 'px';
         });
-        document.querySelectorAll('.chinese-word').forEach(container => {
-            container.style.gap = `8px ${pinyinSpacing}px`;
-        });
+        document.querySelectorAll('.chinese-word').forEach(container => container.style.gap = `8px ${pinyinSpacing}px`);
         document.getElementById('pinyinSizeVal').innerText = pinyinSize + 'px';
         document.getElementById('pinyinSpacingVal').innerText = pinyinSpacing + 'px';
         saveAllData();
     }
-    
     function applyBottomStyles() {
         const container = document.getElementById('chineseWord');
         if (!container) return;
@@ -1087,7 +1137,6 @@
         const bottomColor = document.getElementById('bottomCharColor').value;
         const isBottomBold = document.getElementById('bottomBold').classList.contains('active');
         const bottomSize = document.getElementById('bottomSizePx').value;
-        
         container.querySelectorAll('.chinese-bottom').forEach(el => {
             el.style.fontFamily = bottomFont;
             el.style.color = bottomColor;
@@ -1097,9 +1146,7 @@
         document.getElementById('bottomSizeVal').innerText = bottomSize + 'px';
         saveAllData();
     }
-    
     let currentKhmerFontSize = 18;
-    
     function setKhmerFontSize(newSize) {
         const el = document.getElementById('khmerWord');
         if (!el) return;
@@ -1110,184 +1157,282 @@
         document.getElementById('mKmSizeVal').innerText = currentKhmerFontSize + 'vh';
         saveAllData();
     }
-    
     function updateKhmerDisplay(text) {
         const container = document.getElementById('khmerWord');
-        if (container) {
-            container.innerText = text;
-            setKhmerFontSize(currentKhmerFontSize);
+        if (container) { container.innerText = text; setKhmerFontSize(currentKhmerFontSize); }
+    }
+    
+    // ========== MODE, PAGINATION, AUTO-SCROLL ==========
+    let appMode = 'random';
+    let normalCurrentIdx = 0;
+    let normalCurrentPage = 0;
+    const ITEMS_PER_PAGE = 40;
+    function getNormalPageForIndex(idx) { return Math.floor(idx / ITEMS_PER_PAGE); }
+    
+    function scrollToActiveSidebarItem() {
+        setTimeout(() => {
+            const activeItem = document.querySelector('.vocab-item.active');
+            if (activeItem) {
+                activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 50);
+    }
+    
+    function renderNormalSidebar() {
+        if (!vocabList.length) return;
+        const start = normalCurrentPage * ITEMS_PER_PAGE;
+        const end = Math.min(start + ITEMS_PER_PAGE, vocabList.length);
+        const indices = [];
+        for (let i = start; i < end; i++) indices.push(i);
+        sidebarIndices = indices;
+        let focusPos = indices.indexOf(normalCurrentIdx);
+        if (focusPos === -1 && indices.length) {
+            normalCurrentIdx = indices[0];
+            focusPos = 0;
+        }
+        sidebarFocusIdx = focusPos >= 0 ? focusPos : 0;
+        renderSidebarUI();
+        updateDisplay();
+        const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]];
+        if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer);
+        updatePaginationControls();
+        scrollToActiveSidebarItem();
+    }
+    
+    function updatePaginationControls() {
+        const container = document.getElementById('paginationContainer');
+        if (!container) return;
+        if (appMode === 'normal' && vocabList.length > ITEMS_PER_PAGE) {
+            const totalPages = Math.ceil(vocabList.length / ITEMS_PER_PAGE);
+            container.style.display = 'flex';
+            container.innerHTML = `
+                <div class="pagination-bar">
+                    <button id="prevPageBtn" class="pagination-btn">◀ Prev</button>
+                    <span class="pagination-info">Page ${normalCurrentPage+1} / ${totalPages}</span>
+                    <button id="nextPageBtn" class="pagination-btn">Next ▶</button>
+                </div>
+            `;
+            document.getElementById('prevPageBtn')?.addEventListener('click', () => {
+                if (normalCurrentPage > 0) {
+                    normalCurrentPage--;
+                    normalCurrentIdx = normalCurrentPage * ITEMS_PER_PAGE;
+                    renderNormalSidebar();
+                }
+            });
+            document.getElementById('nextPageBtn')?.addEventListener('click', () => {
+                if (normalCurrentPage + 1 < totalPages) {
+                    normalCurrentPage++;
+                    normalCurrentIdx = normalCurrentPage * ITEMS_PER_PAGE;
+                    renderNormalSidebar();
+                }
+            });
+        } else {
+            container.style.display = 'none';
+            container.innerHTML = '';
         }
     }
     
-    // ========== ELEMENT‑SPECIFIC ZOOM ==========
-    function attachZoomToElement(element, type) {
-        if (!element) return;
-        element.addEventListener('wheel', (e) => {
-            if (e.ctrlKey) {
-                e.preventDefault();
-                const delta = e.deltaY > 0 ? -1 : 1;
-                if (type === 'chinese') {
-                    setChineseFontSize(currentChineseFontSize + delta);
-                } else {
-                    setKhmerFontSize(currentKhmerFontSize + delta);
-                }
-            }
-        }, { passive: false });
-        
-        let initialDistance = 0;
-        let initialSize = 0;
-        let pinchActive = false;
-        
-        const onTouchStart = (e) => {
-            if (e.touches.length === 2) {
-                e.preventDefault();
-                const dx = e.touches[0].clientX - e.touches[1].clientX;
-                const dy = e.touches[0].clientY - e.touches[1].clientY;
-                initialDistance = Math.hypot(dx, dy);
-                initialSize = (type === 'chinese') ? currentChineseFontSize : currentKhmerFontSize;
-                pinchActive = true;
-            }
-        };
-        
-        const onTouchMove = (e) => {
-            if (pinchActive && e.touches.length === 2) {
-                e.preventDefault();
-                const dx = e.touches[0].clientX - e.touches[1].clientX;
-                const dy = e.touches[0].clientY - e.touches[1].clientY;
-                const newDistance = Math.hypot(dx, dy);
-                if (initialDistance > 0) {
-                    const scale = newDistance / initialDistance;
-                    let newSize = initialSize * scale;
-                    if (type === 'chinese') {
-                        setChineseFontSize(Math.round(newSize));
-                    } else {
-                        setKhmerFontSize(Math.round(newSize));
-                    }
-                }
-            }
-        };
-        
-        const onTouchEnd = (e) => {
-            pinchActive = false;
-            initialDistance = 0;
-        };
-        
-        element.addEventListener('touchstart', onTouchStart, { passive: false });
-        element.addEventListener('touchmove', onTouchMove, { passive: false });
-        element.addEventListener('touchend', onTouchEnd);
-        element.addEventListener('touchcancel', onTouchEnd);
+    function renderRandomSidebar(idx) {
+        const item = vocabList[idx];
+        const key = item.chinese.substring(0, 1);
+        let related = vocabList.map((it, i) => ({...it, oIdx: i})).filter(it => it.oIdx !== idx && it.chinese.includes(key)).slice(0, 50);
+        sidebarIndices = [idx, ...related.map(i => i.oIdx)];
+        sidebarFocusIdx = 0;
+        renderSidebarUI();
+        updateDisplay();
+        speakAutoSequence(item.chinese, item.khmer);
+        scrollToActiveSidebarItem();
     }
     
-    // ========== DRAG SYSTEM ==========
-    let chineseElement = null;
-    let khmerElement = null;
-    let chineseX = 50, chineseY = 40;
-    let khmerX = 50, khmerY = 70;
-    let topLayerX = 0, topLayerY = 0;
-    let bottomLayerX = 0, bottomLayerY = 0;
-    let dragActive = false;
-    let dragTarget = null;
-    let dragType = null;
-    let dragStartMouseX = 0, dragStartMouseY = 0;
-    let dragStartLeft = 0, dragStartTop = 0;
-    let dragStartTopX = 0, dragStartTopY = 0;
-    let dragStartBottomX = 0, dragStartBottomY = 0;
-    let longPressTimer = null;
-    let pressStartX = 0, pressStartY = 0;
-    let hasMovedDuringPress = false;
-    const canvas = document.getElementById('displayArea');
+    function loadWordByMode(idx) {
+        killAllSpeech();
+        if (!vocabList[idx]) return;
+        if (appMode === 'random') {
+            history = history.slice(0, historyIndex + 1);
+            history.push(idx);
+            historyIndex = history.length - 1;
+            renderRandomSidebar(idx);
+        } else {
+            normalCurrentIdx = idx;
+            const newPage = getNormalPageForIndex(idx);
+            if (newPage !== normalCurrentPage) {
+                normalCurrentPage = newPage;
+                renderNormalSidebar();
+            } else {
+                let focusPos = sidebarIndices.indexOf(idx);
+                if (focusPos !== -1) {
+                    sidebarFocusIdx = focusPos;
+                    renderSidebarUI();
+                    updateDisplay();
+                    const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]];
+                    if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer);
+                    scrollToActiveSidebarItem();
+                } else {
+                    renderNormalSidebar();
+                }
+            }
+        }
+    }
     
+    function goPrevNormal() {
+        if (!vocabList.length) return;
+        let newIdx = normalCurrentIdx - 1;
+        if (newIdx < 0) newIdx = 0;
+        loadWordByMode(newIdx);
+    }
+    function goNextNormal() {
+        if (!vocabList.length) return;
+        let newIdx = normalCurrentIdx + 1;
+        if (newIdx >= vocabList.length) newIdx = vocabList.length - 1;
+        loadWordByMode(newIdx);
+    }
+    function pickRandom() {
+        if (appMode === 'normal') goNextNormal();
+        else if (vocabList.length) {
+            const idx = Math.floor(Math.random() * vocabList.length);
+            history = history.slice(0, historyIndex + 1);
+            history.push(idx);
+            historyIndex = history.length - 1;
+            loadWordByMode(idx);
+        }
+    }
+    function historyPrev() {
+        if (appMode === 'random') { if (historyIndex > 0) { historyIndex--; loadWordByMode(history[historyIndex]); } }
+        else goPrevNormal();
+    }
+    function historyNext() {
+        if (appMode === 'random') { if (historyIndex < history.length - 1) { historyIndex++; loadWordByMode(history[historyIndex]); } }
+        else goNextNormal();
+    }
+    
+    function toggleAppMode() {
+        if (appMode === 'random') {
+            appMode = 'normal';
+            document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)';
+            document.getElementById('modeRandomBtn').classList.remove('active');
+            document.getElementById('modeNormalBtn').classList.add('active');
+            const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || '';
+            let idx = vocabList.findIndex(v => v.chinese === currentChinese);
+            if (idx === -1 && vocabList.length) idx = 0;
+            normalCurrentIdx = idx;
+            normalCurrentPage = getNormalPageForIndex(idx);
+            renderNormalSidebar();
+        } else {
+            appMode = 'random';
+            document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)';
+            document.getElementById('modeNormalBtn').classList.remove('active');
+            document.getElementById('modeRandomBtn').classList.add('active');
+            const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || '';
+            let idx = vocabList.findIndex(v => v.chinese === currentChinese);
+            if (idx === -1 && vocabList.length) idx = 0;
+            if (idx !== -1) {
+                history = [idx];
+                historyIndex = 0;
+                renderRandomSidebar(idx);
+            } else if (vocabList.length) pickRandom();
+        }
+        saveAllData();
+    }
+    
+    function showSearchPopup() {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal-overlay';
+        modalDiv.innerHTML = `
+            <div class="search-popup">
+                <h3>🔍 Search Vocabulary</h3>
+                <input type="text" id="searchInput" placeholder="Type Chinese or Khmer...">
+                <div id="searchResults" class="search-results"></div>
+                <button class="close-search close-modal">Cancel</button>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+        const input = modalDiv.querySelector('#searchInput');
+        const resultsDiv = modalDiv.querySelector('#searchResults');
+        const closeBtn = modalDiv.querySelector('.close-search');
+        const updateResults = () => {
+            const term = input.value.trim().toLowerCase();
+            if (!term) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">Type to search...</div>'; return; }
+            const filtered = vocabList.map((item, idx) => ({ idx, ...item })).filter(item => item.chinese.toLowerCase().includes(term) || item.khmer.toLowerCase().includes(term));
+            if (filtered.length === 0) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">No matches</div>'; return; }
+            resultsDiv.innerHTML = filtered.map(item => `<div class="search-result-item" data-idx="${item.idx}"><strong>${item.chinese}</strong> — ${item.khmer}</div>`).join('');
+            resultsDiv.querySelectorAll('.search-result-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const idx = parseInt(el.dataset.idx);
+                    if (appMode === 'normal') {
+                        normalCurrentIdx = idx;
+                        normalCurrentPage = getNormalPageForIndex(idx);
+                        renderNormalSidebar();
+                    } else {
+                        history = [idx];
+                        historyIndex = 0;
+                        renderRandomSidebar(idx);
+                    }
+                    modalDiv.remove();
+                });
+            });
+        };
+        input.addEventListener('input', updateResults);
+        closeBtn.onclick = () => modalDiv.remove();
+        modalDiv.onclick = (e) => { if (e.target === modalDiv) modalDiv.remove(); };
+        updateResults();
+    }
+    
+    // ========== DRAG & ZOOM ==========
+    let chineseElement = null, khmerElement = null;
+    let chineseX = 50, chineseY = 40, khmerX = 50, khmerY = 70;
+    let topLayerX = 0, topLayerY = 0, bottomLayerX = 0, bottomLayerY = 0;
+    let dragActive = false, dragTarget = null, dragType = null;
+    let dragStartMouseX = 0, dragStartMouseY = 0, dragStartLeft = 0, dragStartTop = 0;
+    let dragStartTopX = 0, dragStartTopY = 0, dragStartBottomX = 0, dragStartBottomY = 0;
+    let longPressTimer = null, pressStartX = 0, pressStartY = 0, hasMovedDuringPress = false;
+    const canvas = document.getElementById('displayArea');
     function applyLayerTransforms() {
         if (!chineseElement) return;
-        chineseElement.querySelectorAll('.pinyin-top').forEach(el => {
-            el.style.transform = `translate(${topLayerX}px, ${topLayerY}px)`;
-        });
-        chineseElement.querySelectorAll('.chinese-bottom').forEach(el => {
-            el.style.transform = `translate(${bottomLayerX}px, ${bottomLayerY}px)`;
-        });
+        chineseElement.querySelectorAll('.pinyin-top').forEach(el => el.style.transform = `translate(${topLayerX}px, ${topLayerY}px)`);
+        chineseElement.querySelectorAll('.chinese-bottom').forEach(el => el.style.transform = `translate(${bottomLayerX}px, ${bottomLayerY}px)`);
     }
-    
     function saveAllDragPositions() {
-        localStorage.setItem('drag_chineseX', chineseX);
-        localStorage.setItem('drag_chineseY', chineseY);
-        localStorage.setItem('drag_khmerX', khmerX);
-        localStorage.setItem('drag_khmerY', khmerY);
-        localStorage.setItem('drag_topX', topLayerX);
-        localStorage.setItem('drag_topY', topLayerY);
-        localStorage.setItem('drag_bottomX', bottomLayerX);
-        localStorage.setItem('drag_bottomY', bottomLayerY);
+        localStorage.setItem('drag_chineseX', chineseX); localStorage.setItem('drag_chineseY', chineseY);
+        localStorage.setItem('drag_khmerX', khmerX); localStorage.setItem('drag_khmerY', khmerY);
+        localStorage.setItem('drag_topX', topLayerX); localStorage.setItem('drag_topY', topLayerY);
+        localStorage.setItem('drag_bottomX', bottomLayerX); localStorage.setItem('drag_bottomY', bottomLayerY);
     }
-    
     function loadAllDragPositions() {
-        const sx = localStorage.getItem('drag_chineseX');
-        const sy = localStorage.getItem('drag_chineseY');
-        const kx = localStorage.getItem('drag_khmerX');
-        const ky = localStorage.getItem('drag_khmerY');
-        const tx = localStorage.getItem('drag_topX');
-        const ty = localStorage.getItem('drag_topY');
-        const bx = localStorage.getItem('drag_bottomX');
-        const by = localStorage.getItem('drag_bottomY');
-        if (sx !== null) chineseX = parseFloat(sx);
-        if (sy !== null) chineseY = parseFloat(sy);
-        if (kx !== null) khmerX = parseFloat(kx);
-        if (ky !== null) khmerY = parseFloat(ky);
-        if (tx !== null) topLayerX = parseFloat(tx);
-        if (ty !== null) topLayerY = parseFloat(ty);
-        if (bx !== null) bottomLayerX = parseFloat(bx);
-        if (by !== null) bottomLayerY = parseFloat(by);
-        
-        if (chineseElement) {
-            chineseElement.style.left = chineseX + '%';
-            chineseElement.style.top = chineseY + '%';
-        }
-        if (khmerElement) {
-            khmerElement.style.left = khmerX + '%';
-            khmerElement.style.top = khmerY + '%';
-        }
+        chineseX = parseFloat(localStorage.getItem('drag_chineseX') ?? 50);
+        chineseY = parseFloat(localStorage.getItem('drag_chineseY') ?? 40);
+        khmerX = parseFloat(localStorage.getItem('drag_khmerX') ?? 50);
+        khmerY = parseFloat(localStorage.getItem('drag_khmerY') ?? 70);
+        topLayerX = parseFloat(localStorage.getItem('drag_topX') ?? 0);
+        topLayerY = parseFloat(localStorage.getItem('drag_topY') ?? 0);
+        bottomLayerX = parseFloat(localStorage.getItem('drag_bottomX') ?? 0);
+        bottomLayerY = parseFloat(localStorage.getItem('drag_bottomY') ?? 0);
+        if (chineseElement) { chineseElement.style.left = chineseX + '%'; chineseElement.style.top = chineseY + '%'; }
+        if (khmerElement) { khmerElement.style.left = khmerX + '%'; khmerElement.style.top = khmerY + '%'; }
         applyLayerTransforms();
     }
-    
     function resetChinesePosition() { chineseX = 50; chineseY = 40; if (chineseElement) { chineseElement.style.left = '50%'; chineseElement.style.top = '40%'; } saveAllDragPositions(); }
     function resetKhmerPosition() { khmerX = 50; khmerY = 70; if (khmerElement) { khmerElement.style.left = '50%'; khmerElement.style.top = '70%'; } saveAllDragPositions(); }
     function resetLayerOffsets() { topLayerX = 0; topLayerY = 0; bottomLayerX = 0; bottomLayerY = 0; applyLayerTransforms(); saveAllDragPositions(); }
-    
-    function showLayerChoiceModal() {
-        return new Promise((resolve) => {
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.innerHTML = `
-                <div class="choice-modal">
-                    <h3>✧ CHOOSE ACTION ✧</h3>
-                    <div class="choice-buttons">
-                        <button class="choice-top">🔶 Drag Top Pinyin</button>
-                        <button class="choice-bottom">🔷 Drag Bottom Char</button>
-                        <div class="choice-reset-group">
-                            <button class="choice-reset-chinese">⟳ Reset Chinese Pos</button>
-                            <button class="choice-reset-khmer">⟳ Reset Khmer Pos</button>
-                            <button class="choice-reset-layers">⟳ Reset Layer Offsets</button>
-                        </div>
-                        <button class="choice-cancel">✕ Cancel</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            const topBtn = modal.querySelector('.choice-top');
-            const bottomBtn = modal.querySelector('.choice-bottom');
-            const resetChineseBtn = modal.querySelector('.choice-reset-chinese');
-            const resetKhmerBtn = modal.querySelector('.choice-reset-khmer');
-            const resetLayersBtn = modal.querySelector('.choice-reset-layers');
-            const cancelBtn = modal.querySelector('.choice-cancel');
-            const cleanup = (result) => { modal.remove(); resolve(result); };
-            topBtn.onclick = () => cleanup('top');
-            bottomBtn.onclick = () => cleanup('bottom');
-            resetChineseBtn.onclick = () => { resetChinesePosition(); cleanup(null); };
-            resetKhmerBtn.onclick = () => { resetKhmerPosition(); cleanup(null); };
-            resetLayersBtn.onclick = () => { resetLayerOffsets(); cleanup(null); };
-            cancelBtn.onclick = () => cleanup(null);
-            modal.onclick = (e) => { if (e.target === modal) cleanup(null); };
-        });
-    }
-    
+    function showLayerChoiceModal() { return new Promise((resolve) => {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal-overlay';
+        modalDiv.innerHTML = `<div class="choice-modal"><h3>✧ CHOOSE ACTION ✧</h3><div class="choice-buttons"><button class="choice-top">🔶 Drag Top Pinyin</button><button class="choice-bottom">🔷 Drag Bottom Char</button><div class="choice-reset-group"><button class="choice-reset-chinese">⟳ Reset Chinese Pos</button><button class="choice-reset-khmer">⟳ Reset Khmer Pos</button><button class="choice-reset-layers">⟳ Reset Layer Offsets</button></div><button class="choice-cancel">✕ Cancel</button></div></div>`;
+        document.body.appendChild(modalDiv);
+        const topBtn = modalDiv.querySelector('.choice-top');
+        const bottomBtn = modalDiv.querySelector('.choice-bottom');
+        const resetChineseBtn = modalDiv.querySelector('.choice-reset-chinese');
+        const resetKhmerBtn = modalDiv.querySelector('.choice-reset-khmer');
+        const resetLayersBtn = modalDiv.querySelector('.choice-reset-layers');
+        const cancelBtn = modalDiv.querySelector('.choice-cancel');
+        const cleanup = (result) => { modalDiv.remove(); resolve(result); };
+        topBtn.onclick = () => cleanup('top');
+        bottomBtn.onclick = () => cleanup('bottom');
+        resetChineseBtn.onclick = () => { resetChinesePosition(); cleanup(null); };
+        resetKhmerBtn.onclick = () => { resetKhmerPosition(); cleanup(null); };
+        resetLayersBtn.onclick = () => { resetLayerOffsets(); cleanup(null); };
+        cancelBtn.onclick = () => cleanup(null);
+        modalDiv.onclick = (e) => { if (e.target === modalDiv) cleanup(null); };
+    }); }
     function initChineseDrag() {
         chineseElement = document.getElementById('chineseWord');
         if (!chineseElement) return;
@@ -1296,24 +1441,15 @@
         chineseElement.style.top = chineseY + '%';
         chineseElement.style.transform = 'translate(-50%, -50%)';
         chineseElement.style.cursor = 'grab';
+        chineseElement.addEventListener('click', (e) => { e.stopPropagation(); speakChineseFromMain(); });
         chineseElement.addEventListener('mousedown', onPointerDown);
         chineseElement.addEventListener('touchstart', onPointerDown, { passive: false });
-        
-        // SPEECH: click/tap on Chinese word
-        chineseElement.addEventListener('click', (e) => {
-            e.stopPropagation();
-            speakChineseFromMain();
-        });
     }
-    
     function onPointerDown(e) {
-        e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault(); e.stopPropagation();
         const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
         const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
-        pressStartX = clientX;
-        pressStartY = clientY;
-        hasMovedDuringPress = false;
+        pressStartX = clientX; pressStartY = clientY; hasMovedDuringPress = false;
         longPressTimer = setTimeout(async () => {
             if (!hasMovedDuringPress && !dragActive) {
                 const choice = await showLayerChoiceModal();
@@ -1327,19 +1463,15 @@
         window.addEventListener('mouseup', onPressEnd);
         window.addEventListener('touchend', onPressEnd);
     }
-    
     function onPressMove(e) {
         const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
         const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
-        const dx = Math.abs(clientX - pressStartX);
-        const dy = Math.abs(clientY - pressStartY);
-        if (dx > 8 || dy > 8) {
+        if (Math.abs(clientX - pressStartX) > 8 || Math.abs(clientY - pressStartY) > 8) {
             hasMovedDuringPress = true;
             if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
             startWordDrag(pressStartX, pressStartY);
         }
     }
-    
     function onPressEnd() {
         if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
         window.removeEventListener('mousemove', onPressMove);
@@ -1347,35 +1479,23 @@
         window.removeEventListener('mouseup', onPressEnd);
         window.removeEventListener('touchend', onPressEnd);
     }
-    
     function startWordDrag(startX, startY) {
         if (dragActive) return;
-        dragActive = true;
-        dragType = 'word';
-        dragStartMouseX = startX;
-        dragStartMouseY = startY;
-        dragStartLeft = chineseX;
-        dragStartTop = chineseY;
+        dragActive = true; dragType = 'word';
+        dragStartMouseX = startX; dragStartMouseY = startY;
+        dragStartLeft = chineseX; dragStartTop = chineseY;
         chineseElement.style.cursor = 'grabbing';
         window.addEventListener('mousemove', onGlobalDragMove);
         window.addEventListener('mouseup', onGlobalDragEnd);
         window.addEventListener('touchmove', onGlobalDragMove, { passive: false });
         window.addEventListener('touchend', onGlobalDragEnd);
     }
-    
     function startLayerDrag(layerType, startX, startY) {
         if (dragActive) return;
-        dragActive = true;
-        dragType = layerType;
-        dragStartMouseX = startX;
-        dragStartMouseY = startY;
-        if (layerType === 'top') {
-            dragStartTopX = topLayerX;
-            dragStartTopY = topLayerY;
-        } else {
-            dragStartBottomX = bottomLayerX;
-            dragStartBottomY = bottomLayerY;
-        }
+        dragActive = true; dragType = layerType;
+        dragStartMouseX = startX; dragStartMouseY = startY;
+        if (layerType === 'top') { dragStartTopX = topLayerX; dragStartTopY = topLayerY; }
+        else { dragStartBottomX = bottomLayerX; dragStartBottomY = bottomLayerY; }
         chineseElement.style.opacity = '0.8';
         chineseElement.style.cursor = 'grabbing';
         window.addEventListener('mousemove', onGlobalDragMove);
@@ -1383,15 +1503,12 @@
         window.addEventListener('touchmove', onGlobalDragMove, { passive: false });
         window.addEventListener('touchend', onGlobalDragEnd);
     }
-    
     function onGlobalDragMove(e) {
-        if (!dragActive) return;
-        e.preventDefault();
+        if (!dragActive) return; e.preventDefault();
         const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
         const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
         const deltaX = clientX - dragStartMouseX;
         const deltaY = clientY - dragStartMouseY;
-        
         if (dragType === 'word') {
             const canvasRect = canvas.getBoundingClientRect();
             let originalPxX = (dragStartLeft / 100) * canvasRect.width;
@@ -1403,37 +1520,28 @@
             chineseElement.style.left = chineseX + '%';
             chineseElement.style.top = chineseY + '%';
         } else if (dragType === 'top') {
-            topLayerX = dragStartTopX + deltaX;
-            topLayerY = dragStartTopY + deltaY;
+            topLayerX = dragStartTopX + deltaX; topLayerY = dragStartTopY + deltaY;
             topLayerX = Math.max(-800, Math.min(800, topLayerX));
             topLayerY = Math.max(-800, Math.min(800, topLayerY));
             applyLayerTransforms();
         } else if (dragType === 'bottom') {
-            bottomLayerX = dragStartBottomX + deltaX;
-            bottomLayerY = dragStartBottomY + deltaY;
+            bottomLayerX = dragStartBottomX + deltaX; bottomLayerY = dragStartBottomY + deltaY;
             bottomLayerX = Math.max(-800, Math.min(800, bottomLayerX));
             bottomLayerY = Math.max(-800, Math.min(800, bottomLayerY));
             applyLayerTransforms();
         }
     }
-    
     function onGlobalDragEnd() {
         if (!dragActive) return;
-        if (dragType === 'word') {
-            chineseElement.style.cursor = 'grab';
-        } else {
-            chineseElement.style.opacity = '';
-            chineseElement.style.cursor = 'grab';
-        }
+        if (dragType === 'word') chineseElement.style.cursor = 'grab';
+        else chineseElement.style.opacity = '';
         saveAllDragPositions();
-        dragActive = false;
-        dragType = null;
+        dragActive = false; dragType = null;
         window.removeEventListener('mousemove', onGlobalDragMove);
         window.removeEventListener('mouseup', onGlobalDragEnd);
         window.removeEventListener('touchmove', onGlobalDragMove);
         window.removeEventListener('touchend', onGlobalDragEnd);
     }
-    
     function initKhmerDrag() {
         khmerElement = document.getElementById('khmerWord');
         if (!khmerElement) return;
@@ -1442,38 +1550,25 @@
         khmerElement.style.top = khmerY + '%';
         khmerElement.style.transform = 'translate(-50%, -50%)';
         khmerElement.style.cursor = 'grab';
-        
-        // SPEECH: click/tap on Khmer word
-        khmerElement.addEventListener('click', (e) => {
-            e.stopPropagation();
-            speakKhmerFromMain();
-        });
-        
-        let khmerDragActive = false;
-        let khmerStartMouseX, khmerStartMouseY, khmerStartLeft, khmerStartTop;
+        khmerElement.addEventListener('click', (e) => { e.stopPropagation(); speakKhmerFromMain(); });
+        let khmerDragActive = false, khmerStartMouseX, khmerStartMouseY, khmerStartLeft, khmerStartTop;
         const onStart = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+            e.preventDefault(); e.stopPropagation();
             khmerDragActive = true;
             const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
             const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
-            khmerStartMouseX = clientX;
-            khmerStartMouseY = clientY;
-            khmerStartLeft = khmerX;
-            khmerStartTop = khmerY;
+            khmerStartMouseX = clientX; khmerStartMouseY = clientY;
+            khmerStartLeft = khmerX; khmerStartTop = khmerY;
             khmerElement.style.cursor = 'grabbing';
             const onMove = (e2) => {
-                if (!khmerDragActive) return;
-                e2.preventDefault();
+                if (!khmerDragActive) return; e2.preventDefault();
                 const cx = e2.clientX ?? (e2.touches ? e2.touches[0].clientX : 0);
                 const cy = e2.clientY ?? (e2.touches ? e2.touches[0].clientY : 0);
-                const dx = cx - khmerStartMouseX;
-                const dy = cy - khmerStartMouseY;
+                const dx = cx - khmerStartMouseX, dy = cy - khmerStartMouseY;
                 const canvasRect = canvas.getBoundingClientRect();
                 let originalPxX = (khmerStartLeft / 100) * canvasRect.width;
                 let originalPxY = (khmerStartTop / 100) * canvasRect.height;
-                let newPxX = originalPxX + dx;
-                let newPxY = originalPxY + dy;
+                let newPxX = originalPxX + dx, newPxY = originalPxY + dy;
                 khmerX = (newPxX / canvasRect.width) * 100;
                 khmerY = (newPxY / canvasRect.height) * 100;
                 khmerElement.style.left = khmerX + '%';
@@ -1496,36 +1591,60 @@
         khmerElement.addEventListener('mousedown', onStart);
         khmerElement.addEventListener('touchstart', onStart, { passive: false });
     }
-    
-    // ========== APP LOGIC ==========
-    let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = true;
-    
-    function loadWord(idx) {
-        killAllSpeech();
-        if (!vocabList[idx]) return;
-        const item = vocabList[idx];
-        const key = item.chinese.substring(0, 1);
-        let related = vocabList.map((it, i) => ({...it, oIdx: i})).filter(it => it.oIdx !== idx && it.chinese.includes(key)).slice(0, 50);
-        sidebarIndices = [idx, ...related.map(i => i.oIdx)];
-        sidebarFocusIdx = 0;
-        renderSidebarUI();
-        updateDisplay();
-        speakAutoSequence(item.chinese, item.khmer);
+    function attachZoomToElement(element, type) {
+        if (!element) return;
+        element.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? -1 : 1;
+                if (type === 'chinese') setChineseFontSize(currentChineseFontSize + delta);
+                else setKhmerFontSize(currentKhmerFontSize + delta);
+            }
+        }, { passive: false });
+        let initialDistance = 0, initialSize = 0, pinchActive = false;
+        const onTouchStart = (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                initialDistance = Math.hypot(dx, dy);
+                initialSize = (type === 'chinese') ? currentChineseFontSize : currentKhmerFontSize;
+                pinchActive = true;
+            }
+        };
+        const onTouchMove = (e) => {
+            if (pinchActive && e.touches.length === 2) {
+                e.preventDefault();
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const newDistance = Math.hypot(dx, dy);
+                if (initialDistance > 0) {
+                    const scale = newDistance / initialDistance;
+                    let newSize = initialSize * scale;
+                    if (type === 'chinese') setChineseFontSize(Math.round(newSize));
+                    else setKhmerFontSize(Math.round(newSize));
+                }
+            }
+        };
+        const onTouchEnd = () => { pinchActive = false; initialDistance = 0; };
+        element.addEventListener('touchstart', onTouchStart, { passive: false });
+        element.addEventListener('touchmove', onTouchMove, { passive: false });
+        element.addEventListener('touchend', onTouchEnd);
+        element.addEventListener('touchcancel', onTouchEnd);
     }
-    window.loadWord = loadWord;
     
+    // ========== SIDEBAR UI & CONTROLS ==========
+    let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = true;
     function saveAllData() {
-        const settings = { mZhSize: currentChineseFontSize, mKmSize: currentKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, interval: document.getElementById('speechInterval').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: document.getElementById('bottomSizePx').value, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible };
+        const settings = { mZhSize: currentChineseFontSize, mKmSize: currentKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, interval: document.getElementById('speechInterval').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: document.getElementById('bottomSizePx').value, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage };
         localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList));
         localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings));
     }
-    
     function loadSettings() {
         const savedSettings = localStorage.getItem('vocabMaster_Settings');
         if(savedSettings) {
             const s = JSON.parse(savedSettings);
-            currentChineseFontSize = s.mZhSize || 42;
-            currentKhmerFontSize = s.mKmSize || 18;
+            currentChineseFontSize = s.mZhSize || 42; currentKhmerFontSize = s.mKmSize || 18;
             document.getElementById('mZhSize').value = currentChineseFontSize;
             document.getElementById('mKmSize').value = currentKhmerFontSize;
             document.getElementById('mZhColor').value = s.mZhColor || "#000000";
@@ -1557,116 +1676,288 @@
             if(s.bottomSizePx) document.getElementById('bottomSizePx').value = s.bottomSizePx;
             if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible;
             if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible;
+            if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; document.getElementById('modeNormalBtn').classList.add('active'); document.getElementById('modeRandomBtn').classList.remove('active'); }
+            else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; document.getElementById('modeRandomBtn').classList.add('active'); document.getElementById('modeNormalBtn').classList.remove('active'); }
+            normalCurrentIdx = s.normalCurrentIdx || 0;
+            normalCurrentPage = s.normalCurrentPage || 0;
         }
-        applyChineseMainStyle();
-        applyPinyinStyles();
-        applyBottomStyles();
-        applyTextVisibility();
+        applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility();
         setKhmerFontSize(currentKhmerFontSize);
     }
     
-    function toggleSidebar() { sidebarVisible = !sidebarVisible; document.getElementById('rightSide').classList.toggle('hidden', !sidebarVisible); document.getElementById('dragResizer').classList.toggle('hidden', !sidebarVisible); document.getElementById('sidebarToggleBtn').innerText = sidebarVisible ? "HIDE SIDEBAR" : "SHOW SIDEBAR"; saveAllData(); }
-    
-    function applyRateDisplay() { const rateSlider = document.getElementById('zhRateSlider'); const rateSpan = document.getElementById('zhRateVal'); if(rateSlider && rateSpan) rateSpan.innerText = (parseInt(rateSlider.value) > 0 ? '+' : '') + rateSlider.value + '%'; saveAllData(); }
-    function applySidebarStyles() { document.querySelectorAll('.side-zh').forEach(el => { el.style.fontFamily = document.getElementById('sZhFont').value; el.style.color = document.getElementById('sZhColor').value; el.style.fontSize = document.getElementById('sZhSize').value+'rem'; }); document.querySelectorAll('.side-km').forEach(el => { el.style.fontFamily = document.getElementById('sKmFont').value; el.style.color = document.getElementById('sKmColor').value; el.style.fontSize = document.getElementById('sKmSize').value+'rem'; }); }
-    function applyStyles() { 
+    function renderSidebarUI() {
+        const list = document.getElementById('sidebarList');
+        list.innerHTML = '';
+        for (let sIdx = 0; sIdx < sidebarIndices.length; sIdx++) {
+            const idx = sidebarIndices[sIdx];
+            const div = document.createElement('div');
+            div.className = `vocab-item ${sIdx === sidebarFocusIdx ? 'active' : ''}`;
+            const rowNumber = idx + 1;
+            div.innerHTML = `
+                <div class="side-number">#${rowNumber}</div>
+                <div class="word-wrapper" onclick="selectSidebarItem(${sIdx}); event.stopPropagation()">
+                    <span class="side-zh">${vocabList[idx].chinese}</span>
+                    <span class="side-km">${vocabList[idx].khmer}</span>
+                </div>
+                <button class="select-main-btn" onclick="loadWordByMode(${idx}); event.stopPropagation()">MAIN</button>
+            `;
+            list.appendChild(div);
+        }
+        applySidebarStyles();
+        if (appMode === 'normal') updatePaginationControls();
+        scrollToActiveSidebarItem();
+    }
+    function selectSidebarItem(sideIdx) {
+        sidebarFocusIdx = sideIdx;
+        const idx = sidebarIndices[sideIdx];
+        if (appMode === 'normal') normalCurrentIdx = idx;
+        updateDisplay();
+        const item = vocabList[idx];
+        if (item) speakAutoSequence(item.chinese, item.khmer);
+        saveAllData();
+        scrollToActiveSidebarItem();
+    }
+    window.selectSidebarItem = selectSidebarItem;
+    function updateDisplay() {
+        if (!sidebarIndices.length) return;
+        const idx = sidebarIndices[sidebarFocusIdx];
+        if (idx === undefined) return;
+        const item = vocabList[idx];
+        updateChineseDisplay(item.chinese);
+        document.getElementById('khmerWord').innerText = item.khmer;
+        document.querySelectorAll('.vocab-item').forEach((d, i) => d.classList.toggle('active', i === sidebarFocusIdx));
+        applyStyles();
+    }
+    function applySidebarStyles() {
+        document.querySelectorAll('.side-zh').forEach(el => { el.style.fontFamily = document.getElementById('sZhFont').value; el.style.color = document.getElementById('sZhColor').value; el.style.fontSize = document.getElementById('sZhSize').value+'rem'; });
+        document.querySelectorAll('.side-km').forEach(el => { el.style.fontFamily = document.getElementById('sKmFont').value; el.style.color = document.getElementById('sKmColor').value; el.style.fontSize = document.getElementById('sKmSize').value+'rem'; });
+    }
+    function applyStyles() {
         const mKm = document.getElementById('khmerWord'); if(mKm){ mKm.style.fontFamily = document.getElementById('mKmFont').value; mKm.style.color = document.getElementById('mKmColor').value; mKm.style.fontWeight = document.getElementById('mKmBold').classList.contains('active') ? 'bold' : 'normal'; }
         applySidebarStyles();
         document.getElementById('delayVal').innerText = document.getElementById('autoDelay').value+'s';
         document.getElementById('repVal').innerText = document.getElementById('zhReps').value;
         document.getElementById('kmRepVal').innerText = document.getElementById('kmReps').value;
-        applyChineseMainStyle();
-        applyPinyinStyles();
-        applyBottomStyles();
+        applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles();
         saveAllData();
     }
-    function pickRandom() { if (!vocabList.length) return; const idx = Math.floor(Math.random() * vocabList.length); history = history.slice(0, historyIndex + 1); history.push(idx); historyIndex = history.length - 1; loadWord(idx); }
-    function historyPrev() { if (historyIndex > 0) { historyIndex--; loadWord(history[historyIndex]); } }
-    function historyNext() { if (historyIndex < history.length - 1) { historyIndex++; loadWord(history[historyIndex]); } }
-    function updateDisplay() { if (!vocabList[sidebarIndices[sidebarFocusIdx]]) return; const item = vocabList[sidebarIndices[sidebarFocusIdx]]; updateChineseDisplay(item.chinese); updateKhmerDisplay(item.khmer); document.querySelectorAll('.vocab-item').forEach((d, i) => d.classList.toggle('active', i === sidebarFocusIdx)); applyStyles(); }
-    function renderSidebarUI() { const list = document.getElementById('sidebarList'); list.innerHTML = ''; for (let sIdx = 0; sIdx < sidebarIndices.length; sIdx++) { const idx = sidebarIndices[sIdx]; const div = document.createElement('div'); div.className = `vocab-item ${sIdx === sidebarFocusIdx ? 'active' : ''}`; div.innerHTML = `<div class="word-wrapper" onclick="sidebarFocusIdx=${sIdx};updateDisplay();speakAutoSequence(vocabList[${idx}].chinese, vocabList[${idx}].khmer); event.stopPropagation()"><span class="side-zh">${vocabList[idx].chinese}</span><span class="side-km">${vocabList[idx].khmer}</span></div><button class="select-main-btn" onclick="loadWord(${idx}); event.stopPropagation()">MAIN</button>`; list.appendChild(div); } applySidebarStyles(); }
-    function moveSidebarFocus(delta) { if (!sidebarIndices.length) return; let newFocus = sidebarFocusIdx + delta; if (newFocus < 0) newFocus = sidebarIndices.length - 1; if (newFocus >= sidebarIndices.length) newFocus = 0; sidebarFocusIdx = newFocus; updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); }
     function toggleAuto() { autoActive = !autoActive; const btn = document.getElementById('autoBtn'); btn.classList.toggle('active', autoActive); btn.classList.toggle('off', !autoActive); btn.innerText = autoActive ? "AUTO: ON" : "AUTO: OFF"; if(autoActive) pickRandom(); else { clearTimeout(autoTimer); killAllSpeech(); } }
     function startAutoCycle() { clearTimeout(autoTimer); autoTimer = setTimeout(() => { if(autoActive) pickRandom(); }, parseInt(document.getElementById('autoDelay').value)*1000); }
-    function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
-    function switchTab(tab) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active'); document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab))); }
+    function toggleSidebar() {
+        sidebarVisible = !sidebarVisible;
+        document.getElementById('rightSide').classList.toggle('hidden', !sidebarVisible);
+        document.getElementById('dragResizer').classList.toggle('hidden', !sidebarVisible);
+        document.getElementById('sidebarToggleBtn').innerText = sidebarVisible ? "HIDE SIDEBAR" : "SHOW SIDEBAR";
+        const sidebarControlsDiv = document.getElementById('sidebarControlsContainer');
+        if (sidebarControlsDiv) {
+            if (!sidebarVisible) sidebarControlsDiv.classList.add('sidebar-controls-hidden');
+            else sidebarControlsDiv.classList.remove('sidebar-controls-hidden');
+        }
+        saveAllData();
+    }
+    function applyRateDisplay() { const rateSlider = document.getElementById('zhRateSlider'); const rateSpan = document.getElementById('zhRateVal'); if(rateSlider && rateSpan) rateSpan.innerText = (parseInt(rateSlider.value) > 0 ? '+' : '') + rateSlider.value + '%'; saveAllData(); }
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+        document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab)));
+    }
     function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
+    function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
+    
+    // ========== DRAGGABLE FLOATING MENU (click anywhere on background) ==========
+    let menuDragActive = false;
+    let menuStartX = 0, menuStartY = 0;
+    let menuTranslateX = 0, menuTranslateY = 0;
+    const floatingMenuDiv = document.getElementById('floatingMenu');
+    function onMenuMouseDown(e) {
+        // Prevent drag when clicking on interactive elements
+        const target = e.target;
+        if (target.closest('button') || target.closest('select') || target.closest('input') || target.closest('.toggle-section-btn') || target.closest('.drag-dark-toggle') || target.closest('.aba-icon-inline') || target.closest('.tab-btn') || target.closest('.vis-toggle-btn')) {
+            return;
+        }
+        e.preventDefault();
+        menuDragActive = true;
+        menuStartX = e.clientX - menuTranslateX;
+        menuStartY = e.clientY - menuTranslateY;
+        document.addEventListener('mousemove', onMenuMouseMove);
+        document.addEventListener('mouseup', onMenuMouseUp);
+    }
+    function onMenuMouseMove(e) {
+        if (!menuDragActive) return;
+        e.preventDefault();
+        menuTranslateX = e.clientX - menuStartX;
+        menuTranslateY = e.clientY - menuStartY;
+        floatingMenuDiv.style.transform = `translate3d(${menuTranslateX}px, ${menuTranslateY}px, 0)`;
+    }
+    function onMenuMouseUp() {
+        menuDragActive = false;
+        document.removeEventListener('mousemove', onMenuMouseMove);
+        document.removeEventListener('mouseup', onMenuMouseUp);
+        // Save position
+        posX = menuTranslateX;
+        posY = menuTranslateY;
+    }
+    floatingMenuDiv.addEventListener('mousedown', onMenuMouseDown);
+    floatingMenuDiv.addEventListener('touchstart', (e) => {
+        if (e.target.closest('button') || e.target.closest('select') || e.target.closest('input') || e.target.closest('.toggle-section-btn') || e.target.closest('.drag-dark-toggle') || e.target.closest('.aba-icon-inline') || e.target.closest('.tab-btn') || e.target.closest('.vis-toggle-btn')) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        menuDragActive = true;
+        menuStartX = touch.clientX - menuTranslateX;
+        menuStartY = touch.clientY - menuTranslateY;
+        document.addEventListener('touchmove', onMenuTouchMove);
+        document.addEventListener('touchend', onMenuTouchEnd);
+    }, { passive: false });
+    function onMenuTouchMove(e) {
+        if (!menuDragActive) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        menuTranslateX = touch.clientX - menuStartX;
+        menuTranslateY = touch.clientY - menuStartY;
+        floatingMenuDiv.style.transform = `translate3d(${menuTranslateX}px, ${menuTranslateY}px, 0)`;
+    }
+    function onMenuTouchEnd() {
+        menuDragActive = false;
+        document.removeEventListener('touchmove', onMenuTouchMove);
+        document.removeEventListener('touchend', onMenuTouchEnd);
+        posX = menuTranslateX;
+        posY = menuTranslateY;
+    }
+    let posX = 0, posY = 0;
     
     // ========== FILE LOADER ==========
     const modal = document.getElementById('fileSourceModal'), insertBtn = document.getElementById('insertDataBtn'), closeModalBtn = document.getElementById('closeModalBtn'), chooseLocalBtn = document.getElementById('chooseLocalBtn'), chooseUrlBtn = document.getElementById('chooseUrlBtn'), urlInputArea = document.getElementById('urlInputArea'), confirmUrlLoad = document.getElementById('confirmUrlLoad'), sheetUrlModal = document.getElementById('sheetUrlInputModal');
     function showModal() { modal.style.display = 'flex'; } function hideModal() { modal.style.display = 'none'; urlInputArea.style.display = 'none'; }
     insertBtn.onclick = showModal; closeModalBtn.onclick = hideModal; modal.onclick = (e) => { if(e.target === modal) hideModal(); };
     chooseLocalBtn.onclick = () => {
-        let hiddenFileInput = document.createElement('input');
-        hiddenFileInput.type = 'file';
-        hiddenFileInput.accept = '.xlsx, .xls, .xlsb';
-        hiddenFileInput.style.display = 'none';
+        let hiddenFileInput = document.createElement('input'); hiddenFileInput.type = 'file'; hiddenFileInput.accept = '.xlsx, .xls, .xlsb'; hiddenFileInput.style.display = 'none';
         hiddenFileInput.onchange = (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
+            const file = e.target.files[0]; if(!file) return;
             const reader = new FileReader();
             reader.onload = ev => {
                 const workbook = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
                 const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
                 vocabList = rows.map(r => ({ khmer: r[3]?.toString().trim() || "", chinese: r[4]?.toString().trim() || "" })).filter(i => i.khmer && i.chinese);
-                if(vocabList.length) { saveAllData(); pickRandom(); }
+                if(vocabList.length) { saveAllData(); if (appMode === 'random') { pickRandom(); } else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } }
                 hideModal();
             };
             reader.readAsArrayBuffer(file);
         };
-        document.body.appendChild(hiddenFileInput);
-        hiddenFileInput.click();
-        setTimeout(() => { if(hiddenFileInput) hiddenFileInput.remove(); }, 1000);
+        document.body.appendChild(hiddenFileInput); hiddenFileInput.click(); setTimeout(() => { if(hiddenFileInput) hiddenFileInput.remove(); }, 1000);
     };
     chooseUrlBtn.onclick = () => { urlInputArea.style.display = 'flex'; };
-    async function loadSheetFromModalUrl() { let urlOrId = sheetUrlModal.value.trim(); if(!urlOrId) return; let sheetId = ''; if(urlOrId.includes('spreadsheets/d/')) { const match = urlOrId.match(/\/d\/([a-zA-Z0-9_-]+)/); if(match) sheetId = match[1]; } else if(urlOrId.length > 20) sheetId = urlOrId; else { alert("Invalid Sheet ID"); return; } const apiUrl = `https://opensheet.elk.sh/${sheetId}/Sheet1`; try { const response = await fetch(apiUrl); if(!response.ok) throw new Error(); const data = await response.json(); if(!Array.isArray(data) || data.length===0) throw new Error(); const firstRow = data[0]; const columns = Object.keys(firstRow); let khmerCol = null, chineseCol = null; for(const col of columns) { const c = col.toLowerCase(); if(c.includes('khmer')||c.includes('km')) khmerCol = col; if(c.includes('chinese')||c.includes('zh')) chineseCol = col; } if(!khmerCol || !chineseCol) { const stringCols = []; for(const row of data.slice(0,3)) for(const [k,v] of Object.entries(row)) if(typeof v === 'string' && v.length>0 && !stringCols.includes(k)) stringCols.push(k); if(stringCols.length>=2) { khmerCol = khmerCol || stringCols[0]; chineseCol = chineseCol || stringCols[1]; } } if(!khmerCol || !chineseCol) throw new Error(); vocabList = data.map(row => ({ khmer: row[khmerCol]?.toString().trim() || "", chinese: row[chineseCol]?.toString().trim() || "" })).filter(v=>v.khmer && v.chinese); if(vocabList.length===0) throw new Error(); saveAllData(); pickRandom(); hideModal(); } catch(err) { alert("Sheet load error: "+err.message); } }
+    async function loadSheetFromModalUrl() { let urlOrId = sheetUrlModal.value.trim(); if(!urlOrId) return; let sheetId = ''; if(urlOrId.includes('spreadsheets/d/')) { const match = urlOrId.match(/\/d\/([a-zA-Z0-9_-]+)/); if(match) sheetId = match[1]; } else if(urlOrId.length > 20) sheetId = urlOrId; else { alert("Invalid Sheet ID"); return; } const apiUrl = `https://opensheet.elk.sh/${sheetId}/Sheet1`; try { const response = await fetch(apiUrl); if(!response.ok) throw new Error(); const data = await response.json(); if(!Array.isArray(data) || data.length===0) throw new Error(); const firstRow = data[0]; const columns = Object.keys(firstRow); let khmerCol = null, chineseCol = null; for(const col of columns) { const c = col.toLowerCase(); if(c.includes('khmer')||c.includes('km')) khmerCol = col; if(c.includes('chinese')||c.includes('zh')) chineseCol = col; } if(!khmerCol || !chineseCol) { const stringCols = []; for(const row of data.slice(0,3)) for(const [k,v] of Object.entries(row)) if(typeof v === 'string' && v.length>0 && !stringCols.includes(k)) stringCols.push(k); if(stringCols.length>=2) { khmerCol = khmerCol || stringCols[0]; chineseCol = chineseCol || stringCols[1]; } } if(!khmerCol || !chineseCol) throw new Error(); vocabList = data.map(row => ({ khmer: row[khmerCol]?.toString().trim() || "", chinese: row[chineseCol]?.toString().trim() || "" })).filter(v=>v.khmer && v.chinese); if(vocabList.length===0) throw new Error(); saveAllData(); if (appMode === 'random') { pickRandom(); } else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } hideModal(); } catch(err) { alert("Sheet load error: "+err.message); } }
     confirmUrlLoad.onclick = loadSheetFromModalUrl;
     
-    let posX=0,posY=0,initialX,initialY,activeDrag=false; const dragHandle=document.getElementById("dragHandle"), floatingMenu=document.getElementById("floatingMenu");
-    dragHandle.onmousedown=(e)=>{ if(e.target.classList?.contains('drag-dark-toggle')||e.target.closest('.aba-icon-inline')) return; activeDrag=true; initialX=e.clientX-posX; initialY=e.clientY-posY; };
-    document.addEventListener("mousemove",(e)=>{ if(activeDrag){ posX=e.clientX-initialX; posY=e.clientY-initialY; floatingMenu.style.transform=`translate3d(${posX}px,${posY}px,0)`; } });
-    document.addEventListener("mouseup",()=>activeDrag=false);
-    function initGearDrag() { applyStoredGearPosition(); const gearElem = document.getElementById('minimizedTrigger'); let gearDragActive = false, gearLeft = 20, gearTop = 20, dragOccurred = false, startX = 0, startY = 0; function onStart(e) { e.preventDefault(); e.stopPropagation(); gearDragActive = true; dragOccurred = false; const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); startX = cx - gearLeft; startY = cy - gearTop; } function onMove(e) { if (!gearDragActive) return; e.preventDefault(); const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); if (Math.abs(cx - (startX + gearLeft)) > 5 || Math.abs(cy - (startY + gearTop)) > 5) dragOccurred = true; let newLeft = cx - startX; let newTop = cy - startY; newLeft = Math.min(Math.max(5, newLeft), window.innerWidth - 65); newTop = Math.min(Math.max(5, newTop), window.innerHeight - 75); gearLeft = newLeft; gearTop = newTop; gearElem.style.left = newLeft + 'px'; gearElem.style.top = newTop + 'px'; } function onEnd() { if (!gearDragActive) return; gearDragActive = false; if (!dragOccurred) { const isMenuVisible = document.getElementById('floatingMenu').style.display !== 'none'; if (isMenuVisible) toggleMenu(true); else { toggleMenu(false); floatingMenu.style.transform = `translate3d(0px,0px,0)`; posX = 0; posY = 0; } } saveGearPosition(); } gearElem.addEventListener('mousedown', onStart); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); gearElem.addEventListener('touchstart', onStart, { passive: false }); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); }
-    function saveGearPosition() { const gearElem = document.getElementById('minimizedTrigger'); if (!gearElem) return; const left = gearElem.offsetLeft; const top = gearElem.offsetTop; if (!isNaN(left) && !isNaN(top)) { localStorage.setItem('gearPosLeft', left); localStorage.setItem('gearPosTop', top); } }
-    function applyStoredGearPosition() { const gearElem = document.getElementById('minimizedTrigger'); let left = parseFloat(localStorage.getItem('gearPosLeft')); let top = parseFloat(localStorage.getItem('gearPosTop')); if (isNaN(left)) left = window.innerWidth - 80; if (isNaN(top)) top = 30; left = Math.min(Math.max(5, left), window.innerWidth - 65); top = Math.min(Math.max(5, top), window.innerHeight - 75); gearElem.style.left = left + 'px'; gearElem.style.top = top + 'px'; }
+    let activeDragFlag = false; // for gear drag (unchanged)
+    const dragHandleElem = document.getElementById("dragHandle");
+    const floatingMenuElem = document.getElementById("floatingMenu");
+    dragHandleElem.onmousedown = (e) => {
+        if(e.target.classList?.contains('drag-dark-toggle')||e.target.closest('.aba-icon-inline')) return;
+        activeDragFlag = true;
+        initialX = e.clientX - posX;
+        initialY = e.clientY - posY;
+    };
+    document.addEventListener("mousemove", (e) => {
+        if(activeDragFlag){
+            posX = e.clientX - initialX;
+            posY = e.clientY - initialY;
+            floatingMenuElem.style.transform = `translate3d(${posX}px,${posY}px,0)`;
+            menuTranslateX = posX;
+            menuTranslateY = posY;
+        }
+    });
+    document.addEventListener("mouseup", () => activeDragFlag = false);
+    
+    let gearPosX = 0, gearPosY = 0, gearInitialX, gearInitialY, gearDragActive = false;
+    const gearElem = document.getElementById('minimizedTrigger');
+    function initGearDrag() {
+        applyStoredGearPosition();
+        let gearLeft = 20, gearTop = 20, dragOccurred = false, startX = 0, startY = 0;
+        function onStart(e) {
+            e.preventDefault(); e.stopPropagation();
+            gearDragActive = true; dragOccurred = false;
+            const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+            const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+            startX = cx - gearLeft; startY = cy - gearTop;
+        }
+        function onMove(e) {
+            if (!gearDragActive) return;
+            e.preventDefault();
+            const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+            const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+            if (Math.abs(cx - (startX + gearLeft)) > 5 || Math.abs(cy - (startY + gearTop)) > 5) dragOccurred = true;
+            let newLeft = cx - startX; let newTop = cy - startY;
+            newLeft = Math.min(Math.max(5, newLeft), window.innerWidth - 65);
+            newTop = Math.min(Math.max(5, newTop), window.innerHeight - 75);
+            gearLeft = newLeft; gearTop = newTop;
+            gearElem.style.left = newLeft + 'px'; gearElem.style.top = newTop + 'px';
+        }
+        function onEnd() {
+            if (!gearDragActive) return;
+            gearDragActive = false;
+            if (!dragOccurred) {
+                const isMenuVisible = document.getElementById('floatingMenu').style.display !== 'none';
+                if (isMenuVisible) toggleMenu(true);
+                else { toggleMenu(false); floatingMenuElem.style.transform = `translate3d(0px,0px,0)`; posX = 0; posY = 0; menuTranslateX = 0; menuTranslateY = 0; }
+            }
+            saveGearPosition();
+        }
+        gearElem.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+        gearElem.addEventListener('touchstart', onStart, { passive: false });
+        window.addEventListener('touchmove', onMove, { passive: false });
+        window.addEventListener('touchend', onEnd);
+    }
+    function saveGearPosition() {
+        if (!gearElem) return;
+        const left = gearElem.offsetLeft;
+        const top = gearElem.offsetTop;
+        if (!isNaN(left) && !isNaN(top)) { localStorage.setItem('gearPosLeft', left); localStorage.setItem('gearPosTop', top); }
+    }
+    function applyStoredGearPosition() {
+        let left = parseFloat(localStorage.getItem('gearPosLeft'));
+        let top = parseFloat(localStorage.getItem('gearPosTop'));
+        if (isNaN(left)) left = window.innerWidth - 80;
+        if (isNaN(top)) top = 30;
+        left = Math.min(Math.max(5, left), window.innerWidth - 65);
+        top = Math.min(Math.max(5, top), window.innerHeight - 75);
+        gearElem.style.left = left + 'px';
+        gearElem.style.top = top + 'px';
+    }
     function toggleNightMode(){ document.body.classList.toggle('night-mode'); localStorage.setItem('vocabMaster_NightMode',document.body.classList.contains('night-mode')); const btn = document.getElementById('dragDarkModeBtn'); if(btn) btn.innerHTML = document.body.classList.contains('night-mode') ? '☀️' : '🌙'; applyStyles(); renderSidebarUI(); }
     function initNightMode(){ if(localStorage.getItem('vocabMaster_NightMode')==='true') document.body.classList.add('night-mode'); const btn = document.getElementById('dragDarkModeBtn'); if(btn) btn.innerHTML = document.body.classList.contains('night-mode') ? '☀️' : '🌙'; }
     function setupQRPopup() { const overlay = document.getElementById('qrPopupOverlay'); const closeBtn = document.getElementById('qrCloseBtn'); const inlineIcon = document.getElementById('abaIconInline'); if (inlineIcon) inlineIcon.addEventListener('click', (e) => { e.stopPropagation(); overlay.style.display = 'flex'; }); if (closeBtn) closeBtn.addEventListener('click', () => overlay.style.display = 'none'); overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; }); }
     
     window.onload = () => {
-        loadSettings(); const savedList = localStorage.getItem('vocabMaster_List'); if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) pickRandom(); } initNightMode(); applyStyles(); initGearDrag(); setupQRPopup(); setupBackgroundClick(); initChineseDrag(); initKhmerDrag(); loadAllDragPositions();
-        
+        loadSettings(); const savedList = localStorage.getItem('vocabMaster_List'); if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) { if (appMode === 'random') pickRandom(); else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } } }
+        initNightMode(); applyStyles(); initGearDrag(); setupQRPopup(); setupBackgroundClick(); initChineseDrag(); initKhmerDrag(); loadAllDragPositions();
         attachZoomToElement(document.getElementById('chineseWord'), 'chinese');
         attachZoomToElement(document.getElementById('khmerWord'), 'khmer');
+        
+        if (!sidebarVisible) {
+            document.getElementById('sidebarControlsContainer')?.classList.add('sidebar-controls-hidden');
+        }
         
         const topSection = document.getElementById('topPinyinSection');
         const topToggleBtn = document.getElementById('toggleTopPinyinSectionBtn');
         const bottomSection = document.getElementById('bottomSection');
         const bottomToggleBtn = document.getElementById('toggleBottomSectionBtn');
-        
         const topHidden = localStorage.getItem('topPinyinSectionHidden') === 'true';
         const bottomHidden = localStorage.getItem('bottomSectionHidden') === 'true';
         if (topHidden) { topSection.classList.add('hidden'); topToggleBtn.innerText = '🙈'; topPinyinVisible = false; }
         if (bottomHidden) { bottomSection.classList.add('hidden'); bottomToggleBtn.innerText = '🙈'; bottomCharVisible = false; }
         applyTextVisibility();
-        
         topToggleBtn.addEventListener('click', () => {
-            topSection.classList.toggle('hidden');
-            const isHidden = topSection.classList.contains('hidden');
-            topToggleBtn.innerText = isHidden ? '🙈' : '👁️';
-            topPinyinVisible = !isHidden;
-            applyTextVisibility();
-            localStorage.setItem('topPinyinSectionHidden', isHidden);
-            saveAllData();
+            topSection.classList.toggle('hidden'); const isHidden = topSection.classList.contains('hidden');
+            topToggleBtn.innerText = isHidden ? '🙈' : '👁️'; topPinyinVisible = !isHidden;
+            applyTextVisibility(); localStorage.setItem('topPinyinSectionHidden', isHidden); saveAllData();
         });
         bottomToggleBtn.addEventListener('click', () => {
-            bottomSection.classList.toggle('hidden');
-            const isHidden = bottomSection.classList.contains('hidden');
-            bottomToggleBtn.innerText = isHidden ? '🙈' : '👁️';
-            bottomCharVisible = !isHidden;
-            applyTextVisibility();
-            localStorage.setItem('bottomSectionHidden', isHidden);
-            saveAllData();
+            bottomSection.classList.toggle('hidden'); const isHidden = bottomSection.classList.contains('hidden');
+            bottomToggleBtn.innerText = isHidden ? '🙈' : '👁️'; bottomCharVisible = !isHidden;
+            applyTextVisibility(); localStorage.setItem('bottomSectionHidden', isHidden); saveAllData();
         });
         
         document.getElementById('sVocabSpacing').addEventListener('input',function(){ const val = this.value; document.getElementById('vocabSpacingVal').innerText = val+'px'; document.body.style.setProperty('--vocab-spacing', val+'px'); saveAllData(); });
@@ -1687,11 +1978,21 @@
         document.getElementById('bottomCharColor').addEventListener('input', applyBottomStyles);
         document.getElementById('bottomSizePx').addEventListener('input', applyBottomStyles);
         document.getElementById('sidebarCloseBtn').addEventListener('click', () => { if (sidebarVisible) toggleSidebar(); });
-        window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); pickRandom(); } else if (e.code === 'ArrowLeft') { e.preventDefault(); historyPrev(); } else if (e.code === 'ArrowRight') { e.preventDefault(); historyNext(); } else if (e.code === 'ArrowDown') { e.preventDefault(); moveSidebarFocus(1); } else if (e.code === 'ArrowUp') { e.preventDefault(); moveSidebarFocus(-1); } });
+        document.getElementById('modeRandomBtn').addEventListener('click', () => { if (appMode !== 'random') toggleAppMode(); });
+        document.getElementById('modeNormalBtn').addEventListener('click', () => { if (appMode !== 'normal') toggleAppMode(); });
+        document.getElementById('searchBtn').addEventListener('click', () => showSearchPopup());
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') { e.preventDefault(); pickRandom(); }
+            else if (e.code === 'ArrowLeft') { e.preventDefault(); historyPrev(); }
+            else if (e.code === 'ArrowRight') { e.preventDefault(); historyNext(); }
+            else if (e.code === 'ArrowDown') { e.preventDefault(); moveSidebarFocus(1); }
+            else if (e.code === 'ArrowUp') { e.preventDefault(); moveSidebarFocus(-1); }
+        });
         if(vocabList.length) updateDisplay();
         setTimeout(() => { loadAllDragPositions(); }, 100);
     };
-    window.onresize = () => {};
+    function moveSidebarFocus(delta) { if (!sidebarIndices.length) return; let newFocus = sidebarFocusIdx + delta; if (newFocus < 0) newFocus = sidebarIndices.length - 1; if (newFocus >= sidebarIndices.length) newFocus = 0; sidebarFocusIdx = newFocus; updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); }
+    window.historyPrev = historyPrev; window.historyNext = historyNext; window.moveSidebarFocus = moveSidebarFocus; window.toggleAuto = toggleAuto; window.toggleSidebar = toggleSidebar; window.switchTab = switchTab; window.toggleMenu = toggleMenu; window.pickRandom = pickRandom; window.loadWordByMode = loadWordByMode;
 </script>
 </body>
 </html>
