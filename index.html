@@ -482,8 +482,8 @@
         .sidebar.hidden { width: 0 !important; min-width: 0 !important; border: none; transform: translateX(100%); overflow: hidden; }
         .sidebar .sidebar-close-btn {
             position: absolute;
-            top: -8px;
-            left: -15px;
+            top: 15px;
+            left: -22px;
             width: 30px;
             height: 30px;
             background: var(--accent);
@@ -872,7 +872,7 @@
             .chinese-word { gap: 4px 8px; padding: 8px 12px; }
             .pinyin-top, .chinese-bottom { font-size: 0.3em; }
             .khmer-text { font-size: 22px; padding: 8px 12px; }
-            .sidebar .sidebar-close-btn { top: -8px; left: -12px; width: 26px; height: 26px; font-size: 16px; }
+            .sidebar .sidebar-close-btn { top: 8px; left: -18px; width: 26px; height: 26px; font-size: 16px; }
             .choice-modal { min-width: 280px; padding: 20px; }
         }
     </style>
@@ -927,7 +927,7 @@
                             <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
                             <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
                             <option value="'SingKhmer'">SingKhmerForChinese</option>
-                        </select><input type="color" id="mZhColor" class="color-input" value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyChineseMainStyle(); shrinkChineseToFit()">B</div></div>
+                        </select><input type="color" id="mZhColor"  value="#000000"><div id="mZhBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyChineseMainStyle(); shrinkChineseToFit()">B</div></div>
                         <div class="size-row"><label>Main Char Size (vh)</label><input type="range" id="mZhSize" class="size-slider" min="10" max="150" value="42"><span id="mZhSizeVal">42vh</span></div>
                     </div>
                     <div class="style-grid"><label>KM</label><select id="mKmFont" class="font-select">
@@ -936,7 +936,7 @@
                         <option value="'KHROSAPSRA'">Rosapsra</option>
                         <option value="'KHMithSalaPali'">MithSalaPali</option>
                         <option value="'KHSAMADY'">Samady KS</option>
-                    </select><input type="color" id="mKmColor" class="color-input" value="#1e293b"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
+                    </select><input type="color" id="mKmColor" value="#000000"><div id="mKmBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyStyles()">B</div></div>
                     <div class="size-row"><label>KM Size (vh)</label><input type="range" id="mKmSize" class="size-slider" min="5" max="80" value="18"><span id="mKmSizeVal">18vh</span></div>
                 </div>
 
@@ -972,14 +972,14 @@
                                 <select id="pinyinFont" class="font-select">
                                     <option value="inherit">Default</option>
                                     <option value="'BaguettePinyin'">Baguette</option>
-                                    <option value="'XHeiPinyin'">X Hei</option>
+                                    <option value="'XHeiPinyin'" selected>X Hei</option>
                                     <option value="'Pinyin'">FZPY01</option>
-                                    <option value="'Founder Shaoer'" selected>Founder Shaoer</option>
+                                    <option value="'Founder Shaoer'">Founder Shaoer</option>
                                 </select>
-                                <input type="color" id="pinyinColor" value="#f97316">
+                                <input type="color" id="pinyinColor" value="#000000">
                                 <div id="pinyinBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyPinyinStyles()">B</div>
                             </div>
-                            <div class="size-row"><label>Size (px)</label><input type="range" id="pinyinSizePx" min="20" max="100" value="14"><span id="pinyinSizeVal">14px</span></div>
+                            <div class="size-row"><label>Size (px)</label><input type="range" id="pinyinSizePx" min="10" max="100" value="20"><span id="pinyinSizeVal">20px</span></div>
                             <div class="size-row"><label>Spacing (px)</label><input type="range" id="pinyinSpacing" min="0" max="51" value="12"><span id="pinyinSpacingVal">12px</span></div>
                         </div>
                         <div style="border-top: 1px solid var(--border); margin: 12px 0 8px 0; padding-top: 8px;">
@@ -1005,7 +1005,7 @@
                                     <input type="color" id="bottomCharColor" value="#3b82f6">
                                     <div id="bottomBold" class="bold-toggle active" onclick="this.classList.toggle('active'); applyBottomStyles()">B</div>
                                 </div>
-                                <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" min="10" max="100" value="14"><span id="bottomSizeVal">14px</span></div>
+                                <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" min="10" max="100" value="52"><span id="bottomSizeVal">52px</span></div>
                             </div>
                         </div>
                     </div>
@@ -1046,7 +1046,6 @@
     function speakChineseEdge(text) { if (!text) return; const voice = document.getElementById('zhVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); enqueueSpeech(text, voice, rateFormatted); }
     function speakKhmerEdge(text) { if (!text) return; const voice = document.getElementById('kmVoiceSelect').value; enqueueSpeech(text, voice, null); }
     
-    // Speech functions called on click/tap
     function speakChineseFromMain() { 
         const container = document.getElementById('chineseWord'); 
         const plainText = container ? container.getAttribute('data-plain') || '' : ''; 
@@ -1183,7 +1182,6 @@
         if (container) { container.innerText = text; setKhmerFontSize(currentKhmerFontSize); shrinkKhmerToFit(); }
     }
     
-    // ========== AUTO-SHRINK TEXT TO FIT (NO WRAP, NO OVERFLOW) ==========
     function shrinkChineseToFit() {
         const element = document.getElementById('chineseWord');
         if (!element || !element.parentElement) return;
@@ -1192,19 +1190,10 @@
         if (maxWidth <= 0) return;
         let currentFontVh = currentChineseFontSize;
         let minVh = 8;
-        let found = false;
         for (let testVh = currentFontVh; testVh >= minVh; testVh -= 1) {
             element.style.fontSize = testVh + 'vh';
-            const scrollWidth = element.scrollWidth;
-            if (scrollWidth <= maxWidth || testVh === minVh) {
-                if (testVh !== currentFontVh) {
-                    element.style.fontSize = testVh + 'vh';
-                }
-                found = true;
-                break;
-            }
+            if (element.scrollWidth <= maxWidth || testVh === minVh) break;
         }
-        if (!found) element.style.fontSize = minVh + 'vh';
     }
     
     function shrinkKhmerToFit() {
@@ -1217,10 +1206,7 @@
         let minVh = 5;
         for (let testVh = currentVh; testVh >= minVh; testVh -= 1) {
             element.style.fontSize = testVh + 'vh';
-            if (element.scrollWidth <= maxWidth || testVh === minVh) {
-                if (testVh !== currentVh) element.style.fontSize = testVh + 'vh';
-                break;
-            }
+            if (element.scrollWidth <= maxWidth || testVh === minVh) break;
         }
     }
     
@@ -1734,7 +1720,7 @@
             document.getElementById('mZhSize').value = currentChineseFontSize;
             document.getElementById('mKmSize').value = currentKhmerFontSize;
             document.getElementById('mZhColor').value = s.mZhColor || "#000000";
-            document.getElementById('mKmColor').value = s.mKmColor || "#1e293b";
+            document.getElementById('mKmColor').value = s.mKmColor || "#000000";
             document.getElementById('zhReps').value = s.zhReps || 3;
             document.getElementById('kmReps').value = s.kmReps || 1;
             document.getElementById('speechInterval').value = s.interval || 500;
@@ -1766,6 +1752,15 @@
             else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; document.getElementById('modeRandomBtn').classList.add('active'); document.getElementById('modeNormalBtn').classList.remove('active'); }
             normalCurrentIdx = s.normalCurrentIdx || 0;
             normalCurrentPage = s.normalCurrentPage || 0;
+        } else {
+            // Apply defaults if no settings saved
+            document.getElementById('pinyinFont').value = "'XHeiPinyin'";
+            document.getElementById('pinyinColor').value = "#000000";
+            document.getElementById('pinyinSizePx').value = "20";
+            document.getElementById('bottomSizePx').value = "52";
+            document.getElementById('mKmColor').value = "#000000";
+            applyPinyinStyles();
+            applyBottomStyles();
         }
         applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility();
         setKhmerFontSize(currentKhmerFontSize);
@@ -1854,7 +1849,7 @@
     function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
     function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
     
-    // ========== DRAGGABLE FLOATING MENU (click anywhere on background) ==========
+    // ========== DRAGGABLE FLOATING MENU ==========
     let menuDragActive = false;
     let menuStartX = 0, menuStartY = 0;
     let menuTranslateX = 0, menuTranslateY = 0;
