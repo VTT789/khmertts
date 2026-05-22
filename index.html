@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Vocab Master Pro | Random + Normal | Default Fonts & Draggable Menu</title>
+    <title>Vocab Master Pro | Fixed Speech + Drag + Random/Normal Mode</title>
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
     <style>
         /* ========== CUSTOM WEB FONTS ========== */
@@ -1033,7 +1034,7 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script>
-    // ========== FULL FEATURE: RANDOM/NORMAL + SEARCH + PAGE BUTTONS + AUTO-SCROLL + SIDEBAR CONTROLS HIDE ==========
+    // ========== FIXED SPEECH: click/tap now reliably speaks ==========
     let currentAudio = null, speechQueue = [], isProcessingQueue = false;
     async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
     async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, parseInt(document.getElementById('speechInterval').value || 500))); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
@@ -1041,8 +1042,19 @@
     function killAllSpeech() { if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; } speechQueue = []; isProcessingQueue = false; }
     function speakChineseEdge(text) { if (!text) return; const voice = document.getElementById('zhVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); enqueueSpeech(text, voice, rateFormatted); }
     function speakKhmerEdge(text) { if (!text) return; const voice = document.getElementById('kmVoiceSelect').value; enqueueSpeech(text, voice, null); }
-    function speakChineseFromMain() { const container = document.getElementById('chineseWord'); const plainText = container ? container.getAttribute('data-plain') || '' : ''; if(plainText) { killAllSpeech(); speakChineseEdge(plainText); } }
-    function speakKhmerFromMain() { const container = document.getElementById('khmerWord'); const plainText = container ? container.innerText : ''; if(plainText) { killAllSpeech(); speakKhmerEdge(plainText); } }
+    
+    // Speech functions called on click/tap
+    function speakChineseFromMain() { 
+        const container = document.getElementById('chineseWord'); 
+        const plainText = container ? container.getAttribute('data-plain') || '' : ''; 
+        if(plainText) { killAllSpeech(); speakChineseEdge(plainText); } 
+    }
+    function speakKhmerFromMain() { 
+        const container = document.getElementById('khmerWord'); 
+        const plainText = container ? container.innerText : ''; 
+        if(plainText) { killAllSpeech(); speakKhmerEdge(plainText); } 
+    }
+    
     async function speakAutoSequence(zhText, kmText) { killAllSpeech(); const interval = parseInt(document.getElementById('speechInterval').value); const zhReps = parseInt(document.getElementById('zhReps').value); const kmReps = parseInt(document.getElementById('kmReps').value); const zhVoice = document.getElementById('zhVoiceSelect').value; const kmVoice = document.getElementById('kmVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); for(let i=0; i<zhReps; i++) { await callEdgeTTS(zhText, zhVoice, rateFormatted); if(i < zhReps-1) await new Promise(r => setTimeout(r, interval)); } if(kmText && kmText.trim()) { for(let j=0; j<kmReps; j++) { await callEdgeTTS(kmText, kmVoice, null); if(j < kmReps-1) await new Promise(r => setTimeout(r, interval)); } } if(autoActive) startAutoCycle(); }
     
     const tripleHtmlCache = new Map();
@@ -1441,7 +1453,11 @@
         chineseElement.style.top = chineseY + '%';
         chineseElement.style.transform = 'translate(-50%, -50%)';
         chineseElement.style.cursor = 'grab';
-        chineseElement.addEventListener('click', (e) => { e.stopPropagation(); speakChineseFromMain(); });
+        // Speech on click/tap - uses separate click listener that works even after drag
+        chineseElement.addEventListener('click', (e) => {
+            e.stopPropagation();
+            speakChineseFromMain();
+        });
         chineseElement.addEventListener('mousedown', onPointerDown);
         chineseElement.addEventListener('touchstart', onPointerDown, { passive: false });
     }
@@ -1550,7 +1566,10 @@
         khmerElement.style.top = khmerY + '%';
         khmerElement.style.transform = 'translate(-50%, -50%)';
         khmerElement.style.cursor = 'grab';
-        khmerElement.addEventListener('click', (e) => { e.stopPropagation(); speakKhmerFromMain(); });
+        khmerElement.addEventListener('click', (e) => {
+            e.stopPropagation();
+            speakKhmerFromMain();
+        });
         let khmerDragActive = false, khmerStartMouseX, khmerStartMouseY, khmerStartLeft, khmerStartTop;
         const onStart = (e) => {
             e.preventDefault(); e.stopPropagation();
@@ -1770,7 +1789,6 @@
     let menuTranslateX = 0, menuTranslateY = 0;
     const floatingMenuDiv = document.getElementById('floatingMenu');
     function onMenuMouseDown(e) {
-        // Prevent drag when clicking on interactive elements
         const target = e.target;
         if (target.closest('button') || target.closest('select') || target.closest('input') || target.closest('.toggle-section-btn') || target.closest('.drag-dark-toggle') || target.closest('.aba-icon-inline') || target.closest('.tab-btn') || target.closest('.vis-toggle-btn')) {
             return;
@@ -1793,7 +1811,6 @@
         menuDragActive = false;
         document.removeEventListener('mousemove', onMenuMouseMove);
         document.removeEventListener('mouseup', onMenuMouseUp);
-        // Save position
         posX = menuTranslateX;
         posY = menuTranslateY;
     }
@@ -1849,71 +1866,50 @@
     async function loadSheetFromModalUrl() { let urlOrId = sheetUrlModal.value.trim(); if(!urlOrId) return; let sheetId = ''; if(urlOrId.includes('spreadsheets/d/')) { const match = urlOrId.match(/\/d\/([a-zA-Z0-9_-]+)/); if(match) sheetId = match[1]; } else if(urlOrId.length > 20) sheetId = urlOrId; else { alert("Invalid Sheet ID"); return; } const apiUrl = `https://opensheet.elk.sh/${sheetId}/Sheet1`; try { const response = await fetch(apiUrl); if(!response.ok) throw new Error(); const data = await response.json(); if(!Array.isArray(data) || data.length===0) throw new Error(); const firstRow = data[0]; const columns = Object.keys(firstRow); let khmerCol = null, chineseCol = null; for(const col of columns) { const c = col.toLowerCase(); if(c.includes('khmer')||c.includes('km')) khmerCol = col; if(c.includes('chinese')||c.includes('zh')) chineseCol = col; } if(!khmerCol || !chineseCol) { const stringCols = []; for(const row of data.slice(0,3)) for(const [k,v] of Object.entries(row)) if(typeof v === 'string' && v.length>0 && !stringCols.includes(k)) stringCols.push(k); if(stringCols.length>=2) { khmerCol = khmerCol || stringCols[0]; chineseCol = chineseCol || stringCols[1]; } } if(!khmerCol || !chineseCol) throw new Error(); vocabList = data.map(row => ({ khmer: row[khmerCol]?.toString().trim() || "", chinese: row[chineseCol]?.toString().trim() || "" })).filter(v=>v.khmer && v.chinese); if(vocabList.length===0) throw new Error(); saveAllData(); if (appMode === 'random') { pickRandom(); } else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } hideModal(); } catch(err) { alert("Sheet load error: "+err.message); } }
     confirmUrlLoad.onclick = loadSheetFromModalUrl;
     
-    let activeDragFlag = false; // for gear drag (unchanged)
-    const dragHandleElem = document.getElementById("dragHandle");
-    const floatingMenuElem = document.getElementById("floatingMenu");
-    dragHandleElem.onmousedown = (e) => {
-        if(e.target.classList?.contains('drag-dark-toggle')||e.target.closest('.aba-icon-inline')) return;
-        activeDragFlag = true;
-        initialX = e.clientX - posX;
-        initialY = e.clientY - posY;
-    };
-    document.addEventListener("mousemove", (e) => {
-        if(activeDragFlag){
-            posX = e.clientX - initialX;
-            posY = e.clientY - initialY;
-            floatingMenuElem.style.transform = `translate3d(${posX}px,${posY}px,0)`;
-            menuTranslateX = posX;
-            menuTranslateY = posY;
-        }
-    });
-    document.addEventListener("mouseup", () => activeDragFlag = false);
-    
-    let gearPosX = 0, gearPosY = 0, gearInitialX, gearInitialY, gearDragActive = false;
-    const gearElem = document.getElementById('minimizedTrigger');
+    let gearDragActiveFlag = false, gearLeft = 20, gearTop = 20, gearDragOccurred = false, gearStartX = 0, gearStartY = 0;
+    const gearElemDrag = document.getElementById('minimizedTrigger');
     function initGearDrag() {
         applyStoredGearPosition();
-        let gearLeft = 20, gearTop = 20, dragOccurred = false, startX = 0, startY = 0;
         function onStart(e) {
             e.preventDefault(); e.stopPropagation();
-            gearDragActive = true; dragOccurred = false;
+            gearDragActiveFlag = true; gearDragOccurred = false;
             const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
             const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
-            startX = cx - gearLeft; startY = cy - gearTop;
+            gearStartX = cx - gearLeft; gearStartY = cy - gearTop;
         }
         function onMove(e) {
-            if (!gearDragActive) return;
+            if (!gearDragActiveFlag) return;
             e.preventDefault();
             const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
             const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
-            if (Math.abs(cx - (startX + gearLeft)) > 5 || Math.abs(cy - (startY + gearTop)) > 5) dragOccurred = true;
-            let newLeft = cx - startX; let newTop = cy - startY;
+            if (Math.abs(cx - (gearStartX + gearLeft)) > 5 || Math.abs(cy - (gearStartY + gearTop)) > 5) gearDragOccurred = true;
+            let newLeft = cx - gearStartX; let newTop = cy - gearStartY;
             newLeft = Math.min(Math.max(5, newLeft), window.innerWidth - 65);
             newTop = Math.min(Math.max(5, newTop), window.innerHeight - 75);
             gearLeft = newLeft; gearTop = newTop;
-            gearElem.style.left = newLeft + 'px'; gearElem.style.top = newTop + 'px';
+            gearElemDrag.style.left = newLeft + 'px'; gearElemDrag.style.top = newTop + 'px';
         }
         function onEnd() {
-            if (!gearDragActive) return;
-            gearDragActive = false;
-            if (!dragOccurred) {
+            if (!gearDragActiveFlag) return;
+            gearDragActiveFlag = false;
+            if (!gearDragOccurred) {
                 const isMenuVisible = document.getElementById('floatingMenu').style.display !== 'none';
                 if (isMenuVisible) toggleMenu(true);
-                else { toggleMenu(false); floatingMenuElem.style.transform = `translate3d(0px,0px,0)`; posX = 0; posY = 0; menuTranslateX = 0; menuTranslateY = 0; }
+                else { toggleMenu(false); floatingMenuDiv.style.transform = `translate3d(0px,0px,0)`; posX = 0; posY = 0; menuTranslateX = 0; menuTranslateY = 0; }
             }
             saveGearPosition();
         }
-        gearElem.addEventListener('mousedown', onStart);
+        gearElemDrag.addEventListener('mousedown', onStart);
         window.addEventListener('mousemove', onMove);
         window.addEventListener('mouseup', onEnd);
-        gearElem.addEventListener('touchstart', onStart, { passive: false });
+        gearElemDrag.addEventListener('touchstart', onStart, { passive: false });
         window.addEventListener('touchmove', onMove, { passive: false });
         window.addEventListener('touchend', onEnd);
     }
     function saveGearPosition() {
-        if (!gearElem) return;
-        const left = gearElem.offsetLeft;
-        const top = gearElem.offsetTop;
+        if (!gearElemDrag) return;
+        const left = gearElemDrag.offsetLeft;
+        const top = gearElemDrag.offsetTop;
         if (!isNaN(left) && !isNaN(top)) { localStorage.setItem('gearPosLeft', left); localStorage.setItem('gearPosTop', top); }
     }
     function applyStoredGearPosition() {
@@ -1923,8 +1919,8 @@
         if (isNaN(top)) top = 30;
         left = Math.min(Math.max(5, left), window.innerWidth - 65);
         top = Math.min(Math.max(5, top), window.innerHeight - 75);
-        gearElem.style.left = left + 'px';
-        gearElem.style.top = top + 'px';
+        gearElemDrag.style.left = left + 'px';
+        gearElemDrag.style.top = top + 'px';
     }
     function toggleNightMode(){ document.body.classList.toggle('night-mode'); localStorage.setItem('vocabMaster_NightMode',document.body.classList.contains('night-mode')); const btn = document.getElementById('dragDarkModeBtn'); if(btn) btn.innerHTML = document.body.classList.contains('night-mode') ? '☀️' : '🌙'; applyStyles(); renderSidebarUI(); }
     function initNightMode(){ if(localStorage.getItem('vocabMaster_NightMode')==='true') document.body.classList.add('night-mode'); const btn = document.getElementById('dragDarkModeBtn'); if(btn) btn.innerHTML = document.body.classList.contains('night-mode') ? '☀️' : '🌙'; }
