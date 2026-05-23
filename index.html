@@ -1043,8 +1043,9 @@
                     <div class="size-row"><label>🇨🇳 Speech Rate</label><input type="range" id="zhRateSlider" class="size-slider" min="-100" max="100" value="0" step="5"><span id="zhRateVal">0%</span></div>
                     <div class="size-row"><label>ZH Repetitions</label><input type="range" id="zhReps" class="size-slider" min="1" max="10" value="3"><span id="repVal">3</span></div>
                     <div class="size-row"><label>KM Repetitions</label><input type="range" id="kmReps" class="size-slider" min="1" max="10" value="1"><span id="kmRepVal">1</span></div>
-                    <div class="size-row"><label>Pause Interval (ms)</label><input type="range" id="speechInterval" class="size-slider" min="0" max="2000" step="100" value="500"></div>
+                    <div class="size-row"><label>Pause Interval (ms)</label><input type="range" id="speechInterval" class="size-slider" min="0" max="2000" step="100" value="800"></div>
                     <div class="size-row"><button id="testAudioBtn" class="btn-main btn-accent" style="margin-top:5px; padding:6px;" onclick="testAudioOnMobile()">🔊 Test Audio System</button></div>
+                    <div class="size-row"><div id="speechStatus" style="font-size:0.65rem; text-align:center; padding:5px; color:var(--text-secondary);">⚡ Tap to enable audio</div></div>
                 </div>
 
                 <div id="sideControls" class="control-group">
@@ -1171,46 +1172,63 @@
         saveAllData();
     }
     
-    // ========== FIXED SPEECH FOR MOBILE ==========
+    // ========== FIXED SPEECH FOR TIKTOK BROWSER ==========
     let currentAudio = null;
     let speechQueue = [];
     let isProcessingQueue = false;
     let audioUnlocked = false;
+    let retryCount = 0;
     
-    // Unlock audio on first user interaction (required for mobile)
-    function unlockAudio() {
-        if (audioUnlocked) return;
-        // Create a silent audio context to unlock
-        const silentAudio = new Audio();
-        silentAudio.volume = 0;
-        silentAudio.play().then(() => {
-            audioUnlocked = true;
-            console.log("Audio unlocked for mobile");
-        }).catch(() => {
-            console.log("Audio unlock failed, will retry");
-        });
+    const statusDiv = document.getElementById('speechStatus');
+    
+    function updateStatus(message, isError = false) {
+        if (statusDiv) {
+            statusDiv.innerHTML = message;
+            statusDiv.style.color = isError ? '#ef4444' : '#22c55e';
+            setTimeout(() => {
+                if (statusDiv && !isError) {
+                    statusDiv.style.color = 'var(--text-secondary)';
+                }
+            }, 2000);
+        }
     }
     
-    // Attach unlock to various user interactions
-    document.addEventListener('click', unlockAudio, { once: true });
-    document.addEventListener('touchstart', unlockAudio, { once: true });
+    // Force unlock audio on any user interaction
+    function forceUnlockAudio() {
+        if (audioUnlocked) return true;
+        
+        // Create and play silent audio to unlock
+        const silentAudio = new Audio();
+        silentAudio.volume = 0;
+        const playPromise = silentAudio.play();
+        
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                audioUnlocked = true;
+                updateStatus("✅ Audio ready! Tap words to speak.");
+                console.log("Audio unlocked successfully");
+            }).catch(() => {
+                updateStatus("⚠️ Tap anywhere to enable audio", true);
+                console.log("Audio unlock failed, waiting for user interaction");
+            });
+        }
+        return audioUnlocked;
+    }
+    
+    // Attach unlock to multiple events
+    const unlockEvents = ['click', 'touchstart', 'touchend'];
+    unlockEvents.forEach(eventType => {
+        document.addEventListener(eventType, forceUnlockAudio, { once: false });
+    });
     
     async function callEdgeTTS(text, voice, ratePercent = null) {
         if (!text) return Promise.reject("No text");
         
-        // Ensure audio is unlocked
-        if (!audioUnlocked) {
-            await new Promise(resolve => {
-                const unlockHandler = () => {
-                    audioUnlocked = true;
-                    document.removeEventListener('click', unlockHandler);
-                    document.removeEventListener('touchstart', unlockHandler);
-                    resolve();
-                };
-                document.addEventListener('click', unlockHandler);
-                document.addEventListener('touchstart', unlockHandler);
-            });
-        }
+        // Try to unlock audio first
+        forceUnlockAudio();
+        
+        // Wait a bit for audio context to be ready
+        await new Promise(r => setTimeout(r, 50));
         
         try {
             let formData = new URLSearchParams();
@@ -1234,24 +1252,39 @@
             audio.src = url;
             
             return new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                    reject(new Error("Audio timeout"));
+                }, 10000);
+                
+                audio.oncanplaythrough = () => {
+                    clearTimeout(timeout);
+                };
+                
                 audio.onended = () => {
                     URL.revokeObjectURL(url);
+                    clearTimeout(timeout);
                     resolve();
                 };
+                
                 audio.onerror = (err) => {
                     URL.revokeObjectURL(url);
+                    clearTimeout(timeout);
                     console.error("Audio playback error:", err);
                     reject(err);
                 };
+                
                 audio.play().catch(reject);
                 
                 if (currentAudio && !currentAudio.paused) {
                     currentAudio.pause();
+                    currentAudio.currentTime = 0;
                 }
                 currentAudio = audio;
             });
         } catch(err) {
             console.error("TTS Error:", err);
+            updateStatus("⚠️ Speech error, retrying...", true);
             return Promise.reject(err);
         }
     }
@@ -1264,10 +1297,12 @@
             const { text, voice, rate } = speechQueue.shift();
             try {
                 await callEdgeTTS(text, voice, rate);
-                const interval = parseInt(document.getElementById('speechInterval').value || 500);
+                const interval = parseInt(document.getElementById('speechInterval').value || 800);
                 await new Promise(r => setTimeout(r, interval));
             } catch(err) {
                 console.warn("Speech failed:", err);
+                // Don't break the queue on single failure
+                await new Promise(r => setTimeout(r, 500));
             }
         }
         isProcessingQueue = false;
@@ -1275,6 +1310,7 @@
     
     function enqueueSpeech(text, voice, rate = null) {
         if (!text) return;
+        forceUnlockAudio();
         speechQueue.push({ text, voice, rate });
         processSpeechQueue();
     }
@@ -1296,12 +1332,14 @@
         let rateValue = rateSlider ? parseInt(rateSlider.value) : 0;
         let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%");
         enqueueSpeech(text, voice, rateFormatted);
+        updateStatus("🔊 Speaking Chinese...");
     }
     
     function speakKhmerEdge(text) {
         if (!text) return;
         const voice = document.getElementById('kmVoiceSelect').value;
         enqueueSpeech(text, voice, null);
+        updateStatus("🔊 Speaking Khmer...");
     }
     
     function speakChineseFromMain() {
@@ -1322,18 +1360,36 @@
         }
     }
     
-    // Test audio function
+    // Test audio function for TikTok browser
     function testAudioOnMobile() {
-        killAllSpeech();
-        // Test with a simple Chinese phrase
-        const testText = "测试音频";
-        const voice = document.getElementById('zhVoiceSelect').value;
-        enqueueSpeech(testText, voice, "0%");
-        alert("Testing audio playback. If you hear '测试音频', audio is working!");
+        forceUnlockAudio();
+        updateStatus("🎵 Testing audio...");
+        // Test with a short beep sound (using Web Audio API as fallback)
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.value = 880;
+            gainNode.gain.value = 0.1;
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
+            oscillator.stop(audioContext.currentTime + 0.5);
+            updateStatus("✅ Beep played! Audio working.");
+        } catch(e) {
+            // Fallback: try TTS
+            const testText = "测试";
+            const voice = document.getElementById('zhVoiceSelect').value;
+            enqueueSpeech(testText, voice, "0%");
+            updateStatus("🔊 Testing TTS...");
+        }
     }
     
     async function speakAutoSequence(zhText, kmText) {
         killAllSpeech();
+        forceUnlockAudio();
+        
         const interval = parseInt(document.getElementById('speechInterval').value);
         const zhReps = parseInt(document.getElementById('zhReps').value);
         const kmReps = parseInt(document.getElementById('kmReps').value);
@@ -1344,12 +1400,16 @@
         let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%");
         
         for(let i=0; i<zhReps; i++) {
-            await callEdgeTTS(zhText, zhVoice, rateFormatted);
+            try {
+                await callEdgeTTS(zhText, zhVoice, rateFormatted);
+            } catch(e) { console.warn(e); }
             if(i < zhReps-1) await new Promise(r => setTimeout(r, interval));
         }
         if(kmText && kmText.trim()) {
             for(let j=0; j<kmReps; j++) {
-                await callEdgeTTS(kmText, kmVoice, null);
+                try {
+                    await callEdgeTTS(kmText, kmVoice, null);
+                } catch(e) { console.warn(e); }
                 if(j < kmReps-1) await new Promise(r => setTimeout(r, interval));
             }
         }
@@ -1595,7 +1655,7 @@
         setTimeout(() => forceShrink(), 100);
     });
     
-    // ========== MODE, PAGINATION ==========
+    // ========== MODE, PAGINATION (simplified - keeping existing functionality) ==========
     let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = false;
     let appMode = 'random';
     let normalCurrentIdx = 0;
@@ -1814,7 +1874,7 @@
         updateResults();
     }
     
-    // ========== DRAG & ZOOM (simplified to save space) ==========
+    // ========== DRAG & ZOOM (simplified) ==========
     let chineseElement = null, khmerElement = null;
     let chineseX = 50, chineseY = 40, khmerX = 50, khmerY = 70;
     let topLayerX = 0, topLayerY = 0, bottomLayerX = 0, bottomLayerY = 0;
@@ -2116,7 +2176,7 @@
             document.getElementById('mKmColor').value = s.mKmColor || "#000000";
             document.getElementById('zhReps').value = s.zhReps || 3;
             document.getElementById('kmReps').value = s.kmReps || 1;
-            document.getElementById('speechInterval').value = s.interval || 500;
+            document.getElementById('speechInterval').value = s.interval || 800;
             document.getElementById('autoDelay').value = s.autoDelay || 5;
             if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow;
             if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont;
@@ -2573,6 +2633,11 @@
         initKhmerDrag(); 
         loadAllDragPositions();
         
+        // Try to unlock audio on page load with a silent attempt
+        setTimeout(() => {
+            forceUnlockAudio();
+        }, 500);
+        
         if (!sidebarVisible) {
             document.getElementById('sidebarControlsContainer')?.classList.add('sidebar-controls-hidden');
         }
@@ -2634,6 +2699,7 @@
     window.historyPrev = historyPrev; window.historyNext = historyNext; window.moveSidebarFocus = moveSidebarFocus; window.toggleAuto = toggleAuto; window.toggleSidebar = toggleSidebar; window.switchTab = switchTab; window.toggleMenu = toggleMenu; window.pickRandom = pickRandom; window.loadWordByMode = loadWordByMode;
     window.toggleBold = toggleBold;
     window.testAudioOnMobile = testAudioOnMobile;
+    window.forceUnlockAudio = forceUnlockAudio;
 </script>
 </body>
 </html>
