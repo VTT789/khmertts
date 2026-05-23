@@ -497,7 +497,6 @@
         .chinese-word:active { cursor: grabbing; }
         .char-block { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; white-space: nowrap; }
         
-        /* Top layer - Pinyin (small, above main character) */
         .pinyin-top {
             font-size: 0.35em;
             color: #f97316;
@@ -513,7 +512,6 @@
         }
         body.night-mode .pinyin-top { color: #fbbf24; }
         
-        /* Middle layer - Main Chinese character (large, bold) */
         .chinese-main {
             font-weight: 700;
             color: white;
@@ -524,7 +522,6 @@
             order: 2;
         }
         
-        /* Bottom layer - Small character (tiny, below main) */
         .chinese-bottom {
             font-size: 0.25em;
             font-weight: 500;
@@ -1143,6 +1140,126 @@
         }
     }
     
+    // ========== IMPROVED SPEECH SYSTEM FOR MOBILE ==========
+    let currentAudio = null;
+    let isSpeaking = false;
+    let speechCancelRequested = false;
+    
+    async function callEdgeTTS(text, voice, ratePercent = null) {
+        if (!text || speechCancelRequested) return;
+        try {
+            let formData = new URLSearchParams();
+            formData.append('text', text);
+            formData.append('voice', voice);
+            if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent);
+            
+            const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() });
+            if (!response.ok) throw new Error();
+            if (speechCancelRequested) return;
+            
+            const blob = await response.blob();
+            if (speechCancelRequested) return;
+            
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio();
+            audio.src = url;
+            
+            return new Promise((resolve, reject) => {
+                audio.onended = () => {
+                    URL.revokeObjectURL(url);
+                    resolve();
+                };
+                audio.onerror = () => reject();
+                audio.play().catch(reject);
+                if (currentAudio && !currentAudio.paused) currentAudio.pause();
+                currentAudio = audio;
+            });
+        } catch(err) {
+            console.error("TTS error:", err);
+            return Promise.reject(err);
+        }
+    }
+    
+    function killAllSpeech() {
+        speechCancelRequested = true;
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.src = "";
+            currentAudio = null;
+        }
+        // Reset after a short delay
+        setTimeout(() => {
+            speechCancelRequested = false;
+        }, 100);
+    }
+    
+    async function speakSequence(zhText, kmText) {
+        killAllSpeech();
+        
+        // Small delay to ensure cleanup
+        await new Promise(r => setTimeout(r, 50));
+        
+        const interval = parseInt(document.getElementById('speechInterval').value);
+        const zhReps = parseInt(document.getElementById('zhReps').value);
+        const kmReps = parseInt(document.getElementById('kmReps').value);
+        const zhVoice = document.getElementById('zhVoiceSelect').value;
+        const kmVoice = document.getElementById('kmVoiceSelect').value;
+        const rateSlider = document.getElementById('zhRateSlider');
+        let rateValue = rateSlider ? parseInt(rateSlider.value) : 0;
+        let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%");
+        
+        // Speak Chinese with repetitions
+        for(let i = 0; i < zhReps; i++) {
+            if (speechCancelRequested) return;
+            await callEdgeTTS(zhText, zhVoice, rateFormatted);
+            if (speechCancelRequested) return;
+            if(i < zhReps - 1) await new Promise(r => setTimeout(r, interval));
+        }
+        
+        // Speak Khmer with repetitions
+        if(kmText && kmText.trim() && !speechCancelRequested) {
+            for(let j = 0; j < kmReps; j++) {
+                if (speechCancelRequested) return;
+                await callEdgeTTS(kmText, kmVoice, null);
+                if (speechCancelRequested) return;
+                if(j < kmReps - 1) await new Promise(r => setTimeout(r, interval));
+            }
+        }
+        
+        // Restart auto cycle if needed
+        if(autoActive && !speechCancelRequested) {
+            startAutoCycle();
+        }
+    }
+    
+    // Override the old speakAutoSequence
+    async function speakAutoSequence(zhText, kmText) {
+        speakSequence(zhText, kmText);
+    }
+    
+    function speakChineseFromMain() { 
+        const container = document.getElementById('chineseWord'); 
+        const plainText = container ? container.getAttribute('data-plain') || '' : ''; 
+        if(plainText) { 
+            killAllSpeech();
+            const voice = document.getElementById('zhVoiceSelect').value; 
+            const rateSlider = document.getElementById('zhRateSlider'); 
+            let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; 
+            let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); 
+            callEdgeTTS(plainText, voice, rateFormatted).catch(console.warn);
+        } 
+    }
+    
+    function speakKhmerFromMain() { 
+        const container = document.getElementById('khmerWord'); 
+        const plainText = container ? container.innerText : ''; 
+        if(plainText) { 
+            killAllSpeech();
+            const voice = document.getElementById('kmVoiceSelect').value; 
+            callEdgeTTS(plainText, voice, null).catch(console.warn);
+        } 
+    }
+    
     // ========== AUTO-SHRINK FUNCTIONS ==========
     let userSetChineseFontSize = 42;
     let userSetKhmerFontSize = 42;
@@ -1262,185 +1379,6 @@
         }, 50);
     }
     
-    // ========== FIXED SPEECH WITH PROPER QUEUE ==========
-    let currentAudio = null;
-    let speechQueue = [];
-    let isProcessingQueue = false;
-    let isAutoPlaying = false;
-    
-    async function callEdgeTTS(text, voice, ratePercent = null) {
-        if (!text || !text.trim()) return Promise.resolve();
-        return new Promise(async (resolve, reject) => {
-            try {
-                let formData = new URLSearchParams();
-                formData.append('text', text);
-                formData.append('voice', voice);
-                if (voice && voice.startsWith('zh-') && ratePercent !== null) {
-                    formData.append('rate', ratePercent);
-                }
-                const response = await fetch("/speak", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: formData.toString()
-                });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
-                const audio = new Audio();
-                audio.src = url;
-                audio.onended = () => {
-                    URL.revokeObjectURL(url);
-                    resolve();
-                };
-                audio.onerror = (err) => {
-                    URL.revokeObjectURL(url);
-                    reject(err);
-                };
-                if (currentAudio && !currentAudio.paused) {
-                    currentAudio.pause();
-                }
-                currentAudio = audio;
-                await audio.play();
-            } catch(err) {
-                console.error("TTS error:", err);
-                reject(err);
-            }
-        });
-    }
-    
-    async function processSpeechQueue() {
-        if (isProcessingQueue || speechQueue.length === 0) return;
-        isProcessingQueue = true;
-        
-        while (speechQueue.length > 0) {
-            const { text, voice, rate } = speechQueue.shift();
-            if (!text || !text.trim()) continue;
-            try {
-                await callEdgeTTS(text, voice, rate);
-                const interval = parseInt(document.getElementById('speechInterval').value || 500);
-                await new Promise(r => setTimeout(r, interval));
-            } catch(err) {
-                console.warn("Speech failed:", err);
-            }
-        }
-        
-        isProcessingQueue = false;
-        
-        // After queue completes, start next auto cycle if auto mode is active
-        if (autoActive && !isAutoPlaying) {
-            startAutoCycle();
-        }
-    }
-    
-    function enqueueSpeech(text, voice, rate = null) {
-        if (!text || !text.trim()) return;
-        speechQueue.push({ text, voice, rate });
-        processSpeechQueue();
-    }
-    
-    function killAllSpeech() {
-        if (currentAudio) {
-            currentAudio.pause();
-            currentAudio.src = "";
-            currentAudio = null;
-        }
-        speechQueue = [];
-        isProcessingQueue = false;
-        isAutoPlaying = false;
-        if (autoTimer) {
-            clearTimeout(autoTimer);
-            autoTimer = null;
-        }
-    }
-    
-    function speakChineseEdge(text) {
-        if (!text) return;
-        const voice = document.getElementById('zhVoiceSelect').value;
-        const rateSlider = document.getElementById('zhRateSlider');
-        let rateValue = rateSlider ? parseInt(rateSlider.value) : 0;
-        let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%");
-        enqueueSpeech(text, voice, rateFormatted);
-    }
-    
-    function speakKhmerEdge(text) {
-        if (!text) return;
-        const voice = document.getElementById('kmVoiceSelect').value;
-        enqueueSpeech(text, voice, null);
-    }
-    
-    function speakChineseFromMain() {
-        const container = document.getElementById('chineseWord');
-        const plainText = container ? container.getAttribute('data-plain') || '' : '';
-        if (plainText) {
-            killAllSpeech();
-            speakChineseEdge(plainText);
-        }
-    }
-    
-    function speakKhmerFromMain() {
-        const container = document.getElementById('khmerWord');
-        const plainText = container ? container.innerText : '';
-        if (plainText) {
-            killAllSpeech();
-            speakKhmerEdge(plainText);
-        }
-    }
-    
-    async function speakAutoSequence(zhText, kmText) {
-        // Kill any ongoing speech and clear queue
-        if (currentAudio) {
-            currentAudio.pause();
-            currentAudio.src = "";
-            currentAudio = null;
-        }
-        speechQueue = [];
-        isProcessingQueue = false;
-        isAutoPlaying = true;
-        
-        const interval = parseInt(document.getElementById('speechInterval').value);
-        const zhReps = parseInt(document.getElementById('zhReps').value);
-        const kmReps = parseInt(document.getElementById('kmReps').value);
-        const zhVoice = document.getElementById('zhVoiceSelect').value;
-        const kmVoice = document.getElementById('kmVoiceSelect').value;
-        const rateSlider = document.getElementById('zhRateSlider');
-        let rateValue = rateSlider ? parseInt(rateSlider.value) : 0;
-        let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%");
-        
-        try {
-            // Speak Chinese first with repetitions
-            if (zhText && zhText.trim()) {
-                for (let i = 0; i < zhReps; i++) {
-                    if (!isAutoPlaying) break;
-                    await callEdgeTTS(zhText, zhVoice, rateFormatted);
-                    if (i < zhReps - 1 && isAutoPlaying) {
-                        await new Promise(r => setTimeout(r, interval));
-                    }
-                }
-            }
-            
-            // Then speak Khmer with repetitions
-            if (kmText && kmText.trim() && isAutoPlaying) {
-                for (let j = 0; j < kmReps; j++) {
-                    if (!isAutoPlaying) break;
-                    await callEdgeTTS(kmText, kmVoice, null);
-                    if (j < kmReps - 1 && isAutoPlaying) {
-                        await new Promise(r => setTimeout(r, interval));
-                    }
-                }
-            }
-        } catch(err) {
-            console.warn("Auto speech error:", err);
-        }
-        
-        isAutoPlaying = false;
-        
-        // Start next cycle if auto is still active
-        if (autoActive) {
-            startAutoCycle();
-        }
-    }
-    
-    // ========== TRIPLE HTML ==========
     const tripleHtmlCache = new Map();
     function getTripleHTML(chineseText) {
         if (!chineseText) return '';
@@ -1613,11 +1551,7 @@
         renderSidebarUI();
         updateDisplay();
         const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]];
-        if (currentItem && autoActive) {
-            speakAutoSequence(currentItem.chinese, currentItem.khmer);
-        } else if (currentItem) {
-            speakAutoSequence(currentItem.chinese, currentItem.khmer);
-        }
+        if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer);
         updatePaginationControls();
         scrollToActiveSidebarItem();
     }
@@ -1663,11 +1597,7 @@
         sidebarFocusIdx = 0;
         renderSidebarUI();
         updateDisplay();
-        if (autoActive) {
-            speakAutoSequence(item.chinese, item.khmer);
-        } else {
-            speakAutoSequence(item.chinese, item.khmer);
-        }
+        speakAutoSequence(item.chinese, item.khmer);
         scrollToActiveSidebarItem();
     }
     
@@ -1692,11 +1622,7 @@
                     renderSidebarUI();
                     updateDisplay();
                     const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]];
-                    if (currentItem && autoActive) {
-                        speakAutoSequence(currentItem.chinese, currentItem.khmer);
-                    } else if (currentItem) {
-                        speakAutoSequence(currentItem.chinese, currentItem.khmer);
-                    }
+                    if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer);
                     scrollToActiveSidebarItem();
                 } else {
                     renderNormalSidebar();
@@ -1731,27 +1657,16 @@
     }
     
     function historyPrev() {
-        killAllSpeech();
-        if (appMode === 'random') { 
-            if (historyIndex > 0) { 
-                historyIndex--; 
-                loadWordByMode(history[historyIndex]); 
-            } 
-        } else goPrevNormal();
+        if (appMode === 'random') { if (historyIndex > 0) { historyIndex--; loadWordByMode(history[historyIndex]); } }
+        else goPrevNormal();
     }
     
     function historyNext() {
-        killAllSpeech();
-        if (appMode === 'random') { 
-            if (historyIndex < history.length - 1) { 
-                historyIndex++; 
-                loadWordByMode(history[historyIndex]); 
-            } 
-        } else goNextNormal();
+        if (appMode === 'random') { if (historyIndex < history.length - 1) { historyIndex++; loadWordByMode(history[historyIndex]); } }
+        else goNextNormal();
     }
     
     function toggleAppMode() {
-        killAllSpeech();
         if (appMode === 'random') {
             appMode = 'normal';
             document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)';
@@ -1804,7 +1719,6 @@
             resultsDiv.querySelectorAll('.search-result-item').forEach(el => {
                 el.addEventListener('click', () => {
                     const idx = parseInt(el.dataset.idx);
-                    killAllSpeech();
                     if (appMode === 'normal') {
                         normalCurrentIdx = idx;
                         normalCurrentPage = getNormalPageForIndex(idx);
@@ -1824,7 +1738,7 @@
         updateResults();
     }
     
-    // ========== DRAG & ZOOM (keep existing) ==========
+    // ========== DRAG & ZOOM ==========
     let chineseElement = null, khmerElement = null;
     let chineseX = 50, chineseY = 40, khmerX = 50, khmerY = 70;
     let topLayerX = 0, topLayerY = 0, bottomLayerX = 0, bottomLayerY = 0;
@@ -1834,6 +1748,7 @@
     let longPressTimer = null, pressStartX = 0, pressStartY = 0, hasMovedDuringPress = false;
     const canvas = document.getElementById('displayArea');
     
+    // Two-finger zoom variables
     let initialPinchDistance = 0;
     let initialFontSize = 0;
     let isPinching = false;
@@ -2240,18 +2155,16 @@
         btn.classList.toggle('active', autoActive); 
         btn.classList.toggle('off', !autoActive); 
         btn.innerText = autoActive ? "AUTO: ON" : "AUTO: OFF"; 
-        if(autoActive) { 
+        if(autoActive) {
             pickRandom(); 
         } else { 
+            clearTimeout(autoTimer); 
             killAllSpeech(); 
-            if (autoTimer) clearTimeout(autoTimer);
-            autoTimer = null;
         } 
     }
     
     function startAutoCycle() { 
-        if (autoTimer) clearTimeout(autoTimer);
-        if (!autoActive) return;
+        clearTimeout(autoTimer); 
         autoTimer = setTimeout(() => { 
             if(autoActive) pickRandom(); 
         }, parseInt(document.getElementById('autoDelay').value) * 1000); 
@@ -2420,7 +2333,6 @@
             if (newVocab.length === 0) throw new Error();
             vocabList = newVocab;
             saveAllData();
-            killAllSpeech();
             if (appMode === 'random') pickRandom();
             else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); }
             alert(`Successfully loaded ${vocabList.length} vocabulary items!`);
@@ -2439,7 +2351,7 @@
                 const workbook = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
                 const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
                 vocabList = rows.map(r => ({ khmer: r[3]?.toString().trim() || "", chinese: r[4]?.toString().trim() || "" })).filter(i => i.khmer && i.chinese);
-                if(vocabList.length) { saveAllData(); killAllSpeech(); if (appMode === 'random') pickRandom(); else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } }
+                if(vocabList.length) { saveAllData(); if (appMode === 'random') pickRandom(); else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } }
                 hideModal();
             };
             reader.readAsArrayBuffer(file);
@@ -2480,7 +2392,6 @@
             vocabList = data.map(row => ({ khmer: row[khmerCol]?.toString().trim() || "", chinese: row[chineseCol]?.toString().trim() || "" })).filter(v=>v.khmer && v.chinese); 
             if(vocabList.length===0) throw new Error(); 
             saveAllData(); 
-            killAllSpeech();
             if (appMode === 'random') pickRandom(); 
             else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } 
             hideModal(); 
