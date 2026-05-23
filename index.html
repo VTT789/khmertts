@@ -552,7 +552,7 @@
             backdrop-filter: none;
             border: none;
             box-shadow: none;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            text-shadow: none;
             will-change: left, top;
             touch-action: pan-y pinch-zoom;
             max-width: 90vw;
@@ -1144,127 +1144,169 @@
     
     // ========== TEXT SHADOW FUNCTION (FOR BOTH CHINESE AND KHMER) ==========
     function applyTextShadow() {
-        // Apply shadow to Chinese main text
+        const shadowSize = document.getElementById('mZhShadow').value;
+        const shadowValue = shadowSize > 0 ? `0 2px ${shadowSize}px rgba(0,0,0,0.5)` : 'none';
+        
+        // Apply to Chinese main text
         const chineseContainer = document.getElementById('chineseWord');
         if (chineseContainer) {
-            const shadowSize = document.getElementById('mZhShadow').value;
-            const shadowValue = shadowSize > 0 ? `0 2px ${shadowSize}px rgba(0,0,0,0.5)` : 'none';
             chineseContainer.querySelectorAll('.chinese-main').forEach(el => {
                 el.style.textShadow = shadowValue;
             });
-            document.getElementById('mZhShadowVal').innerText = shadowSize + 'px';
         }
         
-        // Apply shadow to Khmer text
+        // Apply to Khmer text
         const khmerElement = document.getElementById('khmerWord');
         if (khmerElement) {
-            const shadowSize = document.getElementById('mZhShadow').value;
-            const shadowValue = shadowSize > 0 ? `0 2px ${shadowSize}px rgba(0,0,0,0.5)` : 'none';
             khmerElement.style.textShadow = shadowValue;
         }
         
+        document.getElementById('mZhShadowVal').innerText = shadowSize + 'px';
         saveAllData();
     }
     
-    // ========== IMPROVED SPEECH SYSTEM FOR MOBILE ==========
+    // ========== ROBUST SPEECH SYSTEM ==========
     let currentAudio = null;
-    let speechCancelRequested = false;
+    let isSpeaking = false;
+    let currentSpeechId = 0;
+    let nextSpeechId = 0;
     
-    async function callEdgeTTS(text, voice, ratePercent = null) {
-        if (!text || speechCancelRequested) return;
+    async function speakText(text, voice, ratePercent = null) {
+        if (!text) return false;
+        
+        const thisSpeechId = ++nextSpeechId;
+        
         try {
             let formData = new URLSearchParams();
             formData.append('text', text);
             formData.append('voice', voice);
-            if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent);
+            if (voice.startsWith('zh-') && ratePercent !== null) {
+                formData.append('rate', ratePercent);
+            }
             
             const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() });
             if (!response.ok) throw new Error();
-            if (speechCancelRequested) return;
+            
+            // Check if this speech was cancelled during fetch
+            if (thisSpeechId !== currentSpeechId) return false;
             
             const blob = await response.blob();
-            if (speechCancelRequested) return;
+            
+            // Check again after blob conversion
+            if (thisSpeechId !== currentSpeechId) return false;
             
             const url = URL.createObjectURL(blob);
             const audio = new Audio();
             audio.src = url;
             
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 audio.onended = () => {
                     URL.revokeObjectURL(url);
-                    resolve();
+                    resolve(true);
                 };
-                audio.onerror = () => reject();
-                audio.play().catch(reject);
-                if (currentAudio && !currentAudio.paused) currentAudio.pause();
-                currentAudio = audio;
+                audio.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    resolve(false);
+                };
+                
+                if (thisSpeechId === currentSpeechId) {
+                    if (currentAudio && !currentAudio.paused) {
+                        currentAudio.pause();
+                    }
+                    currentAudio = audio;
+                    audio.play().catch(() => resolve(false));
+                } else {
+                    resolve(false);
+                }
             });
         } catch(err) {
             console.error("TTS error:", err);
-            return Promise.reject(err);
+            return false;
         }
     }
     
-    function killAllSpeech() {
-        speechCancelRequested = true;
+    function cancelAllSpeech() {
         if (currentAudio) {
             currentAudio.pause();
             currentAudio.src = "";
             currentAudio = null;
         }
-        setTimeout(() => {
-            speechCancelRequested = false;
-        }, 100);
+        currentSpeechId = nextSpeechId;
     }
     
-    async function speakSequence(zhText, kmText) {
-        killAllSpeech();
-        await new Promise(r => setTimeout(r, 50));
+    async function speakFullSequence(zhText, kmText) {
+        cancelAllSpeech();
         
-        const interval = parseInt(document.getElementById('speechInterval').value);
-        const zhReps = parseInt(document.getElementById('zhReps').value);
-        const kmReps = parseInt(document.getElementById('kmReps').value);
+        const interval = parseInt(document.getElementById('speechInterval').value) || 500;
+        const zhReps = parseInt(document.getElementById('zhReps').value) || 3;
+        const kmReps = parseInt(document.getElementById('kmReps').value) || 1;
         const zhVoice = document.getElementById('zhVoiceSelect').value;
         const kmVoice = document.getElementById('kmVoiceSelect').value;
         const rateSlider = document.getElementById('zhRateSlider');
         let rateValue = rateSlider ? parseInt(rateSlider.value) : 0;
         let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%");
         
-        for(let i = 0; i < zhReps; i++) {
-            if (speechCancelRequested) return;
-            await callEdgeTTS(zhText, zhVoice, rateFormatted);
-            if (speechCancelRequested) return;
-            if(i < zhReps - 1) await new Promise(r => setTimeout(r, interval));
+        // Small delay to ensure cancellation is processed
+        await new Promise(r => setTimeout(r, 50));
+        
+        // Store current speech ID for this sequence
+        const mySpeechId = ++nextSpeechId;
+        currentSpeechId = mySpeechId;
+        
+        // Speak Chinese repetitions
+        for (let i = 0; i < zhReps; i++) {
+            if (currentSpeechId !== mySpeechId) return;
+            const success = await speakText(zhText, zhVoice, rateFormatted);
+            if (!success && currentSpeechId === mySpeechId) {
+                // If failed, wait a bit and retry once
+                await new Promise(r => setTimeout(r, 200));
+                if (currentSpeechId === mySpeechId) {
+                    await speakText(zhText, zhVoice, rateFormatted);
+                }
+            }
+            if (currentSpeechId !== mySpeechId) return;
+            if (i < zhReps - 1) await new Promise(r => setTimeout(r, interval));
         }
         
-        if(kmText && kmText.trim() && !speechCancelRequested) {
-            for(let j = 0; j < kmReps; j++) {
-                if (speechCancelRequested) return;
-                await callEdgeTTS(kmText, kmVoice, null);
-                if (speechCancelRequested) return;
-                if(j < kmReps - 1) await new Promise(r => setTimeout(r, interval));
+        // Speak Khmer repetitions
+        if (kmText && kmText.trim() && currentSpeechId === mySpeechId) {
+            for (let j = 0; j < kmReps; j++) {
+                if (currentSpeechId !== mySpeechId) return;
+                const success = await speakText(kmText, kmVoice, null);
+                if (!success && currentSpeechId === mySpeechId) {
+                    await new Promise(r => setTimeout(r, 200));
+                    if (currentSpeechId === mySpeechId) {
+                        await speakText(kmText, kmVoice, null);
+                    }
+                }
+                if (currentSpeechId !== mySpeechId) return;
+                if (j < kmReps - 1) await new Promise(r => setTimeout(r, interval));
             }
         }
         
-        if(autoActive && !speechCancelRequested) {
+        // Restart auto cycle if needed
+        if (autoActive && currentSpeechId === mySpeechId) {
             startAutoCycle();
         }
     }
     
+    // Legacy function aliases
     async function speakAutoSequence(zhText, kmText) {
-        speakSequence(zhText, kmText);
+        speakFullSequence(zhText, kmText);
     }
     
     function speakChineseFromMain() { 
         const container = document.getElementById('chineseWord'); 
         const plainText = container ? container.getAttribute('data-plain') || '' : ''; 
         if(plainText) { 
-            killAllSpeech();
+            cancelAllSpeech();
             const voice = document.getElementById('zhVoiceSelect').value; 
             const rateSlider = document.getElementById('zhRateSlider'); 
             let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; 
             let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); 
-            callEdgeTTS(plainText, voice, rateFormatted).catch(console.warn);
+            const myId = ++nextSpeechId;
+            currentSpeechId = myId;
+            speakText(plainText, voice, rateFormatted).catch(console.warn);
         } 
     }
     
@@ -1272,9 +1314,11 @@
         const container = document.getElementById('khmerWord'); 
         const plainText = container ? container.innerText : ''; 
         if(plainText) { 
-            killAllSpeech();
+            cancelAllSpeech();
             const voice = document.getElementById('kmVoiceSelect').value; 
-            callEdgeTTS(plainText, voice, null).catch(console.warn);
+            const myId = ++nextSpeechId;
+            currentSpeechId = myId;
+            speakText(plainText, voice, null).catch(console.warn);
         } 
     }
     
@@ -1628,7 +1672,7 @@
     }
     
     function loadWordByMode(idx) {
-        killAllSpeech();
+        cancelAllSpeech();
         if (!vocabList[idx]) return;
         if (appMode === 'random') {
             history = history.slice(0, historyIndex + 1);
@@ -2190,7 +2234,7 @@
             pickRandom(); 
         } else { 
             clearTimeout(autoTimer); 
-            killAllSpeech(); 
+            cancelAllSpeech(); 
         } 
     }
     
