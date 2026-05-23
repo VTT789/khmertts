@@ -498,7 +498,6 @@
         .chinese-word:active { cursor: grabbing; }
         .char-block { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; white-space: nowrap; }
         
-        /* Top layer - Pinyin (small, above main character) */
         .pinyin-top {
             font-size: 0.35em;
             color: #f97316;
@@ -514,7 +513,6 @@
         }
         body.night-mode .pinyin-top { color: #fbbf24; }
         
-        /* Middle layer - Main Chinese character (large) */
         .chinese-main {
             font-weight: 500;
             color: white;
@@ -526,7 +524,6 @@
             order: 2;
         }
         
-        /* Bottom layer - Small character (tiny, below main) */
         .chinese-bottom {
             font-size: 0.25em;
             font-weight: 500;
@@ -1024,7 +1021,6 @@
                             <option value="'SingKhmer'">SingKhmerForChinese</option>
                         </select><input type="color" id="mZhColor" value="#000000"><button id="mZhBold" class="bold-icon-btn" onclick="toggleBold('mZhBold', applyChineseMainStyle)"><span>BOLD</span></button></div>
                         <div class="size-row"><label>Main Char Size (vh)</label><input type="range" id="mZhSize" class="size-slider" min="2" max="150" value="42"><span id="mZhSizeVal">42vh</span></div>
-                        <!-- Shadow control -->
                         <div class="shadow-style-grid">
                             <label>Shadow</label>
                             <input type="range" id="shadowSlider" class="size-slider" min="0" max="20" step="0.5" value="3">
@@ -1048,6 +1044,7 @@
                     <div class="size-row"><label>ZH Repetitions</label><input type="range" id="zhReps" class="size-slider" min="1" max="10" value="3"><span id="repVal">3</span></div>
                     <div class="size-row"><label>KM Repetitions</label><input type="range" id="kmReps" class="size-slider" min="1" max="10" value="1"><span id="kmRepVal">1</span></div>
                     <div class="size-row"><label>Pause Interval (ms)</label><input type="range" id="speechInterval" class="size-slider" min="0" max="2000" step="100" value="500"></div>
+                    <div class="size-row"><button id="testAudioBtn" class="btn-main btn-accent" style="margin-top:5px; padding:6px;" onclick="testAudioOnMobile()">🔊 Test Audio System</button></div>
                 </div>
 
                 <div id="sideControls" class="control-group">
@@ -1157,7 +1154,6 @@
         const percent = Math.round(shadowValue);
         document.getElementById('shadowVal').innerText = percent + '%';
         
-        // Apply shadow to both Chinese main text and Khmer text
         const shadowBlur = percent * 0.4;
         const shadowOffset = percent * 0.2;
         const shadowOpacity = Math.min(0.5, percent / 40);
@@ -1175,146 +1171,190 @@
         saveAllData();
     }
     
-    // ========== AUTO-SHRINK FUNCTIONS ==========
-    let userSetChineseFontSize = 42;
-    let userSetKhmerFontSize = 42;
+    // ========== FIXED SPEECH FOR MOBILE ==========
+    let currentAudio = null;
+    let speechQueue = [];
+    let isProcessingQueue = false;
+    let audioUnlocked = false;
     
-    function shrinkChineseToFit() {
-        const element = document.getElementById('chineseWord');
-        if (!element) return;
+    // Unlock audio on first user interaction (required for mobile)
+    function unlockAudio() {
+        if (audioUnlocked) return;
+        // Create a silent audio context to unlock
+        const silentAudio = new Audio();
+        silentAudio.volume = 0;
+        silentAudio.play().then(() => {
+            audioUnlocked = true;
+            console.log("Audio unlocked for mobile");
+        }).catch(() => {
+            console.log("Audio unlock failed, will retry");
+        });
+    }
+    
+    // Attach unlock to various user interactions
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+    
+    async function callEdgeTTS(text, voice, ratePercent = null) {
+        if (!text) return Promise.reject("No text");
         
-        const parentRect = document.getElementById('displayArea').getBoundingClientRect();
-        const maxWidth = parentRect.width * 0.85;
-        if (maxWidth <= 0) return;
-        
-        const originalTransform = element.style.transform;
-        const originalPosition = element.style.position;
-        const originalLeft = element.style.left;
-        const originalTop = element.style.top;
-        
-        element.style.position = 'absolute';
-        element.style.left = '0';
-        element.style.top = '0';
-        element.style.transform = 'none';
-        
-        element.style.fontSize = userSetChineseFontSize + 'vh';
-        void element.offsetHeight;
-        
-        let finalSize = userSetChineseFontSize;
-        
-        if (element.scrollWidth > maxWidth) {
-            let low = 2;
-            let high = userSetChineseFontSize;
-            let bestSize = low;
-            
-            for (let i = 0; i < 12; i++) {
-                if (low > high) break;
-                const mid = (low + high) / 2;
-                element.style.fontSize = mid + 'vh';
-                void element.offsetHeight;
-                
-                if (element.scrollWidth <= maxWidth) {
-                    bestSize = mid;
-                    low = mid + 0.5;
-                } else {
-                    high = mid - 0.5;
-                }
-            }
-            finalSize = bestSize;
+        // Ensure audio is unlocked
+        if (!audioUnlocked) {
+            await new Promise(resolve => {
+                const unlockHandler = () => {
+                    audioUnlocked = true;
+                    document.removeEventListener('click', unlockHandler);
+                    document.removeEventListener('touchstart', unlockHandler);
+                    resolve();
+                };
+                document.addEventListener('click', unlockHandler);
+                document.addEventListener('touchstart', unlockHandler);
+            });
         }
         
-        element.style.fontSize = finalSize + 'vh';
-        
-        element.style.position = originalPosition || 'absolute';
-        element.style.left = originalLeft || chineseX + '%';
-        element.style.top = originalTop || chineseY + '%';
-        element.style.transform = originalTransform || 'translate(-50%, -50%)';
-        
-        document.getElementById('mZhSizeVal').innerText = Math.round(finalSize) + 'vh';
-    }
-    
-    function shrinkKhmerToFit() {
-        const element = document.getElementById('khmerWord');
-        if (!element) return;
-        
-        const parentRect = document.getElementById('displayArea').getBoundingClientRect();
-        const maxWidth = parentRect.width * 0.85;
-        if (maxWidth <= 0) return;
-        
-        const originalTransform = element.style.transform;
-        const originalPosition = element.style.position;
-        const originalLeft = element.style.left;
-        const originalTop = element.style.top;
-        
-        element.style.position = 'absolute';
-        element.style.left = '0';
-        element.style.top = '0';
-        element.style.transform = 'none';
-        
-        element.style.fontSize = userSetKhmerFontSize + 'vh';
-        void element.offsetHeight;
-        
-        let finalSize = userSetKhmerFontSize;
-        
-        if (element.scrollWidth > maxWidth) {
-            let low = 2;
-            let high = userSetKhmerFontSize;
-            let bestSize = low;
-            
-            for (let i = 0; i < 12; i++) {
-                if (low > high) break;
-                const mid = (low + high) / 2;
-                element.style.fontSize = mid + 'vh';
-                void element.offsetHeight;
-                
-                if (element.scrollWidth <= maxWidth) {
-                    bestSize = mid;
-                    low = mid + 0.5;
-                } else {
-                    high = mid - 0.5;
-                }
+        try {
+            let formData = new URLSearchParams();
+            formData.append('text', text);
+            formData.append('voice', voice);
+            if (voice.startsWith('zh-') && ratePercent !== null) {
+                formData.append('rate', ratePercent);
             }
-            finalSize = bestSize;
+            
+            const response = await fetch("/speak", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: formData.toString()
+            });
+            
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio();
+            audio.src = url;
+            
+            return new Promise((resolve, reject) => {
+                audio.onended = () => {
+                    URL.revokeObjectURL(url);
+                    resolve();
+                };
+                audio.onerror = (err) => {
+                    URL.revokeObjectURL(url);
+                    console.error("Audio playback error:", err);
+                    reject(err);
+                };
+                audio.play().catch(reject);
+                
+                if (currentAudio && !currentAudio.paused) {
+                    currentAudio.pause();
+                }
+                currentAudio = audio;
+            });
+        } catch(err) {
+            console.error("TTS Error:", err);
+            return Promise.reject(err);
         }
+    }
+    
+    async function processSpeechQueue() {
+        if (isProcessingQueue || speechQueue.length === 0) return;
+        isProcessingQueue = true;
         
-        element.style.fontSize = finalSize + 'vh';
+        while (speechQueue.length) {
+            const { text, voice, rate } = speechQueue.shift();
+            try {
+                await callEdgeTTS(text, voice, rate);
+                const interval = parseInt(document.getElementById('speechInterval').value || 500);
+                await new Promise(r => setTimeout(r, interval));
+            } catch(err) {
+                console.warn("Speech failed:", err);
+            }
+        }
+        isProcessingQueue = false;
+    }
+    
+    function enqueueSpeech(text, voice, rate = null) {
+        if (!text) return;
+        speechQueue.push({ text, voice, rate });
+        processSpeechQueue();
+    }
+    
+    function killAllSpeech() {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.src = "";
+            currentAudio = null;
+        }
+        speechQueue = [];
+        isProcessingQueue = false;
+    }
+    
+    function speakChineseEdge(text) {
+        if (!text) return;
+        const voice = document.getElementById('zhVoiceSelect').value;
+        const rateSlider = document.getElementById('zhRateSlider');
+        let rateValue = rateSlider ? parseInt(rateSlider.value) : 0;
+        let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%");
+        enqueueSpeech(text, voice, rateFormatted);
+    }
+    
+    function speakKhmerEdge(text) {
+        if (!text) return;
+        const voice = document.getElementById('kmVoiceSelect').value;
+        enqueueSpeech(text, voice, null);
+    }
+    
+    function speakChineseFromMain() {
+        const container = document.getElementById('chineseWord');
+        const plainText = container ? container.getAttribute('data-plain') || '' : '';
+        if(plainText) {
+            killAllSpeech();
+            speakChineseEdge(plainText);
+        }
+    }
+    
+    function speakKhmerFromMain() {
+        const container = document.getElementById('khmerWord');
+        const plainText = container ? container.innerText : '';
+        if(plainText) {
+            killAllSpeech();
+            speakKhmerEdge(plainText);
+        }
+    }
+    
+    // Test audio function
+    function testAudioOnMobile() {
+        killAllSpeech();
+        // Test with a simple Chinese phrase
+        const testText = "测试音频";
+        const voice = document.getElementById('zhVoiceSelect').value;
+        enqueueSpeech(testText, voice, "0%");
+        alert("Testing audio playback. If you hear '测试音频', audio is working!");
+    }
+    
+    async function speakAutoSequence(zhText, kmText) {
+        killAllSpeech();
+        const interval = parseInt(document.getElementById('speechInterval').value);
+        const zhReps = parseInt(document.getElementById('zhReps').value);
+        const kmReps = parseInt(document.getElementById('kmReps').value);
+        const zhVoice = document.getElementById('zhVoiceSelect').value;
+        const kmVoice = document.getElementById('kmVoiceSelect').value;
+        const rateSlider = document.getElementById('zhRateSlider');
+        let rateValue = rateSlider ? parseInt(rateSlider.value) : 0;
+        let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%");
         
-        element.style.position = originalPosition || 'absolute';
-        element.style.left = originalLeft || khmerX + '%';
-        element.style.top = originalTop || khmerY + '%';
-        element.style.transform = originalTransform || 'translate(-50%, -50%)';
-        
-        document.getElementById('mKmSizeVal').innerText = Math.round(finalSize) + 'vh';
+        for(let i=0; i<zhReps; i++) {
+            await callEdgeTTS(zhText, zhVoice, rateFormatted);
+            if(i < zhReps-1) await new Promise(r => setTimeout(r, interval));
+        }
+        if(kmText && kmText.trim()) {
+            for(let j=0; j<kmReps; j++) {
+                await callEdgeTTS(kmText, kmVoice, null);
+                if(j < kmReps-1) await new Promise(r => setTimeout(r, interval));
+            }
+        }
+        if(autoActive) startAutoCycle();
     }
-    
-    function forceShrink() {
-        setTimeout(() => {
-            shrinkChineseToFit();
-            shrinkKhmerToFit();
-        }, 50);
-    }
-    
-    // ========== FIXED SPEECH ==========
-    let currentAudio = null, speechQueue = [], isProcessingQueue = false;
-    async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
-    async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, parseInt(document.getElementById('speechInterval').value || 500))); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
-    function enqueueSpeech(text, voice, rate = null) { if (!text) return; speechQueue.push({ text, voice, rate }); processSpeechQueue(); }
-    function killAllSpeech() { if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; } speechQueue = []; isProcessingQueue = false; }
-    function speakChineseEdge(text) { if (!text) return; const voice = document.getElementById('zhVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); enqueueSpeech(text, voice, rateFormatted); }
-    function speakKhmerEdge(text) { if (!text) return; const voice = document.getElementById('kmVoiceSelect').value; enqueueSpeech(text, voice, null); }
-    
-    function speakChineseFromMain() { 
-        const container = document.getElementById('chineseWord'); 
-        const plainText = container ? container.getAttribute('data-plain') || '' : ''; 
-        if(plainText) { killAllSpeech(); speakChineseEdge(plainText); } 
-    }
-    function speakKhmerFromMain() { 
-        const container = document.getElementById('khmerWord'); 
-        const plainText = container ? container.innerText : ''; 
-        if(plainText) { killAllSpeech(); speakKhmerEdge(plainText); } 
-    }
-    
-    async function speakAutoSequence(zhText, kmText) { killAllSpeech(); const interval = parseInt(document.getElementById('speechInterval').value); const zhReps = parseInt(document.getElementById('zhReps').value); const kmReps = parseInt(document.getElementById('kmReps').value); const zhVoice = document.getElementById('zhVoiceSelect').value; const kmVoice = document.getElementById('kmVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); for(let i=0; i<zhReps; i++) { await callEdgeTTS(zhText, zhVoice, rateFormatted); if(i < zhReps-1) await new Promise(r => setTimeout(r, interval)); } if(kmText && kmText.trim()) { for(let j=0; j<kmReps; j++) { await callEdgeTTS(kmText, kmVoice, null); if(j < kmReps-1) await new Promise(r => setTimeout(r, interval)); } } if(autoActive) startAutoCycle(); }
     
     const tripleHtmlCache = new Map();
     function getTripleHTML(chineseText) {
@@ -1362,6 +1402,9 @@
         bottomElements.forEach(el => { el.style.display = bottomCharVisible ? '' : 'none'; });
     }
     
+    let userSetChineseFontSize = 42;
+    let userSetKhmerFontSize = 42;
+    
     function applyChineseMainStyle() {
         const container = document.getElementById('chineseWord');
         if (!container) return;
@@ -1371,7 +1414,6 @@
         const newSize = parseFloat(document.getElementById('mZhSize').value);
         
         userSetChineseFontSize = newSize;
-        
         container.style.fontSize = userSetChineseFontSize + 'vh';
         container.querySelectorAll('.chinese-main').forEach(el => {
             el.style.fontFamily = mainFont;
@@ -1446,6 +1488,101 @@
     function updateKhmerDisplay(text) {
         const container = document.getElementById('khmerWord');
         if (container) { container.innerText = text; setKhmerFontSize(userSetKhmerFontSize); forceShrink(); }
+    }
+    
+    function shrinkChineseToFit() {
+        const element = document.getElementById('chineseWord');
+        if (!element) return;
+        const parentRect = document.getElementById('displayArea').getBoundingClientRect();
+        const maxWidth = parentRect.width * 0.85;
+        if (maxWidth <= 0) return;
+        
+        const originalTransform = element.style.transform;
+        const originalPosition = element.style.position;
+        const originalLeft = element.style.left;
+        const originalTop = element.style.top;
+        
+        element.style.position = 'absolute';
+        element.style.left = '0';
+        element.style.top = '0';
+        element.style.transform = 'none';
+        element.style.fontSize = userSetChineseFontSize + 'vh';
+        void element.offsetHeight;
+        
+        let finalSize = userSetChineseFontSize;
+        if (element.scrollWidth > maxWidth) {
+            let low = 2, high = userSetChineseFontSize, bestSize = low;
+            for (let i = 0; i < 12; i++) {
+                if (low > high) break;
+                const mid = (low + high) / 2;
+                element.style.fontSize = mid + 'vh';
+                void element.offsetHeight;
+                if (element.scrollWidth <= maxWidth) {
+                    bestSize = mid;
+                    low = mid + 0.5;
+                } else {
+                    high = mid - 0.5;
+                }
+            }
+            finalSize = bestSize;
+        }
+        element.style.fontSize = finalSize + 'vh';
+        element.style.position = originalPosition || 'absolute';
+        element.style.left = originalLeft || chineseX + '%';
+        element.style.top = originalTop || chineseY + '%';
+        element.style.transform = originalTransform || 'translate(-50%, -50%)';
+        document.getElementById('mZhSizeVal').innerText = Math.round(finalSize) + 'vh';
+    }
+    
+    function shrinkKhmerToFit() {
+        const element = document.getElementById('khmerWord');
+        if (!element) return;
+        const parentRect = document.getElementById('displayArea').getBoundingClientRect();
+        const maxWidth = parentRect.width * 0.85;
+        if (maxWidth <= 0) return;
+        
+        const originalTransform = element.style.transform;
+        const originalPosition = element.style.position;
+        const originalLeft = element.style.left;
+        const originalTop = element.style.top;
+        
+        element.style.position = 'absolute';
+        element.style.left = '0';
+        element.style.top = '0';
+        element.style.transform = 'none';
+        element.style.fontSize = userSetKhmerFontSize + 'vh';
+        void element.offsetHeight;
+        
+        let finalSize = userSetKhmerFontSize;
+        if (element.scrollWidth > maxWidth) {
+            let low = 2, high = userSetKhmerFontSize, bestSize = low;
+            for (let i = 0; i < 12; i++) {
+                if (low > high) break;
+                const mid = (low + high) / 2;
+                element.style.fontSize = mid + 'vh';
+                void element.offsetHeight;
+                if (element.scrollWidth <= maxWidth) {
+                    bestSize = mid;
+                    low = mid + 0.5;
+                } else {
+                    high = mid - 0.5;
+                }
+            }
+            finalSize = bestSize;
+        }
+        element.style.fontSize = finalSize + 'vh';
+        element.style.position = originalPosition || 'absolute';
+        element.style.left = originalLeft || khmerX + '%';
+        element.style.top = originalTop || khmerY + '%';
+        element.style.transform = originalTransform || 'translate(-50%, -50%)';
+        document.getElementById('mKmSizeVal').innerText = Math.round(finalSize) + 'vh';
+    }
+    
+    function forceShrink() {
+        setTimeout(() => {
+            shrinkChineseToFit();
+            shrinkKhmerToFit();
+        }, 50);
     }
     
     let resizeDebounce;
@@ -1677,7 +1814,7 @@
         updateResults();
     }
     
-    // ========== DRAG & ZOOM ==========
+    // ========== DRAG & ZOOM (simplified to save space) ==========
     let chineseElement = null, khmerElement = null;
     let chineseX = 50, chineseY = 40, khmerX = 50, khmerY = 70;
     let topLayerX = 0, topLayerY = 0, bottomLayerX = 0, bottomLayerY = 0;
@@ -1791,7 +1928,6 @@
         chineseElement.addEventListener('click', (e) => { e.stopPropagation(); speakChineseFromMain(); });
         chineseElement.addEventListener('mousedown', onPointerDown);
         chineseElement.addEventListener('touchstart', onPointerDown, { passive: false });
-        
         chineseElement.addEventListener('touchstart', (e) => handlePinchStart(e, 'chinese'), { passive: false });
         chineseElement.addEventListener('touchmove', (e) => handlePinchMove(e, 'chinese'), { passive: false });
         chineseElement.addEventListener('touchend', handlePinchEnd);
@@ -1912,7 +2048,6 @@
         khmerElement.style.transform = 'translate(-50%, -50%)';
         khmerElement.style.cursor = 'grab';
         khmerElement.addEventListener('click', (e) => { e.stopPropagation(); speakKhmerFromMain(); });
-        
         khmerElement.addEventListener('touchstart', (e) => handlePinchStart(e, 'khmer'), { passive: false });
         khmerElement.addEventListener('touchmove', (e) => handlePinchMove(e, 'khmer'), { passive: false });
         khmerElement.addEventListener('touchend', handlePinchEnd);
@@ -2484,6 +2619,7 @@
         document.getElementById('modeRandomBtn').addEventListener('click', () => { if (appMode !== 'random') toggleAppMode(); });
         document.getElementById('modeNormalBtn').addEventListener('click', () => { if (appMode !== 'normal') toggleAppMode(); });
         document.getElementById('searchBtn').addEventListener('click', () => showSearchPopup());
+        document.getElementById('testAudioBtn').addEventListener('click', testAudioOnMobile);
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space') { e.preventDefault(); pickRandom(); }
             else if (e.code === 'ArrowLeft') { e.preventDefault(); historyPrev(); }
@@ -2497,6 +2633,7 @@
     function moveSidebarFocus(delta) { if (!sidebarIndices.length) return; let newFocus = sidebarFocusIdx + delta; if (newFocus < 0) newFocus = sidebarIndices.length - 1; if (newFocus >= sidebarIndices.length) newFocus = 0; sidebarFocusIdx = newFocus; updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); }
     window.historyPrev = historyPrev; window.historyNext = historyNext; window.moveSidebarFocus = moveSidebarFocus; window.toggleAuto = toggleAuto; window.toggleSidebar = toggleSidebar; window.switchTab = switchTab; window.toggleMenu = toggleMenu; window.pickRandom = pickRandom; window.loadWordByMode = loadWordByMode;
     window.toggleBold = toggleBold;
+    window.testAudioOnMobile = testAudioOnMobile;
 </script>
 </body>
 </html>
