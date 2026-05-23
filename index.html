@@ -395,7 +395,7 @@
         .style-grid { display: grid; grid-template-columns: 25px 1fr 40px 35px 40px; gap: 6px; align-items: center; margin-bottom: 6px; }
         .side-style-grid { display: grid; grid-template-columns: 35px 1fr 40px; gap: 6px; align-items: center; margin-bottom: 6px; }
         .pinyin-style-grid { display: grid; grid-template-columns: 35px 1fr 40px 40px; gap: 6px; align-items: center; margin-bottom: 6px; }
-        .shadow-style-grid { display: grid; grid-template-columns: 25px 1fr 40px; gap: 6px; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+        .shadow-style-grid { display: grid; grid-template-columns: 50px 1fr 40px; gap: 6px; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
 
         .voice-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px solid var(--border); transition: all 0.2s; }
         .size-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding: 0 5px; }
@@ -536,10 +536,10 @@
             margin-top: 4px;
             position: relative;
             transition: none;
-            color: #a78bfa;
+            color: #2563eb;
             order: 3;
         }
-        body.night-mode .chinese-bottom { color: #818cf8; }
+        body.night-mode .chinese-bottom { color: #60a5fa; }
         
         .khmer-text {
             position: absolute;
@@ -1024,11 +1024,11 @@
                             <option value="'SingKhmer'">SingKhmerForChinese</option>
                         </select><input type="color" id="mZhColor" value="#000000"><button id="mZhBold" class="bold-icon-btn" onclick="toggleBold('mZhBold', applyChineseMainStyle)"><span>BOLD</span></button></div>
                         <div class="size-row"><label>Main Char Size (vh)</label><input type="range" id="mZhSize" class="size-slider" min="2" max="150" value="42"><span id="mZhSizeVal">42vh</span></div>
-                        <!-- Shadow control for Chinese text -->
+                        <!-- Shadow control -->
                         <div class="shadow-style-grid">
-                            <label>🇨🇳 Shadow</label>
-                            <input type="range" id="zhShadowSlider" class="size-slider" min="0" max="20" step="0.5" value="3">
-                            <span id="zhShadowVal">3%</span>
+                            <label>Shadow</label>
+                            <input type="range" id="shadowSlider" class="size-slider" min="0" max="20" step="0.5" value="3">
+                            <span id="shadowVal">3%</span>
                         </div>
                     </div>
                     <div class="style-grid"><label>KM Font</label><select id="mKmFont" class="font-select">
@@ -1039,12 +1039,6 @@
                         <option value="'KHSAMADY'">Samady KS</option>
                     </select><input type="color" id="mKmColor" value="#000000"><button id="mKmBold" class="bold-icon-btn" onclick="toggleBold('mKmBold', applyStyles)"><span>BOLD</span></button></div>
                     <div class="size-row"><label>KM Size (vh)</label><input type="range" id="mKmSize" class="size-slider" min="2" max="150" value="42"><span id="mKmSizeVal">42vh</span></div>
-                    <!-- Shadow control for Khmer text -->
-                    <div class="shadow-style-grid">
-                        <label>🇰🇭 Shadow</label>
-                        <input type="range" id="kmShadowSlider" class="size-slider" min="0" max="20" step="0.5" value="3">
-                        <span id="kmShadowVal">3%</span>
-                    </div>
                 </div>
 
                 <div id="voiceControls" class="control-group">
@@ -1086,8 +1080,8 @@
                                 <input type="color" id="pinyinColor" value="#000000">
                                 <button id="pinyinBold" class="bold-icon-btn active" onclick="toggleBold('pinyinBold', applyPinyinStyles)"><span>BOLD</span></button>
                             </div>
-                            <div class="size-row"><label>Size (px)</label><input type="range" id="pinyinSizePx" min="10" max="100" value="20"><span id="pinyinSizeVal">20px</span></div>
-                            <div class="size-row"><label>Spacing (px)</label><input type="range" id="pinyinSpacing" min="0" max="51" value="12"><span id="pinyinSpacingVal">12px</span></div>
+                            <div class="size-row"><label>Size (px)</label><input type="range" id="pinyinSizePx" class="size-slider" min="10" max="60" value="24"><span id="pinyinSizeVal">24px</span></div>
+                            <div class="size-row"><label>Spacing (px)</label><input type="range" id="pinyinSpacing" class="size-slider" min="0" max="51" value="0"><span id="pinyinSpacingVal">0px</span></div>
                         </div>
                         <div style="border-top: 1px solid var(--border); margin: 12px 0 8px 0; padding-top: 8px;">
                             <div class="section-header">
@@ -1109,10 +1103,10 @@
                                         <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti</option>
                                         <option value="'Hanyi Extra Bold'">Hanyi Extra Bold</option>
                                     </select>
-                                    <input type="color" id="bottomCharColor" value="#a78bfa">
+                                    <input type="color" id="bottomCharColor" value="#2563eb">
                                     <button id="bottomBold" class="bold-icon-btn" onclick="toggleBold('bottomBold', applyBottomStyles)"><span>BOLD</span></button>
                                 </div>
-                                <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" min="8" max="60" value="16"><span id="bottomSizeVal">16px</span></div>
+                                <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" class="size-slider" min="30" max="100" value="45"><span id="bottomSizeVal">45px</span></div>
                             </div>
                         </div>
                     </div>
@@ -1157,29 +1151,25 @@
         }
     }
     
-    // ========== SHADOW CONTROL FUNCTIONS ==========
+    // ========== SHADOW CONTROL FUNCTION ==========
     function applyShadow() {
-        const zhShadowValue = document.getElementById('zhShadowSlider').value;
-        const kmShadowValue = document.getElementById('kmShadowSlider').value;
-        const zhPercent = Math.round(zhShadowValue);
-        const kmPercent = Math.round(kmShadowValue);
+        const shadowValue = document.getElementById('shadowSlider').value;
+        const percent = Math.round(shadowValue);
+        document.getElementById('shadowVal').innerText = percent + '%';
         
-        document.getElementById('zhShadowVal').innerText = zhPercent + '%';
-        document.getElementById('kmShadowVal').innerText = kmPercent + '%';
+        // Apply shadow to both Chinese main text and Khmer text
+        const shadowBlur = percent * 0.4;
+        const shadowOffset = percent * 0.2;
+        const shadowOpacity = Math.min(0.5, percent / 40);
+        const shadowStyle = `${shadowOffset}px ${shadowOffset}px ${shadowBlur}px rgba(0,0,0,${shadowOpacity})`;
         
-        // Apply shadow to Chinese main text (percentage-based for better scaling)
-        const zhShadowBlur = zhPercent * 0.4;
-        const zhShadowOffset = zhPercent * 0.2;
         document.querySelectorAll('.chinese-main').forEach(el => {
-            el.style.textShadow = `${zhShadowOffset}px ${zhShadowOffset}px ${zhShadowBlur}px rgba(0,0,0,${Math.min(0.5, zhPercent / 40)})`;
+            el.style.textShadow = shadowStyle;
         });
         
-        // Apply shadow to Khmer text
-        const kmShadowBlur = kmPercent * 0.4;
-        const kmShadowOffset = kmPercent * 0.2;
         const khmerElement = document.getElementById('khmerWord');
         if (khmerElement) {
-            khmerElement.style.textShadow = `${kmShadowOffset}px ${kmShadowOffset}px ${kmShadowBlur}px rgba(0,0,0,${Math.min(0.5, kmPercent / 40)})`;
+            khmerElement.style.textShadow = shadowStyle;
         }
         
         saveAllData();
@@ -1974,7 +1964,7 @@
     
     // ========== SIDEBAR UI & CONTROLS ==========
     function saveAllData() {
-        const settings = { mZhSize: userSetChineseFontSize, mKmSize: userSetKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, interval: document.getElementById('speechInterval').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: document.getElementById('bottomSizePx').value, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage, zhShadow: document.getElementById('zhShadowSlider').value, kmShadow: document.getElementById('kmShadowSlider').value };
+        const settings = { mZhSize: userSetChineseFontSize, mKmSize: userSetKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, interval: document.getElementById('speechInterval').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: document.getElementById('bottomSizePx').value, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage, shadow: document.getElementById('shadowSlider').value };
         localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList));
         localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings));
     }
@@ -1993,8 +1983,7 @@
             document.getElementById('kmReps').value = s.kmReps || 1;
             document.getElementById('speechInterval').value = s.interval || 500;
             document.getElementById('autoDelay').value = s.autoDelay || 5;
-            if(s.zhShadow !== undefined) document.getElementById('zhShadowSlider').value = s.zhShadow;
-            if(s.kmShadow !== undefined) document.getElementById('kmShadowSlider').value = s.kmShadow;
+            if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow;
             if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont;
             if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont;
             if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize;
@@ -2031,10 +2020,12 @@
         } else {
             document.getElementById('pinyinFont').value = "'XHeiPinyin'";
             document.getElementById('pinyinColor').value = "#000000";
-            document.getElementById('pinyinSizePx').value = "20";
-            document.getElementById('bottomSizePx').value = "16";
+            document.getElementById('pinyinSizePx').value = "24";
+            document.getElementById('pinyinSpacing').value = "0";
+            document.getElementById('bottomSizePx').value = "45";
             document.getElementById('mKmColor').value = "#000000";
-            document.getElementById('bottomCharColor').value = "#a78bfa";
+            document.getElementById('bottomCharColor').value = "#2563eb";
+            document.getElementById('shadowSlider').value = "3";
             sidebarVisible = false;
             document.getElementById('rightSide').classList.add('hidden');
             document.getElementById('dragResizer').classList.add('hidden');
@@ -2476,8 +2467,7 @@
         document.getElementById('mZhSize').addEventListener('input',function(){ setChineseFontSize(parseFloat(this.value)); saveAllData(); });
         document.getElementById('mKmSize').addEventListener('input',function(){ setKhmerFontSize(parseFloat(this.value)); saveAllData(); });
         document.getElementById('mZhColor').addEventListener('input',applyStyles); document.getElementById('mKmColor').addEventListener('input',applyStyles); 
-        document.getElementById('zhShadowSlider').addEventListener('input', function() { applyShadow(); saveAllData(); });
-        document.getElementById('kmShadowSlider').addEventListener('input', function() { applyShadow(); saveAllData(); });
+        document.getElementById('shadowSlider').addEventListener('input', function() { applyShadow(); saveAllData(); });
         document.getElementById('sZhSize').addEventListener('input',applyStyles); document.getElementById('sKmSize').addEventListener('input',applyStyles); document.getElementById('sZhColor').addEventListener('input',applyStyles); document.getElementById('sKmColor').addEventListener('input',applyStyles); 
         document.getElementById('mZhFont').addEventListener('change',function(){ applyChineseMainStyle(); saveAllData(); });
         document.getElementById('mKmFont').addEventListener('change',applyStyles); document.getElementById('sZhFont').addEventListener('change',applyStyles); document.getElementById('sKmFont').addEventListener('change',applyStyles);
