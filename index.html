@@ -395,6 +395,7 @@
         .style-grid { display: grid; grid-template-columns: 25px 1fr 40px 35px 40px; gap: 6px; align-items: center; margin-bottom: 6px; }
         .side-style-grid { display: grid; grid-template-columns: 35px 1fr 40px; gap: 6px; align-items: center; margin-bottom: 6px; }
         .pinyin-style-grid { display: grid; grid-template-columns: 35px 1fr 40px 40px; gap: 6px; align-items: center; margin-bottom: 6px; }
+        .shadow-style-grid { display: grid; grid-template-columns: 25px 1fr 40px; gap: 6px; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
 
         .voice-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px solid var(--border); transition: all 0.2s; }
         .size-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding: 0 5px; }
@@ -497,6 +498,7 @@
         .chinese-word:active { cursor: grabbing; }
         .char-block { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; white-space: nowrap; }
         
+        /* Top layer - Pinyin (small, above main character) */
         .pinyin-top {
             font-size: 0.35em;
             color: #f97316;
@@ -512,17 +514,19 @@
         }
         body.night-mode .pinyin-top { color: #fbbf24; }
         
+        /* Middle layer - Main Chinese character (large) */
         .chinese-main {
-            font-weight: 400;
+            font-weight: 500;
             color: white;
             line-height: 1.2;
             white-space: nowrap;
             font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui;
-            text-shadow: none;
+            text-shadow: 0 0px 0px rgba(0,0,0,0);
+            transition: text-shadow 0.1s ease;
             order: 2;
-            transition: text-shadow 0.2s ease;
         }
         
+        /* Bottom layer - Small character (tiny, below main) */
         .chinese-bottom {
             font-size: 0.25em;
             font-weight: 500;
@@ -546,13 +550,13 @@
             color: #a78bfa;
             white-space: nowrap;
             font-family: 'KHLazySmooth', 'Segoe UI', system-ui;
-            transition: text-shadow 0.2s ease;
+            transition: none;
             z-index: 10;
             background: transparent;
             backdrop-filter: none;
             border: none;
             box-shadow: none;
-            text-shadow: none;
+            text-shadow: 0 0px 0px rgba(0,0,0,0);
             will-change: left, top;
             touch-action: pan-y pinch-zoom;
             max-width: 90vw;
@@ -1020,7 +1024,12 @@
                             <option value="'SingKhmer'">SingKhmerForChinese</option>
                         </select><input type="color" id="mZhColor" value="#000000"><button id="mZhBold" class="bold-icon-btn" onclick="toggleBold('mZhBold', applyChineseMainStyle)"><span>BOLD</span></button></div>
                         <div class="size-row"><label>Main Char Size (vh)</label><input type="range" id="mZhSize" class="size-slider" min="2" max="150" value="42"><span id="mZhSizeVal">42vh</span></div>
-                        <div class="size-row"><label>Text Shadow (px)</label><input type="range" id="mZhShadow" class="size-slider" min="0" max="20" step="1" value="0"><span id="mZhShadowVal">0px</span></div>
+                        <!-- Shadow control for Chinese text -->
+                        <div class="shadow-style-grid">
+                            <label>🇨🇳 Shadow</label>
+                            <input type="range" id="zhShadowSlider" class="size-slider" min="0" max="20" step="0.5" value="3">
+                            <span id="zhShadowVal">3%</span>
+                        </div>
                     </div>
                     <div class="style-grid"><label>KM Font</label><select id="mKmFont" class="font-select">
                         <option value="'KHLazySmooth'">LazySmooth</option>
@@ -1030,6 +1039,12 @@
                         <option value="'KHSAMADY'">Samady KS</option>
                     </select><input type="color" id="mKmColor" value="#000000"><button id="mKmBold" class="bold-icon-btn" onclick="toggleBold('mKmBold', applyStyles)"><span>BOLD</span></button></div>
                     <div class="size-row"><label>KM Size (vh)</label><input type="range" id="mKmSize" class="size-slider" min="2" max="150" value="42"><span id="mKmSizeVal">42vh</span></div>
+                    <!-- Shadow control for Khmer text -->
+                    <div class="shadow-style-grid">
+                        <label>🇰🇭 Shadow</label>
+                        <input type="range" id="kmShadowSlider" class="size-slider" min="0" max="20" step="0.5" value="3">
+                        <span id="kmShadowVal">3%</span>
+                    </div>
                 </div>
 
                 <div id="voiceControls" class="control-group">
@@ -1042,7 +1057,7 @@
                 </div>
 
                 <div id="sideControls" class="control-group">
-                    <button id="sidebarToggleBtn" class="btn-main btn-accent" style="margin-bottom:10px; width:100%;" onclick="toggleSidebar()">HIDE SIDEBAR</button>
+                    <button id="sidebarToggleBtn" class="btn-main btn-accent" style="margin-bottom:10px; width:100%;" onclick="toggleSidebar()">SHOW SIDEBAR</button>
                     <div id="sidebarControlsContainer">
                         <div class="side-style-grid"><label>ZH Font</label><select id="sZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette</option><option value="'XHeiPinyin'">X Hei</option><option value="'Cream Pudding Pinyin'">Cream Pudding</option><option value="'Pinyin'">FZPY01</option></select><input type="color" id="sZhColor" value="#000000"></div>
                         <div class="side-style-grid"><label>KM Font</label><select id="sKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option><option value="'KHROSAPSRA'">Rosapsra</option><option value="'KHMithSalaPali'">MithSalaPali</option></select><input type="color" id="sKmColor" value="#475569"></div>
@@ -1112,7 +1127,7 @@
     </div>
 
     <div class="resizer" id="dragResizer" style="width:12px; cursor:col-resize; background:#e2e8f0; z-index:10;"></div>
-    <div class="sidebar" id="rightSide">
+    <div class="sidebar hidden" id="rightSide">
         <button class="sidebar-close-btn" id="sidebarCloseBtn">✕</button>
         <div class="sidebar-mode-buttons">
             <button id="modeRandomBtn" class="mode-icon-btn active">🎲 RANDOM</button>
@@ -1142,184 +1157,32 @@
         }
     }
     
-    // ========== TEXT SHADOW FUNCTION (FOR BOTH CHINESE AND KHMER) ==========
-    function applyTextShadow() {
-        const shadowSize = document.getElementById('mZhShadow').value;
-        const shadowValue = shadowSize > 0 ? `0 2px ${shadowSize}px rgba(0,0,0,0.5)` : 'none';
+    // ========== SHADOW CONTROL FUNCTIONS ==========
+    function applyShadow() {
+        const zhShadowValue = document.getElementById('zhShadowSlider').value;
+        const kmShadowValue = document.getElementById('kmShadowSlider').value;
+        const zhPercent = Math.round(zhShadowValue);
+        const kmPercent = Math.round(kmShadowValue);
         
-        // Apply to Chinese main text
-        const chineseContainer = document.getElementById('chineseWord');
-        if (chineseContainer) {
-            chineseContainer.querySelectorAll('.chinese-main').forEach(el => {
-                el.style.textShadow = shadowValue;
-            });
-        }
+        document.getElementById('zhShadowVal').innerText = zhPercent + '%';
+        document.getElementById('kmShadowVal').innerText = kmPercent + '%';
         
-        // Apply to Khmer text
+        // Apply shadow to Chinese main text (percentage-based for better scaling)
+        const zhShadowBlur = zhPercent * 0.4;
+        const zhShadowOffset = zhPercent * 0.2;
+        document.querySelectorAll('.chinese-main').forEach(el => {
+            el.style.textShadow = `${zhShadowOffset}px ${zhShadowOffset}px ${zhShadowBlur}px rgba(0,0,0,${Math.min(0.5, zhPercent / 40)})`;
+        });
+        
+        // Apply shadow to Khmer text
+        const kmShadowBlur = kmPercent * 0.4;
+        const kmShadowOffset = kmPercent * 0.2;
         const khmerElement = document.getElementById('khmerWord');
         if (khmerElement) {
-            khmerElement.style.textShadow = shadowValue;
+            khmerElement.style.textShadow = `${kmShadowOffset}px ${kmShadowOffset}px ${kmShadowBlur}px rgba(0,0,0,${Math.min(0.5, kmPercent / 40)})`;
         }
         
-        document.getElementById('mZhShadowVal').innerText = shadowSize + 'px';
         saveAllData();
-    }
-    
-    // ========== ROBUST SPEECH SYSTEM ==========
-    let currentAudio = null;
-    let isSpeaking = false;
-    let currentSpeechId = 0;
-    let nextSpeechId = 0;
-    
-    async function speakText(text, voice, ratePercent = null) {
-        if (!text) return false;
-        
-        const thisSpeechId = ++nextSpeechId;
-        
-        try {
-            let formData = new URLSearchParams();
-            formData.append('text', text);
-            formData.append('voice', voice);
-            if (voice.startsWith('zh-') && ratePercent !== null) {
-                formData.append('rate', ratePercent);
-            }
-            
-            const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() });
-            if (!response.ok) throw new Error();
-            
-            // Check if this speech was cancelled during fetch
-            if (thisSpeechId !== currentSpeechId) return false;
-            
-            const blob = await response.blob();
-            
-            // Check again after blob conversion
-            if (thisSpeechId !== currentSpeechId) return false;
-            
-            const url = URL.createObjectURL(blob);
-            const audio = new Audio();
-            audio.src = url;
-            
-            return new Promise((resolve) => {
-                audio.onended = () => {
-                    URL.revokeObjectURL(url);
-                    resolve(true);
-                };
-                audio.onerror = () => {
-                    URL.revokeObjectURL(url);
-                    resolve(false);
-                };
-                
-                if (thisSpeechId === currentSpeechId) {
-                    if (currentAudio && !currentAudio.paused) {
-                        currentAudio.pause();
-                    }
-                    currentAudio = audio;
-                    audio.play().catch(() => resolve(false));
-                } else {
-                    resolve(false);
-                }
-            });
-        } catch(err) {
-            console.error("TTS error:", err);
-            return false;
-        }
-    }
-    
-    function cancelAllSpeech() {
-        if (currentAudio) {
-            currentAudio.pause();
-            currentAudio.src = "";
-            currentAudio = null;
-        }
-        currentSpeechId = nextSpeechId;
-    }
-    
-    async function speakFullSequence(zhText, kmText) {
-        cancelAllSpeech();
-        
-        const interval = parseInt(document.getElementById('speechInterval').value) || 500;
-        const zhReps = parseInt(document.getElementById('zhReps').value) || 3;
-        const kmReps = parseInt(document.getElementById('kmReps').value) || 1;
-        const zhVoice = document.getElementById('zhVoiceSelect').value;
-        const kmVoice = document.getElementById('kmVoiceSelect').value;
-        const rateSlider = document.getElementById('zhRateSlider');
-        let rateValue = rateSlider ? parseInt(rateSlider.value) : 0;
-        let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%");
-        
-        // Small delay to ensure cancellation is processed
-        await new Promise(r => setTimeout(r, 50));
-        
-        // Store current speech ID for this sequence
-        const mySpeechId = ++nextSpeechId;
-        currentSpeechId = mySpeechId;
-        
-        // Speak Chinese repetitions
-        for (let i = 0; i < zhReps; i++) {
-            if (currentSpeechId !== mySpeechId) return;
-            const success = await speakText(zhText, zhVoice, rateFormatted);
-            if (!success && currentSpeechId === mySpeechId) {
-                // If failed, wait a bit and retry once
-                await new Promise(r => setTimeout(r, 200));
-                if (currentSpeechId === mySpeechId) {
-                    await speakText(zhText, zhVoice, rateFormatted);
-                }
-            }
-            if (currentSpeechId !== mySpeechId) return;
-            if (i < zhReps - 1) await new Promise(r => setTimeout(r, interval));
-        }
-        
-        // Speak Khmer repetitions
-        if (kmText && kmText.trim() && currentSpeechId === mySpeechId) {
-            for (let j = 0; j < kmReps; j++) {
-                if (currentSpeechId !== mySpeechId) return;
-                const success = await speakText(kmText, kmVoice, null);
-                if (!success && currentSpeechId === mySpeechId) {
-                    await new Promise(r => setTimeout(r, 200));
-                    if (currentSpeechId === mySpeechId) {
-                        await speakText(kmText, kmVoice, null);
-                    }
-                }
-                if (currentSpeechId !== mySpeechId) return;
-                if (j < kmReps - 1) await new Promise(r => setTimeout(r, interval));
-            }
-        }
-        
-        // Restart auto cycle if needed
-        if (autoActive && currentSpeechId === mySpeechId) {
-            startAutoCycle();
-        }
-    }
-    
-    // Legacy function aliases
-    async function speakAutoSequence(zhText, kmText) {
-        speakFullSequence(zhText, kmText);
-    }
-    
-    function speakChineseFromMain() { 
-        const container = document.getElementById('chineseWord'); 
-        const plainText = container ? container.getAttribute('data-plain') || '' : ''; 
-        if(plainText) { 
-            cancelAllSpeech();
-            const voice = document.getElementById('zhVoiceSelect').value; 
-            const rateSlider = document.getElementById('zhRateSlider'); 
-            let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; 
-            let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); 
-            const myId = ++nextSpeechId;
-            currentSpeechId = myId;
-            speakText(plainText, voice, rateFormatted).catch(console.warn);
-        } 
-    }
-    
-    function speakKhmerFromMain() { 
-        const container = document.getElementById('khmerWord'); 
-        const plainText = container ? container.innerText : ''; 
-        if(plainText) { 
-            cancelAllSpeech();
-            const voice = document.getElementById('kmVoiceSelect').value; 
-            const myId = ++nextSpeechId;
-            currentSpeechId = myId;
-            speakText(plainText, voice, null).catch(console.warn);
-        } 
     }
     
     // ========== AUTO-SHRINK FUNCTIONS ==========
@@ -1441,6 +1304,28 @@
         }, 50);
     }
     
+    // ========== FIXED SPEECH ==========
+    let currentAudio = null, speechQueue = [], isProcessingQueue = false;
+    async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
+    async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, parseInt(document.getElementById('speechInterval').value || 500))); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
+    function enqueueSpeech(text, voice, rate = null) { if (!text) return; speechQueue.push({ text, voice, rate }); processSpeechQueue(); }
+    function killAllSpeech() { if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; } speechQueue = []; isProcessingQueue = false; }
+    function speakChineseEdge(text) { if (!text) return; const voice = document.getElementById('zhVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); enqueueSpeech(text, voice, rateFormatted); }
+    function speakKhmerEdge(text) { if (!text) return; const voice = document.getElementById('kmVoiceSelect').value; enqueueSpeech(text, voice, null); }
+    
+    function speakChineseFromMain() { 
+        const container = document.getElementById('chineseWord'); 
+        const plainText = container ? container.getAttribute('data-plain') || '' : ''; 
+        if(plainText) { killAllSpeech(); speakChineseEdge(plainText); } 
+    }
+    function speakKhmerFromMain() { 
+        const container = document.getElementById('khmerWord'); 
+        const plainText = container ? container.innerText : ''; 
+        if(plainText) { killAllSpeech(); speakKhmerEdge(plainText); } 
+    }
+    
+    async function speakAutoSequence(zhText, kmText) { killAllSpeech(); const interval = parseInt(document.getElementById('speechInterval').value); const zhReps = parseInt(document.getElementById('zhReps').value); const kmReps = parseInt(document.getElementById('kmReps').value); const zhVoice = document.getElementById('zhVoiceSelect').value; const kmVoice = document.getElementById('kmVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); for(let i=0; i<zhReps; i++) { await callEdgeTTS(zhText, zhVoice, rateFormatted); if(i < zhReps-1) await new Promise(r => setTimeout(r, interval)); } if(kmText && kmText.trim()) { for(let j=0; j<kmReps; j++) { await callEdgeTTS(kmText, kmVoice, null); if(j < kmReps-1) await new Promise(r => setTimeout(r, interval)); } } if(autoActive) startAutoCycle(); }
+    
     const tripleHtmlCache = new Map();
     function getTripleHTML(chineseText) {
         if (!chineseText) return '';
@@ -1475,7 +1360,6 @@
         applyBottomStyles();
         applyLayerTransforms();
         applyTextVisibility();
-        applyTextShadow();
         forceShrink();
     }
     
@@ -1502,10 +1386,10 @@
         container.querySelectorAll('.chinese-main').forEach(el => {
             el.style.fontFamily = mainFont;
             el.style.color = mainColor;
-            el.style.fontWeight = isBold ? 'bold' : 'normal';
+            el.style.fontWeight = isBold ? 'bold' : '500';
         });
         document.getElementById('mZhSizeVal').innerText = userSetChineseFontSize + 'vh';
-        applyTextShadow();
+        applyShadow();
         forceShrink();
     }
     
@@ -1564,19 +1448,14 @@
         el.style.fontSize = userSetKhmerFontSize + 'vh';
         document.getElementById('mKmSize').value = userSetKhmerFontSize;
         document.getElementById('mKmSizeVal').innerText = userSetKhmerFontSize + 'vh';
+        applyShadow();
         saveAllData();
         forceShrink();
-        applyTextShadow();
     }
     
     function updateKhmerDisplay(text) {
         const container = document.getElementById('khmerWord');
-        if (container) { 
-            container.innerText = text; 
-            setKhmerFontSize(userSetKhmerFontSize); 
-            applyTextShadow();
-            forceShrink();
-        }
+        if (container) { container.innerText = text; setKhmerFontSize(userSetKhmerFontSize); forceShrink(); }
     }
     
     let resizeDebounce;
@@ -1590,7 +1469,7 @@
     });
     
     // ========== MODE, PAGINATION ==========
-    let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = true;
+    let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = false;
     let appMode = 'random';
     let normalCurrentIdx = 0;
     let normalCurrentPage = 0;
@@ -1672,7 +1551,7 @@
     }
     
     function loadWordByMode(idx) {
-        cancelAllSpeech();
+        killAllSpeech();
         if (!vocabList[idx]) return;
         if (appMode === 'random') {
             history = history.slice(0, historyIndex + 1);
@@ -2095,7 +1974,7 @@
     
     // ========== SIDEBAR UI & CONTROLS ==========
     function saveAllData() {
-        const settings = { mZhSize: userSetChineseFontSize, mKmSize: userSetKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, interval: document.getElementById('speechInterval').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: document.getElementById('bottomSizePx').value, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage, mZhShadow: document.getElementById('mZhShadow').value };
+        const settings = { mZhSize: userSetChineseFontSize, mKmSize: userSetKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, interval: document.getElementById('speechInterval').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: document.getElementById('bottomSizePx').value, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage, zhShadow: document.getElementById('zhShadowSlider').value, kmShadow: document.getElementById('kmShadowSlider').value };
         localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList));
         localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings));
     }
@@ -2114,6 +1993,8 @@
             document.getElementById('kmReps').value = s.kmReps || 1;
             document.getElementById('speechInterval').value = s.interval || 500;
             document.getElementById('autoDelay').value = s.autoDelay || 5;
+            if(s.zhShadow !== undefined) document.getElementById('zhShadowSlider').value = s.zhShadow;
+            if(s.kmShadow !== undefined) document.getElementById('kmShadowSlider').value = s.kmShadow;
             if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont;
             if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont;
             if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize;
@@ -2141,9 +2022,11 @@
             else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; document.getElementById('modeRandomBtn').classList.add('active'); document.getElementById('modeNormalBtn').classList.remove('active'); }
             normalCurrentIdx = s.normalCurrentIdx || 0;
             normalCurrentPage = s.normalCurrentPage || 0;
-            if(s.mZhShadow !== undefined) {
-                document.getElementById('mZhShadow').value = s.mZhShadow;
-                document.getElementById('mZhShadowVal').innerText = s.mZhShadow + 'px';
+            sidebarVisible = s.sidebarVisible !== undefined ? s.sidebarVisible : false;
+            if(!sidebarVisible) {
+                document.getElementById('rightSide').classList.add('hidden');
+                document.getElementById('dragResizer').classList.add('hidden');
+                document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR';
             }
         } else {
             document.getElementById('pinyinFont').value = "'XHeiPinyin'";
@@ -2152,12 +2035,16 @@
             document.getElementById('bottomSizePx').value = "16";
             document.getElementById('mKmColor').value = "#000000";
             document.getElementById('bottomCharColor').value = "#a78bfa";
+            sidebarVisible = false;
+            document.getElementById('rightSide').classList.add('hidden');
+            document.getElementById('dragResizer').classList.add('hidden');
+            document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR';
             applyPinyinStyles();
             applyBottomStyles();
         }
         applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility();
-        applyTextShadow();
         setKhmerFontSize(userSetKhmerFontSize);
+        applyShadow();
     }
     
     function renderSidebarUI() {
@@ -2213,38 +2100,19 @@
     }
     
     function applyStyles() {
-        const mKm = document.getElementById('khmerWord'); if(mKm){ mKm.style.fontFamily = document.getElementById('mKmFont').value; mKm.style.color = document.getElementById('mKmColor').value; mKm.style.fontWeight = document.getElementById('mKmBold').classList.contains('active') ? 'bold' : 'normal'; }
+        const mKm = document.getElementById('khmerWord'); if(mKm){ mKm.style.fontFamily = document.getElementById('mKmFont').value; mKm.style.color = document.getElementById('mKmColor').value; mKm.style.fontWeight = document.getElementById('mKmBold').classList.contains('active') ? 'bold' : '500'; }
         applySidebarStyles();
         document.getElementById('delayVal').innerText = document.getElementById('autoDelay').value+'s';
         document.getElementById('repVal').innerText = document.getElementById('zhReps').value;
         document.getElementById('kmRepVal').innerText = document.getElementById('kmReps').value;
         applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles();
-        applyTextShadow();
+        applyShadow();
         saveAllData();
         forceShrink();
     }
     
-    function toggleAuto() { 
-        autoActive = !autoActive; 
-        const btn = document.getElementById('autoBtn'); 
-        btn.classList.toggle('active', autoActive); 
-        btn.classList.toggle('off', !autoActive); 
-        btn.innerText = autoActive ? "AUTO: ON" : "AUTO: OFF"; 
-        if(autoActive) {
-            pickRandom(); 
-        } else { 
-            clearTimeout(autoTimer); 
-            cancelAllSpeech(); 
-        } 
-    }
-    
-    function startAutoCycle() { 
-        clearTimeout(autoTimer); 
-        autoTimer = setTimeout(() => { 
-            if(autoActive) pickRandom(); 
-        }, parseInt(document.getElementById('autoDelay').value) * 1000); 
-    }
-    
+    function toggleAuto() { autoActive = !autoActive; const btn = document.getElementById('autoBtn'); btn.classList.toggle('active', autoActive); btn.classList.toggle('off', !autoActive); btn.innerText = autoActive ? "AUTO: ON" : "AUTO: OFF"; if(autoActive) pickRandom(); else { clearTimeout(autoTimer); killAllSpeech(); } }
+    function startAutoCycle() { clearTimeout(autoTimer); autoTimer = setTimeout(() => { if(autoActive) pickRandom(); }, parseInt(document.getElementById('autoDelay').value)*1000); }
     function toggleSidebar() {
         sidebarVisible = !sidebarVisible;
         document.getElementById('rightSide').classList.toggle('hidden', !sidebarVisible);
@@ -2579,13 +2447,9 @@
         initKhmerDrag(); 
         loadAllDragPositions();
         
-        // Shadow slider event
-        document.getElementById('mZhShadow').addEventListener('input', function() {
-            applyTextShadow();
-            saveAllData();
-        });
-        
-        if (!sidebarVisible) document.getElementById('sidebarControlsContainer')?.classList.add('sidebar-controls-hidden');
+        if (!sidebarVisible) {
+            document.getElementById('sidebarControlsContainer')?.classList.add('sidebar-controls-hidden');
+        }
         
         const topSection = document.getElementById('topPinyinSection');
         const topToggleBtn = document.getElementById('toggleTopPinyinSectionBtn');
@@ -2612,6 +2476,8 @@
         document.getElementById('mZhSize').addEventListener('input',function(){ setChineseFontSize(parseFloat(this.value)); saveAllData(); });
         document.getElementById('mKmSize').addEventListener('input',function(){ setKhmerFontSize(parseFloat(this.value)); saveAllData(); });
         document.getElementById('mZhColor').addEventListener('input',applyStyles); document.getElementById('mKmColor').addEventListener('input',applyStyles); 
+        document.getElementById('zhShadowSlider').addEventListener('input', function() { applyShadow(); saveAllData(); });
+        document.getElementById('kmShadowSlider').addEventListener('input', function() { applyShadow(); saveAllData(); });
         document.getElementById('sZhSize').addEventListener('input',applyStyles); document.getElementById('sKmSize').addEventListener('input',applyStyles); document.getElementById('sZhColor').addEventListener('input',applyStyles); document.getElementById('sKmColor').addEventListener('input',applyStyles); 
         document.getElementById('mZhFont').addEventListener('change',function(){ applyChineseMainStyle(); saveAllData(); });
         document.getElementById('mKmFont').addEventListener('change',applyStyles); document.getElementById('sZhFont').addEventListener('change',applyStyles); document.getElementById('sKmFont').addEventListener('change',applyStyles);
