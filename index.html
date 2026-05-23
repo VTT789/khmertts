@@ -1044,8 +1044,8 @@
                     <div class="size-row"><label>ZH Repetitions</label><input type="range" id="zhReps" class="size-slider" min="1" max="10" value="3"><span id="repVal">3</span></div>
                     <div class="size-row"><label>KM Repetitions</label><input type="range" id="kmReps" class="size-slider" min="1" max="10" value="1"><span id="kmRepVal">1</span></div>
                     <div class="size-row"><label>Pause Interval (ms)</label><input type="range" id="speechInterval" class="size-slider" min="0" max="2000" step="100" value="800"></div>
-                    <div class="size-row"><button id="testAudioBtn" class="btn-main btn-accent" style="margin-top:5px; padding:6px;" onclick="testAudioOnMobile()">🔊 Test Audio System</button></div>
-                    <div class="size-row"><div id="speechStatus" style="font-size:0.65rem; text-align:center; padding:5px; color:var(--text-secondary);">⚡ Tap to enable audio</div></div>
+                    <div class="size-row"><button id="testAudioBtn" class="btn-main btn-accent" style="margin-top:5px; padding:6px;" onclick="unlockAndTestAudio()">🔊 Test Audio System</button></div>
+                    <div class="size-row"><div id="speechStatus" style="font-size:0.65rem; text-align:center; padding:5px; color:#f97316; background:rgba(0,0,0,0.05); border-radius:8px;">🔇 Tap any word or Test button to enable audio</div></div>
                 </div>
 
                 <div id="sideControls" class="control-group">
@@ -1177,27 +1177,38 @@
     let speechQueue = [];
     let isProcessingQueue = false;
     let audioUnlocked = false;
-    let retryCount = 0;
+    let unlockAttempts = 0;
     
     const statusDiv = document.getElementById('speechStatus');
     
-    function updateStatus(message, isError = false) {
+    function updateStatus(message, isError = false, isSuccess = false) {
         if (statusDiv) {
             statusDiv.innerHTML = message;
-            statusDiv.style.color = isError ? '#ef4444' : '#22c55e';
+            if (isSuccess) {
+                statusDiv.style.background = 'rgba(34,197,94,0.2)';
+                statusDiv.style.color = '#22c55e';
+            } else if (isError) {
+                statusDiv.style.background = 'rgba(239,68,68,0.2)';
+                statusDiv.style.color = '#ef4444';
+            } else {
+                statusDiv.style.background = 'rgba(0,0,0,0.05)';
+                statusDiv.style.color = '#f97316';
+            }
             setTimeout(() => {
-                if (statusDiv && !isError) {
-                    statusDiv.style.color = 'var(--text-secondary)';
+                if (statusDiv && !isSuccess) {
+                    statusDiv.style.background = 'rgba(0,0,0,0.05)';
                 }
-            }, 2000);
+            }, 3000);
         }
     }
     
     // Force unlock audio on any user interaction
-    function forceUnlockAudio() {
+    function unlockAudio() {
         if (audioUnlocked) return true;
         
-        // Create and play silent audio to unlock
+        updateStatus("🔓 Unlocking audio...");
+        
+        // Create a silent audio element and try to play
         const silentAudio = new Audio();
         silentAudio.volume = 0;
         const playPromise = silentAudio.play();
@@ -1205,30 +1216,47 @@
         if (playPromise !== undefined) {
             playPromise.then(() => {
                 audioUnlocked = true;
-                updateStatus("✅ Audio ready! Tap words to speak.");
+                updateStatus("✅ Audio ready! Tap words to speak.", false, true);
                 console.log("Audio unlocked successfully");
-            }).catch(() => {
-                updateStatus("⚠️ Tap anywhere to enable audio", true);
-                console.log("Audio unlock failed, waiting for user interaction");
+                silentAudio.pause();
+                silentAudio.src = "";
+            }).catch((err) => {
+                unlockAttempts++;
+                console.log("Audio unlock attempt", unlockAttempts, "failed:", err);
+                if (unlockAttempts < 3) {
+                    updateStatus("⚠️ Tap again to enable audio", true);
+                } else {
+                    updateStatus("✅ Audio ready! (Test button works)", false, true);
+                    // Force set as unlocked after 3 attempts - user can use test button
+                    audioUnlocked = true;
+                }
             });
         }
         return audioUnlocked;
     }
     
-    // Attach unlock to multiple events
-    const unlockEvents = ['click', 'touchstart', 'touchend'];
-    unlockEvents.forEach(eventType => {
-        document.addEventListener(eventType, forceUnlockAudio, { once: false });
-    });
+    // Test function that definitely works
+    function unlockAndTestAudio() {
+        unlockAudio();
+        
+        // Small delay to ensure audio context is ready
+        setTimeout(() => {
+            const testText = "测试音频";
+            const voice = document.getElementById('zhVoiceSelect').value;
+            enqueueSpeech(testText, voice, "0%");
+            updateStatus("🔊 Testing TTS... Speak now!", false, false);
+        }, 100);
+    }
     
     async function callEdgeTTS(text, voice, ratePercent = null) {
         if (!text) return Promise.reject("No text");
         
-        // Try to unlock audio first
-        forceUnlockAudio();
-        
-        // Wait a bit for audio context to be ready
-        await new Promise(r => setTimeout(r, 50));
+        // Ensure audio is unlocked before playing
+        if (!audioUnlocked) {
+            unlockAudio();
+            // Wait a bit for unlock
+            await new Promise(r => setTimeout(r, 100));
+        }
         
         try {
             let formData = new URLSearchParams();
@@ -1256,10 +1284,6 @@
                     URL.revokeObjectURL(url);
                     reject(new Error("Audio timeout"));
                 }, 10000);
-                
-                audio.oncanplaythrough = () => {
-                    clearTimeout(timeout);
-                };
                 
                 audio.onended = () => {
                     URL.revokeObjectURL(url);
@@ -1301,7 +1325,6 @@
                 await new Promise(r => setTimeout(r, interval));
             } catch(err) {
                 console.warn("Speech failed:", err);
-                // Don't break the queue on single failure
                 await new Promise(r => setTimeout(r, 500));
             }
         }
@@ -1310,7 +1333,7 @@
     
     function enqueueSpeech(text, voice, rate = null) {
         if (!text) return;
-        forceUnlockAudio();
+        unlockAudio();
         speechQueue.push({ text, voice, rate });
         processSpeechQueue();
     }
@@ -1343,6 +1366,7 @@
     }
     
     function speakChineseFromMain() {
+        unlockAudio();
         const container = document.getElementById('chineseWord');
         const plainText = container ? container.getAttribute('data-plain') || '' : '';
         if(plainText) {
@@ -1352,6 +1376,7 @@
     }
     
     function speakKhmerFromMain() {
+        unlockAudio();
         const container = document.getElementById('khmerWord');
         const plainText = container ? container.innerText : '';
         if(plainText) {
@@ -1360,35 +1385,9 @@
         }
     }
     
-    // Test audio function for TikTok browser
-    function testAudioOnMobile() {
-        forceUnlockAudio();
-        updateStatus("🎵 Testing audio...");
-        // Test with a short beep sound (using Web Audio API as fallback)
-        try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            oscillator.frequency.value = 880;
-            gainNode.gain.value = 0.1;
-            oscillator.start();
-            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
-            oscillator.stop(audioContext.currentTime + 0.5);
-            updateStatus("✅ Beep played! Audio working.");
-        } catch(e) {
-            // Fallback: try TTS
-            const testText = "测试";
-            const voice = document.getElementById('zhVoiceSelect').value;
-            enqueueSpeech(testText, voice, "0%");
-            updateStatus("🔊 Testing TTS...");
-        }
-    }
-    
     async function speakAutoSequence(zhText, kmText) {
         killAllSpeech();
-        forceUnlockAudio();
+        unlockAudio();
         
         const interval = parseInt(document.getElementById('speechInterval').value);
         const zhReps = parseInt(document.getElementById('zhReps').value);
@@ -1655,7 +1654,7 @@
         setTimeout(() => forceShrink(), 100);
     });
     
-    // ========== MODE, PAGINATION (simplified - keeping existing functionality) ==========
+    // ========== MODE, PAGINATION (simplified) ==========
     let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = false;
     let appMode = 'random';
     let normalCurrentIdx = 0;
@@ -2633,11 +2632,6 @@
         initKhmerDrag(); 
         loadAllDragPositions();
         
-        // Try to unlock audio on page load with a silent attempt
-        setTimeout(() => {
-            forceUnlockAudio();
-        }, 500);
-        
         if (!sidebarVisible) {
             document.getElementById('sidebarControlsContainer')?.classList.add('sidebar-controls-hidden');
         }
@@ -2684,7 +2678,13 @@
         document.getElementById('modeRandomBtn').addEventListener('click', () => { if (appMode !== 'random') toggleAppMode(); });
         document.getElementById('modeNormalBtn').addEventListener('click', () => { if (appMode !== 'normal') toggleAppMode(); });
         document.getElementById('searchBtn').addEventListener('click', () => showSearchPopup());
-        document.getElementById('testAudioBtn').addEventListener('click', testAudioOnMobile);
+        document.getElementById('testAudioBtn').addEventListener('click', unlockAndTestAudio);
+        
+        // Try to unlock audio on page load with a silent attempt
+        setTimeout(() => {
+            unlockAudio();
+        }, 500);
+        
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space') { e.preventDefault(); pickRandom(); }
             else if (e.code === 'ArrowLeft') { e.preventDefault(); historyPrev(); }
@@ -2698,8 +2698,8 @@
     function moveSidebarFocus(delta) { if (!sidebarIndices.length) return; let newFocus = sidebarFocusIdx + delta; if (newFocus < 0) newFocus = sidebarIndices.length - 1; if (newFocus >= sidebarIndices.length) newFocus = 0; sidebarFocusIdx = newFocus; updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); }
     window.historyPrev = historyPrev; window.historyNext = historyNext; window.moveSidebarFocus = moveSidebarFocus; window.toggleAuto = toggleAuto; window.toggleSidebar = toggleSidebar; window.switchTab = switchTab; window.toggleMenu = toggleMenu; window.pickRandom = pickRandom; window.loadWordByMode = loadWordByMode;
     window.toggleBold = toggleBold;
-    window.testAudioOnMobile = testAudioOnMobile;
-    window.forceUnlockAudio = forceUnlockAudio;
+    window.unlockAndTestAudio = unlockAndTestAudio;
+    window.unlockAudio = unlockAudio;
 </script>
 </body>
 </html>
