@@ -1229,16 +1229,18 @@
         element.style.transform = originalTransform || 'translate(-50%, -50%)';
         document.getElementById('mZhSizeVal').innerText = Math.round(finalSize) + 'vh';
         
-        // Auto-shrink Top Pinyin based on character count - Aggressive scaling
+        // Auto-shrink Top Pinyin based on character count - EXACT SCALING LOGIC
         const chineseText = element.getAttribute('data-plain') || '';
         const charCount = chineseText.length;
         let targetScale = 1.0;
-        if (charCount >= 14) targetScale = 0.10;      // 10%
-        else if (charCount >= 11) targetScale = 0.15; // 15%
-        else if (charCount >= 8) targetScale = 0.20;  // 20%
-        else if (charCount >= 5) targetScale = 0.30;  // 30%
-        else if (charCount >= 3) targetScale = 0.80;  // 80% for 3-4 chars
-        else targetScale = 1.0;                        // 100% for 1-2 chars
+        if (charCount >= 14) targetScale = 0.10;      // 14+ characters: 10%
+        else if (charCount >= 11) targetScale = 0.15; // 11-13 characters: 15%
+        else if (charCount >= 8) targetScale = 0.20;  // 8-10 characters: 20%
+        else if (charCount >= 6) targetScale = 0.30;  // 6-7 characters: 30%
+        else if (charCount >= 5) targetScale = 0.40;  // 5 characters: 40%
+        else if (charCount >= 4) targetScale = 0.70;  // 4 characters: 70%
+        else if (charCount >= 3) targetScale = 0.80;  // 3 characters: 80%
+        else targetScale = 1.0;                        // 1-2 characters: 100%
         
         const appliedSize = Math.max(10, Math.min(120, Math.round(userSetPinyinFontSize * targetScale)));
         const pinyinFont = document.getElementById('pinyinFont').value;
