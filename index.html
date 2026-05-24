@@ -9,7 +9,7 @@
         /* ========== CUSTOM WEB FONTS ========== */
         @font-face {
             font-family: 'BaguettePinyin';
-            src: url('/static/Fonts/Chinese/Baguette.woff2') format('woff2');
+            src: url('/static/Fonts/Chinese/pinyin-baguette.woff2') format('woff2');
             font-display: swap;
         }
         @font-face {
@@ -24,7 +24,7 @@
         }
         @font-face {
             font-family: 'Hanyi Extra Bold';
-            src: url('/static/Fonts/Chinese/Founder Bold Round Simplified.woff2') format('woff2');
+            src: url('/static/Fonts/Chinese/Hanyi Extra Bold Round Simplified.woff2') format('woff2');
             font-display: swap;
         }
         @font-face {
@@ -57,10 +57,19 @@
             src: url('/static/Fonts/Chinese/Yezi Factory Kaiti Pinyin.woff2') format('woff2');
             font-display: swap;
         }
-        /* New font 1: Baguette (already defined above) */
-        /* New font 2: Founder Bold Round Simplified (already mapped to Hanyi Extra Bold) */
+        /* NEW FONTS ADDED */
         @font-face {
-            font-family: 'Hanyi Amber Simplified';
+            font-family: 'Baguette Simplified';
+            src: url('/static/Fonts/Chinese/Baguette Simplified.woff2') format('woff2');
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Founder Bold Round';
+            src: url('/static/Fonts/Chinese/Founder Bold Round Simplified.woff2') format('woff2');
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Hanyi Amber';
             src: url('/static/Fonts/Chinese/Hanyi Amber Simplified.woff2') format('woff2');
             font-display: swap;
         }
@@ -1019,17 +1028,17 @@
                     <div class="size-row"><label>Next Word Delay (s)</label><input type="range" id="autoDelay" class="size-slider" min="2" max="15" step="1" value="5"><span id="delayVal" style="font-size:0.7rem; width:20px;">5s</span></div>
                     <div id="zhMainControls">
                         <div class="style-grid"><label>ZH Font</label><select id="mZhFont" class="font-select">
-                            <option value="'BaguettePinyin'" selected>Baguette (Pinyin)</option>
+                            <option value="'Baguette Simplified'">Baguette Simplified</option>
+                            <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
                             <option value="'XHeiPinyin'">X Hei Pinyin</option>
                             <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
-                            <option value="'Pinyin'">FZPY01 Pinyin</option>
+                            <option value="'Founder Bold Round'">Founder Bold Round</option>
+                            <option value="'Hanyi Amber'">Hanyi Amber</option>
                             <option value="'HanZhen Wide Standard'">HanZhen Wide Standard</option>
                             <option value="'Founder Shaoer'">Founder Shaoer</option>
                             <option value="'Hanyi Changyi'">Hanyi Changyi</option>
                             <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
                             <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
-                            <option value="'SingKhmer'">SingKhmerForChinese</option>
-                            <option value="'Hanyi Amber Simplified'">Hanyi Amber Simplified</option>
                         </select><input type="color" id="mZhColor" value="#000000"><button id="mZhBold" class="bold-icon-btn" onclick="toggleBold('mZhBold', applyChineseMainStyle)"><span>BOLD</span></button></div>
                         <div class="size-row"><label>Main Char Size (vh)</label><input type="range" id="mZhSize" class="size-slider" min="2" max="150" value="42"><span id="mZhSizeVal">42vh</span></div>
                         <div class="shadow-style-grid">
@@ -1079,8 +1088,9 @@
                                 <label>Font</label>
                                 <select id="pinyinFont" class="font-select">
                                     <option value="inherit">Default</option>
-                                    <option value="'BaguettePinyin'" selected>Baguette</option>
-                                    <option value="'XHeiPinyin'">X Hei</option>
+                                    <option value="'Baguette Simplified'">Baguette Simplified</option>
+                                    <option value="'BaguettePinyin'">Baguette</option>
+                                    <option value="'XHeiPinyin'" selected>X Hei</option>
                                     <option value="'Pinyin'">FZPY01</option>
                                     <option value="'Founder Shaoer'">Founder Shaoer</option>
                                 </select>
@@ -2025,7 +2035,7 @@
                 document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR';
             }
         } else {
-            document.getElementById('pinyinFont').value = "'BaguettePinyin'";
+            document.getElementById('pinyinFont').value = "'Baguette Simplified'";
             document.getElementById('pinyinColor').value = "#000000";
             document.getElementById('pinyinSizePx').value = "35";
             document.getElementById('pinyinSpacing').value = "0";
@@ -2039,6 +2049,11 @@
             document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR';
             applyPinyinStyles();
             applyBottomStyles();
+        }
+        // Force default ZH font to Baguette Simplified for main display
+        const mZhFontSelect = document.getElementById('mZhFont');
+        if(mZhFontSelect && (!savedSettings || !savedSettings.mZhFont)) {
+            mZhFontSelect.value = "'Baguette Simplified'";
         }
         applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility();
         setKhmerFontSize(userSetKhmerFontSize);
