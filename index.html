@@ -971,49 +971,78 @@
             display: none;
         }
 
+        /* COPY POPUP STYLES */
+        .copy-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 20px 28px;
+            border-radius: 60px;
+            font-size: 18px;
+            font-weight: 600;
+            z-index: 30000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.2);
+            min-width: 180px;
+            text-align: center;
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            pointer-events: auto;
+        }
+        .copy-popup button {
+            background: #2563eb;
+            border: none;
+            color: white;
+            padding: 8px 24px;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .copy-popup button:active {
+            transform: scale(0.96);
+            background: #1e40af;
+        }
+        .copy-popup .popup-text {
+            font-size: 14px;
+            opacity: 0.8;
+            word-break: break-all;
+            max-width: 260px;
+        }
+
         @media (max-width: 700px) {
             .chinese-word { gap: 4px 8px; padding: 8px 12px; }
             .khmer-text { font-size: 22px; padding: 8px 12px; }
             .sidebar .sidebar-close-btn { top: 8px; left: -18px; width: 26px; height: 26px; font-size: 16px; }
             .choice-modal { min-width: 280px; padding: 20px; }
             #floatingMenu { width: 320px; }
+            .copy-popup { padding: 16px 24px; min-width: 160px; }
+            .copy-popup button { padding: 6px 20px; }
         }
         
-        /* Custom Popup for Copy */
-        .copy-popup {
+        .copy-toast {
             position: fixed;
-            bottom: 30%;
+            bottom: 30px;
             left: 50%;
-            transform: translateX(-50%) scale(0.9);
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(12px);
+            transform: translateX(-50%);
+            background: #333;
             color: white;
-            padding: 14px 28px;
-            border-radius: 60px;
-            font-size: 18px;
-            font-weight: 500;
-            z-index: 20002;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 14px;
+            z-index: 20001;
             pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s ease, transform 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            opacity: 0.9;
             white-space: nowrap;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-        }
-        .copy-popup.show {
-            opacity: 1;
-            transform: translateX(-50%) scale(1);
-        }
-        .copy-icon {
-            font-size: 24px;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-        }
-        body.night-mode .copy-popup {
-            background: rgba(30,41,59,0.95);
-            color: #f1f5f9;
         }
     </style>
 </head>
@@ -1491,41 +1520,198 @@
     window.addEventListener('resize', () => { if (resizeDebounce) clearTimeout(resizeDebounce); resizeDebounce = setTimeout(() => { forceShrink(); applyBottomAutoScale(); }, 150); });
     window.addEventListener('orientationchange', () => { setTimeout(() => { forceShrink(); applyBottomAutoScale(); }, 100); });
     
-    // ========== COPY POPUP WITH ICON (iPhone friendly, auto-hide 3s) ==========
+    // ========== COPY POPUP SYSTEM (iPhone style) ==========
     let activeCopyPopup = null;
-    function showCopyPopup(text, type) {
+    let copyLocked = false;
+    
+    function showCopyPopup(text, onCopy) {
+        if (copyLocked) return;
         if (activeCopyPopup) {
-            activeCopyPopup.classList.remove('show');
-            setTimeout(() => { if(activeCopyPopup) activeCopyPopup.remove(); }, 200);
+            activeCopyPopup.remove();
+            activeCopyPopup = null;
         }
+        copyLocked = true;
         const popup = document.createElement('div');
         popup.className = 'copy-popup';
-        popup.innerHTML = `<span class="copy-icon">📋</span><span>Copied ${type}</span>`;
+        popup.innerHTML = `
+            <div style="font-size: 24px;">📋</div>
+            <div class="popup-text">"${text.length > 40 ? text.substring(0, 40) + '...' : text}"</div>
+            <button class="copy-action-btn">Copy to Clipboard</button>
+        `;
         document.body.appendChild(popup);
         activeCopyPopup = popup;
-        setTimeout(() => popup.classList.add('show'), 10);
+        
+        const copyBtn = popup.querySelector('.copy-action-btn');
+        copyBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            try {
+                await navigator.clipboard.writeText(text);
+                copyBtn.innerText = '✓ Copied!';
+                copyBtn.style.background = '#22c55e';
+                setTimeout(() => {
+                    if (activeCopyPopup) {
+                        activeCopyPopup.remove();
+                        activeCopyPopup = null;
+                    }
+                }, 800);
+            } catch(err) {
+                // fallback for older devices
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                copyBtn.innerText = '✓ Copied!';
+                copyBtn.style.background = '#22c55e';
+                setTimeout(() => {
+                    if (activeCopyPopup) {
+                        activeCopyPopup.remove();
+                        activeCopyPopup = null;
+                    }
+                }, 800);
+            }
+        });
+        
         setTimeout(() => {
-            popup.classList.remove('show');
-            setTimeout(() => { if(popup.parentNode) popup.remove(); if(activeCopyPopup === popup) activeCopyPopup = null; }, 300);
+            if (activeCopyPopup) {
+                activeCopyPopup.remove();
+                activeCopyPopup = null;
+            }
+            copyLocked = false;
         }, 3000);
+        
+        popup.addEventListener('click', (e) => e.stopPropagation());
+        setTimeout(() => { copyLocked = false; }, 3100);
     }
     
-    async function copyToClipboardWithPopup(text, type) {
-        try {
-            await navigator.clipboard.writeText(text);
-            showCopyPopup(text, type);
-        } catch(err) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            showCopyPopup(text, type);
+    // ========== MODE, PAGINATION, DRAG (preserved, shortened) ==========
+    let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = false;
+    let appMode = 'random';
+    let normalCurrentIdx = 0;
+    let normalCurrentPage = 0;
+    const ITEMS_PER_PAGE = 40;
+    
+    function getNormalPageForIndex(idx) { return Math.floor(idx / ITEMS_PER_PAGE); }
+    function scrollToActiveSidebarItem() { setTimeout(() => { const activeItem = document.querySelector('.vocab-item.active'); if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50); }
+    
+    function renderNormalSidebar() {
+        if (!vocabList.length) return;
+        const start = normalCurrentPage * ITEMS_PER_PAGE;
+        const end = Math.min(start + ITEMS_PER_PAGE, vocabList.length);
+        const indices = [];
+        for (let i = start; i < end; i++) indices.push(i);
+        sidebarIndices = indices;
+        let focusPos = indices.indexOf(normalCurrentIdx);
+        if (focusPos === -1 && indices.length) { normalCurrentIdx = indices[0]; focusPos = 0; }
+        sidebarFocusIdx = focusPos >= 0 ? focusPos : 0;
+        renderSidebarUI();
+        updateDisplay();
+        const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]];
+        if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer);
+        updatePaginationControls();
+        scrollToActiveSidebarItem();
+    }
+    
+    function updatePaginationControls() {
+        const container = document.getElementById('paginationContainer');
+        if (!container) return;
+        if (appMode === 'normal' && vocabList.length > ITEMS_PER_PAGE) {
+            const totalPages = Math.ceil(vocabList.length / ITEMS_PER_PAGE);
+            container.style.display = 'flex';
+            container.innerHTML = `<div class="pagination-bar"><button id="prevPageBtn" class="pagination-btn">◀ Prev</button><span class="pagination-info">Page ${normalCurrentPage+1} / ${totalPages}</span><button id="nextPageBtn" class="pagination-btn">Next ▶</button></div>`;
+            document.getElementById('prevPageBtn')?.addEventListener('click', () => { if (normalCurrentPage > 0) { normalCurrentPage--; normalCurrentIdx = normalCurrentPage * ITEMS_PER_PAGE; renderNormalSidebar(); } });
+            document.getElementById('nextPageBtn')?.addEventListener('click', () => { if (normalCurrentPage + 1 < totalPages) { normalCurrentPage++; normalCurrentIdx = normalCurrentPage * ITEMS_PER_PAGE; renderNormalSidebar(); } });
+        } else { container.style.display = 'none'; container.innerHTML = ''; }
+    }
+    
+    function renderRandomSidebar(idx) {
+        const item = vocabList[idx];
+        const key = item.chinese.substring(0, 1);
+        let related = vocabList.map((it, i) => ({...it, oIdx: i})).filter(it => it.oIdx !== idx && it.chinese.includes(key)).slice(0, 50);
+        sidebarIndices = [idx, ...related.map(i => i.oIdx)];
+        sidebarFocusIdx = 0;
+        renderSidebarUI();
+        updateDisplay();
+        speakAutoSequence(item.chinese, item.khmer);
+        scrollToActiveSidebarItem();
+    }
+    
+    function loadWordByMode(idx) {
+        killAllSpeech();
+        if (!vocabList[idx]) return;
+        if (appMode === 'random') {
+            history = history.slice(0, historyIndex + 1);
+            history.push(idx);
+            historyIndex = history.length - 1;
+            renderRandomSidebar(idx);
+        } else {
+            normalCurrentIdx = idx;
+            const newPage = getNormalPageForIndex(idx);
+            if (newPage !== normalCurrentPage) { normalCurrentPage = newPage; renderNormalSidebar(); }
+            else {
+                let focusPos = sidebarIndices.indexOf(idx);
+                if (focusPos !== -1) { sidebarFocusIdx = focusPos; renderSidebarUI(); updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); }
+                else { renderNormalSidebar(); }
+            }
         }
     }
     
-    // ========== DRAG & ZOOM with updated long-press ==========
+    function goPrevNormal() { if (!vocabList.length) return; let newIdx = normalCurrentIdx - 1; if (newIdx < 0) newIdx = 0; loadWordByMode(newIdx); }
+    function goNextNormal() { if (!vocabList.length) return; let newIdx = normalCurrentIdx + 1; if (newIdx >= vocabList.length) newIdx = vocabList.length - 1; loadWordByMode(newIdx); }
+    function pickRandom() { if (appMode === 'normal') goNextNormal(); else if (vocabList.length) { const idx = Math.floor(Math.random() * vocabList.length); history = history.slice(0, historyIndex + 1); history.push(idx); historyIndex = history.length - 1; loadWordByMode(idx); } }
+    function historyPrev() { if (appMode === 'random') { if (historyIndex > 0) { historyIndex--; loadWordByMode(history[historyIndex]); } } else goPrevNormal(); }
+    function historyNext() { if (appMode === 'random') { if (historyIndex < history.length - 1) { historyIndex++; loadWordByMode(history[historyIndex]); } } else goNextNormal(); }
+    
+    function toggleAppMode() {
+        if (appMode === 'random') {
+            appMode = 'normal';
+            document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)';
+            document.getElementById('modeRandomBtn').classList.remove('active');
+            document.getElementById('modeNormalBtn').classList.add('active');
+            const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || '';
+            let idx = vocabList.findIndex(v => v.chinese === currentChinese);
+            if (idx === -1 && vocabList.length) idx = 0;
+            normalCurrentIdx = idx;
+            normalCurrentPage = getNormalPageForIndex(idx);
+            renderNormalSidebar();
+        } else {
+            appMode = 'random';
+            document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)';
+            document.getElementById('modeNormalBtn').classList.remove('active');
+            document.getElementById('modeRandomBtn').classList.add('active');
+            const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || '';
+            let idx = vocabList.findIndex(v => v.chinese === currentChinese);
+            if (idx === -1 && vocabList.length) idx = 0;
+            if (idx !== -1) { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); }
+            else if (vocabList.length) pickRandom();
+        }
+        saveAllData();
+    }
+    
+    function showSearchPopup() {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal-overlay';
+        modalDiv.innerHTML = `<div class="search-popup"><h3>🔍 Search Vocabulary</h3><input type="text" id="searchInput" placeholder="Type Chinese or Khmer..."><div id="searchResults" class="search-results"></div><button class="close-search close-modal">Cancel</button></div>`;
+        document.body.appendChild(modalDiv);
+        const input = modalDiv.querySelector('#searchInput');
+        const resultsDiv = modalDiv.querySelector('#searchResults');
+        const closeBtn = modalDiv.querySelector('.close-search');
+        const updateResults = () => {
+            const term = input.value.trim().toLowerCase();
+            if (!term) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">Type to search...</div>'; return; }
+            const filtered = vocabList.map((item, idx) => ({ idx, ...item })).filter(item => item.chinese.toLowerCase().includes(term) || item.khmer.toLowerCase().includes(term));
+            if (filtered.length === 0) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">No matches</div>'; return; }
+            resultsDiv.innerHTML = filtered.map(item => `<div class="search-result-item" data-idx="${item.idx}"><strong>${item.chinese}</strong> — ${item.khmer}</div>`).join('');
+            resultsDiv.querySelectorAll('.search-result-item').forEach(el => { el.addEventListener('click', () => { const idx = parseInt(el.dataset.idx); if (appMode === 'normal') { normalCurrentIdx = idx; normalCurrentPage = getNormalPageForIndex(idx); renderNormalSidebar(); } else { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); } modalDiv.remove(); }); });
+        };
+        input.addEventListener('input', updateResults);
+        closeBtn.onclick = () => modalDiv.remove();
+        modalDiv.onclick = (e) => { if (e.target === modalDiv) modalDiv.remove(); };
+        updateResults();
+    }
+    
+    // ========== DRAG & ZOOM (preserved) ==========
     let chineseElement = null, khmerElement = null;
     let chineseX = 50, chineseY = 40, khmerX = 50, khmerY = 70;
     let topLayerX = 0, topLayerY = 0, bottomLayerX = 0, bottomLayerY = 0;
@@ -1567,16 +1753,18 @@
         modalDiv.onclick = (e) => { if (e.target === modalDiv) cleanup(null); };
     }); }
     
-    // Chinese long-press: copy + layer popup
+    // Chinese long-press: show copy popup + layer menu
     function onChinesePointerDown(e) {
         e.preventDefault(); e.stopPropagation();
         const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
         const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
         pressStartX = clientX; pressStartY = clientY; hasMovedDuringPress = false;
         longPressTimer = setTimeout(async () => {
-            if (!hasMovedDuringPress && !dragActive) {
+            if (!hasMovedDuringPress && !dragActive && !copyLocked) {
                 const plainText = chineseElement.getAttribute('data-plain') || '';
-                if (plainText) await copyToClipboardWithPopup(plainText, 'Chinese');
+                if (plainText) {
+                    showCopyPopup(plainText, (text) => {});
+                }
                 const choice = await showLayerChoiceModal();
                 if (choice === 'top') startLayerDrag('top', pressStartX, pressStartY);
                 else if (choice === 'bottom') startLayerDrag('bottom', pressStartX, pressStartY);
@@ -1589,7 +1777,7 @@
         window.addEventListener('touchend', onPressEnd);
     }
     
-    // Khmer long-press: copy only with popup
+    // Khmer long-press: show copy popup only
     function onKhmerPointerDown(e) {
         e.preventDefault(); e.stopPropagation();
         let khmerLongPressTimer = null;
@@ -1602,10 +1790,12 @@
             window.removeEventListener('mouseup', onUp);
             window.removeEventListener('touchend', onUp);
         };
-        khmerLongPressTimer = setTimeout(async () => {
-            if (!khmerHasMoved) {
+        khmerLongPressTimer = setTimeout(() => {
+            if (!khmerHasMoved && !copyLocked) {
                 const khmerText = khmerElement.innerText;
-                if (khmerText) await copyToClipboardWithPopup(khmerText, 'Khmer');
+                if (khmerText) {
+                    showCopyPopup(khmerText, (text) => {});
+                }
             }
             onUp();
         }, 1000);
@@ -1776,7 +1966,7 @@
         khmerElement.addEventListener('touchstart', onKhmerPointerDown, { passive: false });
     }
     
-    // ========== SIDEBAR UI & CONTROLS (preserved, shortened) ==========
+    // ========== SIDEBAR UI & CONTROLS (preserved) ==========
     function saveAllData() {
         const settings = { mZhSize: userSetChineseFontSize, mKmSize: userSetKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: userSetBottomFontSize, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage, shadow: document.getElementById('shadowSlider').value };
         localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList));
@@ -1850,131 +2040,6 @@
         setKhmerFontSize(userSetKhmerFontSize);
         applyShadow();
         applyBottomAutoScale();
-    }
-    
-    let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = false;
-    let appMode = 'random';
-    let normalCurrentIdx = 0;
-    let normalCurrentPage = 0;
-    const ITEMS_PER_PAGE = 40;
-    
-    function getNormalPageForIndex(idx) { return Math.floor(idx / ITEMS_PER_PAGE); }
-    function scrollToActiveSidebarItem() { setTimeout(() => { const activeItem = document.querySelector('.vocab-item.active'); if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50); }
-    
-    function renderNormalSidebar() {
-        if (!vocabList.length) return;
-        const start = normalCurrentPage * ITEMS_PER_PAGE;
-        const end = Math.min(start + ITEMS_PER_PAGE, vocabList.length);
-        const indices = [];
-        for (let i = start; i < end; i++) indices.push(i);
-        sidebarIndices = indices;
-        let focusPos = indices.indexOf(normalCurrentIdx);
-        if (focusPos === -1 && indices.length) { normalCurrentIdx = indices[0]; focusPos = 0; }
-        sidebarFocusIdx = focusPos >= 0 ? focusPos : 0;
-        renderSidebarUI();
-        updateDisplay();
-        const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]];
-        if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer);
-        updatePaginationControls();
-        scrollToActiveSidebarItem();
-    }
-    
-    function updatePaginationControls() {
-        const container = document.getElementById('paginationContainer');
-        if (!container) return;
-        if (appMode === 'normal' && vocabList.length > ITEMS_PER_PAGE) {
-            const totalPages = Math.ceil(vocabList.length / ITEMS_PER_PAGE);
-            container.style.display = 'flex';
-            container.innerHTML = `<div class="pagination-bar"><button id="prevPageBtn" class="pagination-btn">◀ Prev</button><span class="pagination-info">Page ${normalCurrentPage+1} / ${totalPages}</span><button id="nextPageBtn" class="pagination-btn">Next ▶</button></div>`;
-            document.getElementById('prevPageBtn')?.addEventListener('click', () => { if (normalCurrentPage > 0) { normalCurrentPage--; normalCurrentIdx = normalCurrentPage * ITEMS_PER_PAGE; renderNormalSidebar(); } });
-            document.getElementById('nextPageBtn')?.addEventListener('click', () => { if (normalCurrentPage + 1 < totalPages) { normalCurrentPage++; normalCurrentIdx = normalCurrentPage * ITEMS_PER_PAGE; renderNormalSidebar(); } });
-        } else { container.style.display = 'none'; container.innerHTML = ''; }
-    }
-    
-    function renderRandomSidebar(idx) {
-        const item = vocabList[idx];
-        const key = item.chinese.substring(0, 1);
-        let related = vocabList.map((it, i) => ({...it, oIdx: i})).filter(it => it.oIdx !== idx && it.chinese.includes(key)).slice(0, 50);
-        sidebarIndices = [idx, ...related.map(i => i.oIdx)];
-        sidebarFocusIdx = 0;
-        renderSidebarUI();
-        updateDisplay();
-        speakAutoSequence(item.chinese, item.khmer);
-        scrollToActiveSidebarItem();
-    }
-    
-    function loadWordByMode(idx) {
-        killAllSpeech();
-        if (!vocabList[idx]) return;
-        if (appMode === 'random') {
-            history = history.slice(0, historyIndex + 1);
-            history.push(idx);
-            historyIndex = history.length - 1;
-            renderRandomSidebar(idx);
-        } else {
-            normalCurrentIdx = idx;
-            const newPage = getNormalPageForIndex(idx);
-            if (newPage !== normalCurrentPage) { normalCurrentPage = newPage; renderNormalSidebar(); }
-            else {
-                let focusPos = sidebarIndices.indexOf(idx);
-                if (focusPos !== -1) { sidebarFocusIdx = focusPos; renderSidebarUI(); updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); }
-                else { renderNormalSidebar(); }
-            }
-        }
-    }
-    
-    function goPrevNormal() { if (!vocabList.length) return; let newIdx = normalCurrentIdx - 1; if (newIdx < 0) newIdx = 0; loadWordByMode(newIdx); }
-    function goNextNormal() { if (!vocabList.length) return; let newIdx = normalCurrentIdx + 1; if (newIdx >= vocabList.length) newIdx = vocabList.length - 1; loadWordByMode(newIdx); }
-    function pickRandom() { if (appMode === 'normal') goNextNormal(); else if (vocabList.length) { const idx = Math.floor(Math.random() * vocabList.length); history = history.slice(0, historyIndex + 1); history.push(idx); historyIndex = history.length - 1; loadWordByMode(idx); } }
-    function historyPrev() { if (appMode === 'random') { if (historyIndex > 0) { historyIndex--; loadWordByMode(history[historyIndex]); } } else goPrevNormal(); }
-    function historyNext() { if (appMode === 'random') { if (historyIndex < history.length - 1) { historyIndex++; loadWordByMode(history[historyIndex]); } } else goNextNormal(); }
-    
-    function toggleAppMode() {
-        if (appMode === 'random') {
-            appMode = 'normal';
-            document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)';
-            document.getElementById('modeRandomBtn').classList.remove('active');
-            document.getElementById('modeNormalBtn').classList.add('active');
-            const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || '';
-            let idx = vocabList.findIndex(v => v.chinese === currentChinese);
-            if (idx === -1 && vocabList.length) idx = 0;
-            normalCurrentIdx = idx;
-            normalCurrentPage = getNormalPageForIndex(idx);
-            renderNormalSidebar();
-        } else {
-            appMode = 'random';
-            document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)';
-            document.getElementById('modeNormalBtn').classList.remove('active');
-            document.getElementById('modeRandomBtn').classList.add('active');
-            const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || '';
-            let idx = vocabList.findIndex(v => v.chinese === currentChinese);
-            if (idx === -1 && vocabList.length) idx = 0;
-            if (idx !== -1) { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); }
-            else if (vocabList.length) pickRandom();
-        }
-        saveAllData();
-    }
-    
-    function showSearchPopup() {
-        const modalDiv = document.createElement('div');
-        modalDiv.className = 'modal-overlay';
-        modalDiv.innerHTML = `<div class="search-popup"><h3>🔍 Search Vocabulary</h3><input type="text" id="searchInput" placeholder="Type Chinese or Khmer..."><div id="searchResults" class="search-results"></div><button class="close-search close-modal">Cancel</button></div>`;
-        document.body.appendChild(modalDiv);
-        const input = modalDiv.querySelector('#searchInput');
-        const resultsDiv = modalDiv.querySelector('#searchResults');
-        const closeBtn = modalDiv.querySelector('.close-search');
-        const updateResults = () => {
-            const term = input.value.trim().toLowerCase();
-            if (!term) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">Type to search...</div>'; return; }
-            const filtered = vocabList.map((item, idx) => ({ idx, ...item })).filter(item => item.chinese.toLowerCase().includes(term) || item.khmer.toLowerCase().includes(term));
-            if (filtered.length === 0) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">No matches</div>'; return; }
-            resultsDiv.innerHTML = filtered.map(item => `<div class="search-result-item" data-idx="${item.idx}"><strong>${item.chinese}</strong> — ${item.khmer}</div>`).join('');
-            resultsDiv.querySelectorAll('.search-result-item').forEach(el => { el.addEventListener('click', () => { const idx = parseInt(el.dataset.idx); if (appMode === 'normal') { normalCurrentIdx = idx; normalCurrentPage = getNormalPageForIndex(idx); renderNormalSidebar(); } else { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); } modalDiv.remove(); }); });
-        };
-        input.addEventListener('input', updateResults);
-        closeBtn.onclick = () => modalDiv.remove();
-        modalDiv.onclick = (e) => { if (e.target === modalDiv) modalDiv.remove(); };
-        updateResults();
     }
     
     function renderSidebarUI() {
