@@ -72,7 +72,6 @@
             src: url('/static/Fonts/Chinese/Hanyi Amber Simplified.woff2') format('woff2');
             font-display: swap;
         }
-
         @font-face {
             font-family: 'KHLazySmooth';
             src: url('/static/Fonts/Khmer/KH BL LAZYSMOOTH.woff2') format('woff2');
@@ -269,8 +268,12 @@
         }
         
         @keyframes spinRoll {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
         }
         
         .gear-spin:hover {
@@ -461,6 +464,23 @@
         .bold-icon-btn:not(.active) span {
             font-weight: normal;
             opacity: 0.7;
+        }
+
+        .offset-reset-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            margin-left: 8px;
+        }
+        .offset-reset-btn:hover {
+            background: #dc2626;
+            transform: scale(0.96);
         }
 
         .display-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; pointer-events: auto; background: inherit; gap: 2rem; overflow: visible; touch-action: pan-y pinch-zoom; }
@@ -959,6 +979,22 @@
             .choice-modal { min-width: 280px; padding: 20px; }
             #floatingMenu { width: 320px; }
         }
+        
+        .copy-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 14px;
+            z-index: 20001;
+            pointer-events: none;
+            opacity: 0.9;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -1034,7 +1070,7 @@
                     <div class="voice-row"><label style="font-weight: bold;">🎙️ Khmer Voice</label><select id="kmVoiceSelect" class="voice-select"><option value="km-KH-SreymomNeural">Sreymom (Female)</option><option value="km-KH-PisethNeural">Piseth (Male)</option></select></div>
                     <div class="voice-row"><label style="font-weight: bold;">🇨🇳 Chinese Voice</label><select id="zhVoiceSelect" class="voice-select"><option value="zh-CN-XiaoxiaoNeural">Xiaoxiao (女声)</option><option value="zh-CN-YunxiNeural">Yunxi (男声)</option><option value="zh-CN-YunyangNeural">Yunyang (新闻)</option><option value="zh-CN-XiaoyiNeural">Xiaoyi (教学)</option></select></div>
                     <div class="size-row"><label>🇨🇳 Speech Rate</label><input type="range" id="zhRateSlider" class="size-slider" min="-100" max="100" value="0" step="5"><span id="zhRateVal">0%</span></div>
-                    <div class="size-row"><label>ZH Repetitions</label><input type="range" id="zhReps" class="size-slider" min="1" max="10" value="1"><span id="repVal">1</span></div>
+                    <div class="size-row"><label>ZH Repetitions</label><input type="range" id="zhReps" class="size-slider" min="1" max="10" value="3"><span id="repVal">3</span></div>
                     <div class="size-row"><label>KM Repetitions</label><input type="range" id="kmReps" class="size-slider" min="1" max="10" value="1"><span id="kmRepVal">1</span></div>
                 </div>
 
@@ -1100,7 +1136,7 @@
                                     <input type="color" id="bottomCharColor" value="#2563eb">
                                     <button id="bottomBold" class="bold-icon-btn" onclick="toggleBold('bottomBold', applyBottomStyles)"><span>BOLD</span></button>
                                 </div>
-                                <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" class="size-slider" min="30" max="100" value="45"><span id="bottomSizeVal">45px</span></div>
+                                <div class="size-row"><label>Base Size (px)</label><input type="range" id="bottomSizePx" class="size-slider" min="30" max="100" value="45"><span id="bottomSizeVal">45px</span></div>
                             </div>
                         </div>
                     </div>
@@ -1164,6 +1200,42 @@
     let userSetChineseFontSize = 42;
     let userSetKhmerFontSize = 42;
     let userSetPinyinFontSize = 55;
+    let userSetBottomBaseSize = 45; // base size in px
+    
+    // Get scale factor based on character count
+    function getBottomScaleFactor(charCount) {
+        if (charCount <= 2) return 1.0;
+        if (charCount === 3) return 0.8;
+        if (charCount === 4) return 0.7;
+        if (charCount === 5) return 0.4;
+        if (charCount >= 6 && charCount <= 7) return 0.3;
+        if (charCount >= 8 && charCount <= 10) return 0.2;
+        if (charCount >= 11 && charCount <= 13) return 0.15;
+        if (charCount >= 14) return 0.1;
+        return 1.0;
+    }
+    
+    function applyBottomStyles() {
+        const container = document.getElementById('chineseWord');
+        if (!container) return;
+        const bottomFont = document.getElementById('bottomFont').value;
+        const bottomColor = document.getElementById('bottomCharColor').value;
+        const isBottomBold = document.getElementById('bottomBold').classList.contains('active');
+        const baseSize = parseFloat(document.getElementById('bottomSizePx').value);
+        userSetBottomBaseSize = baseSize;
+        const chineseText = container.getAttribute('data-plain') || '';
+        const charCount = chineseText.length;
+        const scale = getBottomScaleFactor(charCount);
+        let finalSize = Math.max(10, Math.min(100, Math.round(baseSize * scale)));
+        container.querySelectorAll('.chinese-bottom').forEach(el => {
+            el.style.fontFamily = bottomFont;
+            el.style.color = bottomColor;
+            el.style.fontWeight = isBottomBold ? 'bold' : 'normal';
+            el.style.fontSize = finalSize + 'px';
+        });
+        document.getElementById('bottomSizeVal').innerText = baseSize + 'px';
+        saveAllData();
+    }
     
     function shrinkChineseToFit() {
         const element = document.getElementById('chineseWord');
@@ -1201,6 +1273,7 @@
         element.style.transform = originalTransform || 'translate(-50%, -50%)';
         document.getElementById('mZhSizeVal').innerText = Math.round(finalSize) + 'vh';
         
+        // Auto-shrink Top Pinyin based on character count
         const chineseText = element.getAttribute('data-plain') || '';
         const charCount = chineseText.length;
         let targetScale = 1.0;
@@ -1223,6 +1296,9 @@
             el.style.fontWeight = isPinyinBold ? 'bold' : 'normal';
             el.style.fontSize = appliedSize + 'px';
         });
+        
+        // Apply bottom character auto-shrink based on char count (respects user base size)
+        applyBottomStyles();
     }
     
     function shrinkKhmerToFit() {
@@ -1262,138 +1338,24 @@
         document.getElementById('mKmSizeVal').innerText = Math.round(finalSize) + 'vh';
     }
     
-    function forceShrink() { setTimeout(() => { shrinkChineseToFit(); shrinkKhmerToFit(); }, 50); }
+    function forceShrink() { 
+        setTimeout(() => { 
+            shrinkChineseToFit(); 
+            shrinkKhmerToFit(); 
+        }, 50); 
+    }
     
-    // ========== FIXED SPEECH WITH IPHONE FIX ==========
+    // ========== FIXED SPEECH ==========
     let currentAudio = null, speechQueue = [], isProcessingQueue = false;
-    
-    async function callEdgeTTS(text, voice, ratePercent = null) { 
-        if (!text) return; 
-        try { 
-            let formData = new URLSearchParams(); 
-            formData.append('text', text); 
-            formData.append('voice', voice); 
-            if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); 
-            const response = await fetch("/speak", { 
-                method: "POST", 
-                headers: { "Content-Type": "application/x-www-form-urlencoded" }, 
-                body: formData.toString() 
-            }); 
-            if (!response.ok) throw new Error(); 
-            const blob = await response.blob(); 
-            const url = URL.createObjectURL(blob); 
-            const audio = new Audio(); 
-            audio.src = url; 
-            return new Promise((resolve, reject) => { 
-                audio.onended = () => { 
-                    URL.revokeObjectURL(url); 
-                    resolve(); 
-                }; 
-                audio.onerror = () => reject(); 
-                audio.play().catch(reject); 
-                if (currentAudio && !currentAudio.paused) currentAudio.pause(); 
-                currentAudio = audio; 
-            }); 
-        } catch(err) { 
-            console.error(err); 
-            return Promise.reject(err); 
-        } 
-    }
-    
-    async function processSpeechQueue() { 
-        if (isProcessingQueue || speechQueue.length === 0) return; 
-        isProcessingQueue = true; 
-        while (speechQueue.length) { 
-            const { text, voice, rate } = speechQueue.shift(); 
-            try { 
-                await callEdgeTTS(text, voice, rate); 
-                // Add a small delay between different voices for iPhone compatibility
-                await new Promise(r => setTimeout(r, 300)); 
-            } catch(err) { 
-                console.warn(err); 
-            } 
-        } 
-        isProcessingQueue = false; 
-    }
-    
-    function enqueueSpeech(text, voice, rate = null) { 
-        if (!text) return; 
-        speechQueue.push({ text, voice, rate }); 
-        processSpeechQueue(); 
-    }
-    
-    function killAllSpeech() { 
-        if (currentAudio) { 
-            currentAudio.pause(); 
-            currentAudio.src = ""; 
-            currentAudio = null; 
-        } 
-        speechQueue = []; 
-        isProcessingQueue = false; 
-    }
-    
-    function speakChineseEdge(text) { 
-        if (!text) return; 
-        const voice = document.getElementById('zhVoiceSelect').value; 
-        const rateSlider = document.getElementById('zhRateSlider'); 
-        let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; 
-        let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); 
-        enqueueSpeech(text, voice, rateFormatted); 
-    }
-    
-    function speakKhmerEdge(text) { 
-        if (!text) return; 
-        const voice = document.getElementById('kmVoiceSelect').value; 
-        enqueueSpeech(text, voice, null); 
-    }
-    
-    function speakChineseFromMain() { 
-        const container = document.getElementById('chineseWord'); 
-        const plainText = container ? container.getAttribute('data-plain') || '' : ''; 
-        if(plainText) { 
-            killAllSpeech(); 
-            speakChineseEdge(plainText); 
-        } 
-    }
-    
-    function speakKhmerFromMain() { 
-        const container = document.getElementById('khmerWord'); 
-        const plainText = container ? container.innerText : ''; 
-        if(plainText) { 
-            killAllSpeech(); 
-            speakKhmerEdge(plainText); 
-        } 
-    }
-    
-    async function speakAutoSequence(zhText, kmText) { 
-        killAllSpeech(); 
-        const zhReps = parseInt(document.getElementById('zhReps').value); 
-        const kmReps = parseInt(document.getElementById('kmReps').value); 
-        const zhVoice = document.getElementById('zhVoiceSelect').value; 
-        const kmVoice = document.getElementById('kmVoiceSelect').value; 
-        const rateSlider = document.getElementById('zhRateSlider'); 
-        let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; 
-        let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); 
-        
-        // Speak Chinese first
-        for(let i=0; i<zhReps; i++) { 
-            await callEdgeTTS(zhText, zhVoice, rateFormatted); 
-            if(i < zhReps-1) await new Promise(r => setTimeout(r, 200)); 
-        } 
-        
-        // Longer pause before Khmer for iPhone
-        await new Promise(r => setTimeout(r, 500));
-        
-        // Speak Khmer
-        if(kmText && kmText.trim()) { 
-            for(let j=0; j<kmReps; j++) { 
-                await callEdgeTTS(kmText, kmVoice, null); 
-                if(j < kmReps-1) await new Promise(r => setTimeout(r, 200)); 
-            } 
-        } 
-        
-        if(autoActive) startAutoCycle(); 
-    }
+    async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
+    async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, 0)); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
+    function enqueueSpeech(text, voice, rate = null) { if (!text) return; speechQueue.push({ text, voice, rate }); processSpeechQueue(); }
+    function killAllSpeech() { if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; } speechQueue = []; isProcessingQueue = false; }
+    function speakChineseEdge(text) { if (!text) return; const voice = document.getElementById('zhVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); enqueueSpeech(text, voice, rateFormatted); }
+    function speakKhmerEdge(text) { if (!text) return; const voice = document.getElementById('kmVoiceSelect').value; enqueueSpeech(text, voice, null); }
+    function speakChineseFromMain() { const container = document.getElementById('chineseWord'); const plainText = container ? container.getAttribute('data-plain') || '' : ''; if(plainText) { killAllSpeech(); speakChineseEdge(plainText); } }
+    function speakKhmerFromMain() { const container = document.getElementById('khmerWord'); const plainText = container ? container.innerText : ''; if(plainText) { killAllSpeech(); speakKhmerEdge(plainText); } }
+    async function speakAutoSequence(zhText, kmText) { killAllSpeech(); const zhReps = parseInt(document.getElementById('zhReps').value); const kmReps = parseInt(document.getElementById('kmReps').value); const zhVoice = document.getElementById('zhVoiceSelect').value; const kmVoice = document.getElementById('kmVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); for(let i=0; i<zhReps; i++) { await callEdgeTTS(zhText, zhVoice, rateFormatted); } if(kmText && kmText.trim()) { for(let j=0; j<kmReps; j++) { await callEdgeTTS(kmText, kmVoice, null); } } if(autoActive) startAutoCycle(); }
     
     const tripleHtmlCache = new Map();
     function getTripleHTML(chineseText) {
@@ -1426,7 +1388,7 @@
         container.setAttribute('data-plain', text);
         applyChineseMainStyle();
         applyPinyinStyles();
-        applyBottomStyles();
+        applyBottomStyles(); // bottom auto-shrink applied based on char count
         applyLayerTransforms();
         applyTextVisibility();
         forceShrink();
@@ -1486,24 +1448,6 @@
         forceShrink();
     }
     
-    function applyBottomStyles() {
-        const container = document.getElementById('chineseWord');
-        if (!container) return;
-        const bottomFont = document.getElementById('bottomFont').value;
-        const bottomColor = document.getElementById('bottomCharColor').value;
-        const isBottomBold = document.getElementById('bottomBold').classList.contains('active');
-        const bottomSize = document.getElementById('bottomSizePx').value;
-        container.querySelectorAll('.chinese-bottom').forEach(el => {
-            el.style.fontFamily = bottomFont;
-            el.style.color = bottomColor;
-            el.style.fontWeight = isBottomBold ? 'bold' : 'normal';
-            el.style.fontSize = bottomSize + 'px';
-        });
-        document.getElementById('bottomSizeVal').innerText = bottomSize + 'px';
-        saveAllData();
-        forceShrink();
-    }
-    
     function setKhmerFontSize(newSize) {
         const el = document.getElementById('khmerWord');
         if (!el) return;
@@ -1523,7 +1467,7 @@
     window.addEventListener('resize', () => { if (resizeDebounce) clearTimeout(resizeDebounce); resizeDebounce = setTimeout(() => forceShrink(), 150); });
     window.addEventListener('orientationchange', () => { setTimeout(() => forceShrink(), 100); });
     
-    // ========== MODE, PAGINATION ==========
+    // ========== MODE, PAGINATION (rest preserved) ==========
     let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = false;
     let appMode = 'random';
     let normalCurrentIdx = 0;
@@ -1649,7 +1593,7 @@
         updateResults();
     }
     
-    // ========== DRAG & ZOOM ==========
+    // ========== DRAG & ZOOM (preserved) ==========
     let chineseElement = null, khmerElement = null;
     let chineseX = 50, chineseY = 40, khmerX = 50, khmerY = 70;
     let topLayerX = 0, topLayerY = 0, bottomLayerX = 0, bottomLayerY = 0;
@@ -1669,6 +1613,18 @@
     function resetChinesePosition() { chineseX = 50; chineseY = 40; if (chineseElement) { chineseElement.style.left = '50%'; chineseElement.style.top = '40%'; } saveAllDragPositions(); forceShrink(); }
     function resetKhmerPosition() { khmerX = 50; khmerY = 70; if (khmerElement) { khmerElement.style.left = '50%'; khmerElement.style.top = '70%'; } saveAllDragPositions(); forceShrink(); }
     function resetLayerOffsets() { topLayerX = 0; topLayerY = 0; bottomLayerX = 0; bottomLayerY = 0; applyLayerTransforms(); saveAllDragPositions(); }
+    
+    function showToast(message) {
+        let toast = document.querySelector('.copy-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.className = 'copy-toast';
+            document.body.appendChild(toast);
+        }
+        toast.innerText = message;
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 1500);
+    }
     
     function showLayerChoiceModal() { return new Promise((resolve) => {
         const modalDiv = document.createElement('div');
@@ -1691,29 +1647,20 @@
         modalDiv.onclick = (e) => { if (e.target === modalDiv) cleanup(null); };
     }); }
     
-    function initChineseDrag() {
-        chineseElement = document.getElementById('chineseWord');
-        if (!chineseElement) return;
-        chineseElement.style.position = 'absolute';
-        chineseElement.style.left = chineseX + '%';
-        chineseElement.style.top = chineseY + '%';
-        chineseElement.style.transform = 'translate(-50%, -50%)';
-        chineseElement.style.cursor = 'grab';
-        chineseElement.addEventListener('click', (e) => { e.stopPropagation(); speakChineseFromMain(); });
-        chineseElement.addEventListener('mousedown', onPointerDown);
-        chineseElement.addEventListener('touchstart', onPointerDown, { passive: false });
-        chineseElement.addEventListener('touchstart', (e) => handlePinchStart(e, 'chinese'), { passive: false });
-        chineseElement.addEventListener('touchmove', (e) => handlePinchMove(e, 'chinese'), { passive: false });
-        chineseElement.addEventListener('touchend', handlePinchEnd);
-    }
-    
-    function onPointerDown(e) {
+    function onChinesePointerDown(e) {
         e.preventDefault(); e.stopPropagation();
         const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
         const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
         pressStartX = clientX; pressStartY = clientY; hasMovedDuringPress = false;
         longPressTimer = setTimeout(async () => {
             if (!hasMovedDuringPress && !dragActive) {
+                const plainText = chineseElement.getAttribute('data-plain') || '';
+                if (plainText) {
+                    try {
+                        await navigator.clipboard.writeText(plainText);
+                        showToast(`📋 Copied: ${plainText}`);
+                    } catch(err) { console.warn('copy failed', err); }
+                }
                 const choice = await showLayerChoiceModal();
                 if (choice === 'top') startLayerDrag('top', pressStartX, pressStartY);
                 else if (choice === 'bottom') startLayerDrag('bottom', pressStartX, pressStartY);
@@ -1724,6 +1671,36 @@
         window.addEventListener('touchmove', onPressMove);
         window.addEventListener('mouseup', onPressEnd);
         window.addEventListener('touchend', onPressEnd);
+    }
+    
+    function onKhmerPointerDown(e) {
+        e.preventDefault(); e.stopPropagation();
+        let khmerLongPressTimer = null;
+        let khmerHasMoved = false;
+        const onMove = () => { khmerHasMoved = true; if (khmerLongPressTimer) clearTimeout(khmerLongPressTimer); };
+        const onUp = () => {
+            if (khmerLongPressTimer) clearTimeout(khmerLongPressTimer);
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('touchmove', onMove);
+            window.removeEventListener('mouseup', onUp);
+            window.removeEventListener('touchend', onUp);
+        };
+        khmerLongPressTimer = setTimeout(async () => {
+            if (!khmerHasMoved) {
+                const khmerText = khmerElement.innerText;
+                if (khmerText) {
+                    try {
+                        await navigator.clipboard.writeText(khmerText);
+                        showToast(`📋 Copied: ${khmerText}`);
+                    } catch(err) { console.warn('copy failed', err); }
+                }
+            }
+            onUp();
+        }, 1000);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('touchmove', onMove);
+        window.addEventListener('mouseup', onUp);
+        window.addEventListener('touchend', onUp);
     }
     
     function onPressMove(e) {
@@ -1813,6 +1790,22 @@
         forceShrink();
     }
     
+    function initChineseDrag() {
+        chineseElement = document.getElementById('chineseWord');
+        if (!chineseElement) return;
+        chineseElement.style.position = 'absolute';
+        chineseElement.style.left = chineseX + '%';
+        chineseElement.style.top = chineseY + '%';
+        chineseElement.style.transform = 'translate(-50%, -50%)';
+        chineseElement.style.cursor = 'grab';
+        chineseElement.addEventListener('click', (e) => { e.stopPropagation(); speakChineseFromMain(); });
+        chineseElement.addEventListener('mousedown', onChinesePointerDown);
+        chineseElement.addEventListener('touchstart', onChinesePointerDown, { passive: false });
+        chineseElement.addEventListener('touchstart', (e) => handlePinchStart(e, 'chinese'), { passive: false });
+        chineseElement.addEventListener('touchmove', (e) => handlePinchMove(e, 'chinese'), { passive: false });
+        chineseElement.addEventListener('touchend', handlePinchEnd);
+    }
+    
     function initKhmerDrag() {
         khmerElement = document.getElementById('khmerWord');
         if (!khmerElement) return;
@@ -1867,9 +1860,11 @@
         };
         khmerElement.addEventListener('mousedown', onStart);
         khmerElement.addEventListener('touchstart', onStart, { passive: false });
+        khmerElement.addEventListener('mousedown', onKhmerPointerDown);
+        khmerElement.addEventListener('touchstart', onKhmerPointerDown, { passive: false });
     }
     
-    // ========== SIDEBAR UI & CONTROLS ==========
+    // ========== SIDEBAR UI & CONTROLS (preserved) ==========
     function saveAllData() {
         const settings = { mZhSize: userSetChineseFontSize, mKmSize: userSetKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: document.getElementById('bottomSizePx').value, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage, shadow: document.getElementById('shadowSlider').value };
         localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList));
@@ -1886,7 +1881,7 @@
             document.getElementById('mKmSize').value = userSetKhmerFontSize;
             document.getElementById('mZhColor').value = s.mZhColor || "#000000";
             document.getElementById('mKmColor').value = s.mKmColor || "#000000";
-            document.getElementById('zhReps').value = s.zhReps || 1;
+            document.getElementById('zhReps').value = s.zhReps || 3;
             document.getElementById('kmReps').value = s.kmReps || 1;
             document.getElementById('autoDelay').value = s.autoDelay || 5;
             if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow;
@@ -1910,7 +1905,7 @@
             if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont;
             if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor;
             if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); }
-            if(s.bottomSizePx) document.getElementById('bottomSizePx').value = s.bottomSizePx;
+            if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomBaseSize = parseFloat(s.bottomSizePx); }
             if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible;
             if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible;
             if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; document.getElementById('modeNormalBtn').classList.add('active'); document.getElementById('modeRandomBtn').classList.remove('active'); }
@@ -1926,6 +1921,7 @@
             userSetPinyinFontSize = 55;
             document.getElementById('pinyinSpacing').value = "0";
             document.getElementById('bottomSizePx').value = "45";
+            userSetBottomBaseSize = 45;
             document.getElementById('mKmColor').value = "#000000";
             document.getElementById('bottomCharColor').value = "#2563eb";
             document.getElementById('shadowSlider').value = "3";
@@ -1976,7 +1972,7 @@
     function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
     function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
     
-    // ========== DRAGGABLE FLOATING MENU ==========
+    // ========== DRAGGABLE FLOATING MENU (preserved) ==========
     let menuDragActive = false, menuStartX = 0, menuStartY = 0, currentMenuTransform = { x: 0, y: 0 };
     const floatingMenuDiv = document.getElementById('floatingMenu');
     function applyStoredMenuPosition() { const storedX = parseFloat(localStorage.getItem('menuPosX')) || 0; const storedY = parseFloat(localStorage.getItem('menuPosY')) || 0; if (!isNaN(storedX) && !isNaN(storedY)) { currentMenuTransform.x = storedX; currentMenuTransform.y = storedY; floatingMenuDiv.style.transform = `translate3d(${storedX}px, ${storedY}px, 0)`; } }
@@ -1985,7 +1981,7 @@
     function onMenuTouchStart(e) { const target = e.target; if (target.closest('button') || target.closest('select') || target.closest('input') || target.closest('.toggle-section-btn') || target.closest('.drag-dark-toggle') || target.closest('.aba-icon-inline') || target.closest('.tab-btn') || target.closest('.vis-toggle-btn')) return; e.preventDefault(); menuDragActive = true; const touch = e.touches[0]; const startClientX = touch.clientX, startClientY = touch.clientY, startTranslateX = currentMenuTransform.x, startTranslateY = currentMenuTransform.y; function onTouchMove(moveEvent) { if (!menuDragActive) return; moveEvent.preventDefault(); const moveTouch = moveEvent.touches[0]; const dx = moveTouch.clientX - startClientX, dy = moveTouch.clientY - startClientY; currentMenuTransform.x = startTranslateX + dx; currentMenuTransform.y = startTranslateY + dy; floatingMenuDiv.style.transform = `translate3d(${currentMenuTransform.x}px, ${currentMenuTransform.y}px, 0)`; } function onTouchEnd() { menuDragActive = false; saveMenuPosition(); document.removeEventListener('touchmove', onTouchMove); document.removeEventListener('touchend', onTouchEnd); } document.addEventListener('touchmove', onTouchMove, { passive: false }); document.addEventListener('touchend', onTouchEnd); }
     floatingMenuDiv.addEventListener('mousedown', onMenuMouseDown); floatingMenuDiv.addEventListener('touchstart', onMenuTouchStart, { passive: false }); applyStoredMenuPosition();
     
-    // ========== FILE LOADER ==========
+    // ========== FILE LOADER (preserved) ==========
     const modal = document.getElementById('fileSourceModal'), insertBtn = document.getElementById('insertDataBtn'), closeModalBtn = document.getElementById('closeModalBtn'), chooseLocalBtn = document.getElementById('chooseLocalBtn'), chooseUrlBtn = document.getElementById('chooseUrlBtn'), urlInputArea = document.getElementById('urlInputArea'), confirmUrlLoad = document.getElementById('confirmUrlLoad'), sheetUrlModal = document.getElementById('sheetUrlInputModal');
     function showModal() { modal.style.display = 'flex'; } function hideModal() { modal.style.display = 'none'; urlInputArea.style.display = 'none'; }
     insertBtn.onclick = showModal; closeModalBtn.onclick = hideModal; modal.onclick = (e) => { if(e.target === modal) hideModal(); };
@@ -2039,7 +2035,7 @@
         document.getElementById('pinyinSpacing').addEventListener('input', applyPinyinStyles);
         document.getElementById('bottomFont').addEventListener('change', applyBottomStyles);
         document.getElementById('bottomCharColor').addEventListener('input', applyBottomStyles);
-        document.getElementById('bottomSizePx').addEventListener('input', applyBottomStyles);
+        document.getElementById('bottomSizePx').addEventListener('input', function() { applyBottomStyles(); saveAllData(); });
         document.getElementById('sidebarCloseBtn').addEventListener('click', () => { if (sidebarVisible) toggleSidebar(); });
         document.getElementById('modeRandomBtn').addEventListener('click', () => { if (appMode !== 'random') toggleAppMode(); });
         document.getElementById('modeNormalBtn').addEventListener('click', () => { if (appMode !== 'normal') toggleAppMode(); });
