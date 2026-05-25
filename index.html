@@ -1136,7 +1136,7 @@
                                     <input type="color" id="bottomCharColor" value="#2563eb">
                                     <button id="bottomBold" class="bold-icon-btn" onclick="toggleBold('bottomBold', applyBottomStyles)"><span>BOLD</span></button>
                                 </div>
-                                <div class="size-row"><label>Base Size (px)</label><input type="range" id="bottomSizePx" class="size-slider" min="30" max="100" value="45"><span id="bottomSizeVal">45px</span></div>
+                                <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" class="size-slider" min="20" max="120" value="55"><span id="bottomSizeVal">55px</span></div>
                             </div>
                         </div>
                     </div>
@@ -1200,19 +1200,33 @@
     let userSetChineseFontSize = 42;
     let userSetKhmerFontSize = 42;
     let userSetPinyinFontSize = 55;
-    let userSetBottomBaseSize = 45; // base size in px
+    let userSetBottomFontSize = 55;  // store user's base bottom size (20-120px range)
     
-    // Get scale factor based on character count
+    // Bottom character scaling logic based on character count
     function getBottomScaleFactor(charCount) {
         if (charCount <= 2) return 1.0;
         if (charCount === 3) return 0.8;
         if (charCount === 4) return 0.7;
-        if (charCount === 5) return 0.4;
-        if (charCount >= 6 && charCount <= 7) return 0.3;
-        if (charCount >= 8 && charCount <= 10) return 0.2;
+        if (charCount === 5) return 0.7;
+        if (charCount >= 6 && charCount <= 7) return 0.4;
+        if (charCount >= 8 && charCount <= 10) return 0.3;
         if (charCount >= 11 && charCount <= 13) return 0.15;
-        if (charCount >= 14) return 0.1;
-        return 1.0;
+        return 0.10; // 14+
+    }
+    
+    function applyBottomDynamicSize() {
+        const container = document.getElementById('chineseWord');
+        if (!container) return;
+        const chineseText = container.getAttribute('data-plain') || '';
+        const charCount = chineseText.length;
+        const scale = getBottomScaleFactor(charCount);
+        let finalSize = Math.max(12, Math.min(120, Math.round(userSetBottomFontSize * scale)));
+        // ensure minimum readability
+        if (finalSize < 12) finalSize = 12;
+        container.querySelectorAll('.chinese-bottom').forEach(el => {
+            el.style.fontSize = finalSize + 'px';
+        });
+        document.getElementById('bottomSizeVal').innerText = userSetBottomFontSize + 'px';
     }
     
     function applyBottomStyles() {
@@ -1221,20 +1235,32 @@
         const bottomFont = document.getElementById('bottomFont').value;
         const bottomColor = document.getElementById('bottomCharColor').value;
         const isBottomBold = document.getElementById('bottomBold').classList.contains('active');
-        const baseSize = parseFloat(document.getElementById('bottomSizePx').value);
-        userSetBottomBaseSize = baseSize;
-        const chineseText = container.getAttribute('data-plain') || '';
-        const charCount = chineseText.length;
-        const scale = getBottomScaleFactor(charCount);
-        let finalSize = Math.max(10, Math.min(100, Math.round(baseSize * scale)));
+        // update stored base size when user changes slider
+        const bottomSizeSlider = document.getElementById('bottomSizePx');
+        if (bottomSizeSlider) {
+            userSetBottomFontSize = parseInt(bottomSizeSlider.value) || 55;
+        }
         container.querySelectorAll('.chinese-bottom').forEach(el => {
             el.style.fontFamily = bottomFont;
             el.style.color = bottomColor;
             el.style.fontWeight = isBottomBold ? 'bold' : 'normal';
-            el.style.fontSize = finalSize + 'px';
         });
-        document.getElementById('bottomSizeVal').innerText = baseSize + 'px';
+        applyBottomDynamicSize();  // apply dynamic scaling
         saveAllData();
+        forceShrink();
+    }
+    
+    function updateChineseDisplay(text) {
+        const container = document.getElementById('chineseWord');
+        if (!container) return;
+        container.innerHTML = getTripleHTML(text);
+        container.setAttribute('data-plain', text);
+        applyChineseMainStyle();
+        applyPinyinStyles();
+        applyBottomStyles();  // this will trigger dynamic sizing
+        applyLayerTransforms();
+        applyTextVisibility();
+        forceShrink();
     }
     
     function shrinkChineseToFit() {
@@ -1297,8 +1323,8 @@
             el.style.fontSize = appliedSize + 'px';
         });
         
-        // Apply bottom character auto-shrink based on char count (respects user base size)
-        applyBottomStyles();
+        // Re-apply bottom dynamic size after main resize (which may affect layout)
+        applyBottomDynamicSize();
     }
     
     function shrinkKhmerToFit() {
@@ -1338,12 +1364,7 @@
         document.getElementById('mKmSizeVal').innerText = Math.round(finalSize) + 'vh';
     }
     
-    function forceShrink() { 
-        setTimeout(() => { 
-            shrinkChineseToFit(); 
-            shrinkKhmerToFit(); 
-        }, 50); 
-    }
+    function forceShrink() { setTimeout(() => { shrinkChineseToFit(); shrinkKhmerToFit(); }, 50); }
     
     // ========== FIXED SPEECH ==========
     let currentAudio = null, speechQueue = [], isProcessingQueue = false;
@@ -1380,19 +1401,6 @@
     
     let topPinyinVisible = true;
     let bottomCharVisible = true;
-    
-    function updateChineseDisplay(text) {
-        const container = document.getElementById('chineseWord');
-        if (!container) return;
-        container.innerHTML = getTripleHTML(text);
-        container.setAttribute('data-plain', text);
-        applyChineseMainStyle();
-        applyPinyinStyles();
-        applyBottomStyles(); // bottom auto-shrink applied based on char count
-        applyLayerTransforms();
-        applyTextVisibility();
-        forceShrink();
-    }
     
     function applyTextVisibility() {
         const container = document.getElementById('chineseWord');
@@ -1464,8 +1472,8 @@
     function updateKhmerDisplay(text) { const container = document.getElementById('khmerWord'); if (container) { container.innerText = text; setKhmerFontSize(userSetKhmerFontSize); forceShrink(); } }
     
     let resizeDebounce;
-    window.addEventListener('resize', () => { if (resizeDebounce) clearTimeout(resizeDebounce); resizeDebounce = setTimeout(() => forceShrink(), 150); });
-    window.addEventListener('orientationchange', () => { setTimeout(() => forceShrink(), 100); });
+    window.addEventListener('resize', () => { if (resizeDebounce) clearTimeout(resizeDebounce); resizeDebounce = setTimeout(() => { forceShrink(); applyBottomDynamicSize(); }, 150); });
+    window.addEventListener('orientationchange', () => { setTimeout(() => { forceShrink(); applyBottomDynamicSize(); }, 100); });
     
     // ========== MODE, PAGINATION (rest preserved) ==========
     let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = false;
@@ -1788,6 +1796,7 @@
         window.removeEventListener('touchmove', onGlobalDragMove);
         window.removeEventListener('touchend', onGlobalDragEnd);
         forceShrink();
+        applyBottomDynamicSize(); // re-adjust after drag
     }
     
     function initChineseDrag() {
@@ -1905,7 +1914,7 @@
             if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont;
             if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor;
             if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); }
-            if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomBaseSize = parseFloat(s.bottomSizePx); }
+            if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomFontSize = parseInt(s.bottomSizePx); }
             if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible;
             if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible;
             if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; document.getElementById('modeNormalBtn').classList.add('active'); document.getElementById('modeRandomBtn').classList.remove('active'); }
@@ -1920,8 +1929,8 @@
             document.getElementById('pinyinSizePx').value = "55";
             userSetPinyinFontSize = 55;
             document.getElementById('pinyinSpacing').value = "0";
-            document.getElementById('bottomSizePx').value = "45";
-            userSetBottomBaseSize = 45;
+            document.getElementById('bottomSizePx').value = "55";
+            userSetBottomFontSize = 55;
             document.getElementById('mKmColor').value = "#000000";
             document.getElementById('bottomCharColor').value = "#2563eb";
             document.getElementById('shadowSlider').value = "3";
@@ -1930,7 +1939,6 @@
             document.getElementById('dragResizer').classList.add('hidden');
             document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR';
             applyPinyinStyles();
-            applyBottomStyles();
         }
         const mZhFontSelect = document.getElementById('mZhFont');
         if(mZhFontSelect && (!savedSettings || !savedSettings.mZhFont)) { mZhFontSelect.value = "'Baguette Simplified'"; }
@@ -1958,7 +1966,7 @@
     function selectSidebarItem(sideIdx) { sidebarFocusIdx = sideIdx; const idx = sidebarIndices[sideIdx]; if (appMode === 'normal') normalCurrentIdx = idx; updateDisplay(); const item = vocabList[idx]; if (item) speakAutoSequence(item.chinese, item.khmer); saveAllData(); scrollToActiveSidebarItem(); }
     window.selectSidebarItem = selectSidebarItem;
     
-    function updateDisplay() { if (!sidebarIndices.length) return; const idx = sidebarIndices[sidebarFocusIdx]; if (idx === undefined) return; const item = vocabList[idx]; updateChineseDisplay(item.chinese); document.getElementById('khmerWord').innerText = item.khmer; document.querySelectorAll('.vocab-item').forEach((d, i) => d.classList.toggle('active', i === sidebarFocusIdx)); applyStyles(); forceShrink(); }
+    function updateDisplay() { if (!sidebarIndices.length) return; const idx = sidebarIndices[sidebarFocusIdx]; if (idx === undefined) return; const item = vocabList[idx]; updateChineseDisplay(item.chinese); document.getElementById('khmerWord').innerText = item.khmer; document.querySelectorAll('.vocab-item').forEach((d, i) => d.classList.toggle('active', i === sidebarFocusIdx)); applyStyles(); forceShrink(); applyBottomDynamicSize(); }
     
     function applySidebarStyles() { document.querySelectorAll('.side-zh').forEach(el => { el.style.fontFamily = document.getElementById('sZhFont').value; el.style.color = document.getElementById('sZhColor').value; el.style.fontSize = document.getElementById('sZhSize').value+'rem'; }); document.querySelectorAll('.side-km').forEach(el => { el.style.fontFamily = document.getElementById('sKmFont').value; el.style.color = document.getElementById('sKmColor').value; el.style.fontSize = document.getElementById('sKmSize').value+'rem'; }); }
     
@@ -2035,14 +2043,14 @@
         document.getElementById('pinyinSpacing').addEventListener('input', applyPinyinStyles);
         document.getElementById('bottomFont').addEventListener('change', applyBottomStyles);
         document.getElementById('bottomCharColor').addEventListener('input', applyBottomStyles);
-        document.getElementById('bottomSizePx').addEventListener('input', function() { applyBottomStyles(); saveAllData(); });
+        document.getElementById('bottomSizePx').addEventListener('input', function() { userSetBottomFontSize = parseInt(this.value); applyBottomStyles(); saveAllData(); });
         document.getElementById('sidebarCloseBtn').addEventListener('click', () => { if (sidebarVisible) toggleSidebar(); });
         document.getElementById('modeRandomBtn').addEventListener('click', () => { if (appMode !== 'random') toggleAppMode(); });
         document.getElementById('modeNormalBtn').addEventListener('click', () => { if (appMode !== 'normal') toggleAppMode(); });
         document.getElementById('searchBtn').addEventListener('click', () => showSearchPopup());
         window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); pickRandom(); } else if (e.code === 'ArrowLeft') { e.preventDefault(); historyPrev(); } else if (e.code === 'ArrowRight') { e.preventDefault(); historyNext(); } else if (e.code === 'ArrowDown') { e.preventDefault(); moveSidebarFocus(1); } else if (e.code === 'ArrowUp') { e.preventDefault(); moveSidebarFocus(-1); } });
         if(vocabList.length) updateDisplay();
-        setTimeout(() => { loadAllDragPositions(); forceShrink(); }, 100);
+        setTimeout(() => { loadAllDragPositions(); forceShrink(); applyBottomDynamicSize(); }, 100);
     };
     function moveSidebarFocus(delta) { if (!sidebarIndices.length) return; let newFocus = sidebarFocusIdx + delta; if (newFocus < 0) newFocus = sidebarIndices.length - 1; if (newFocus >= sidebarIndices.length) newFocus = 0; sidebarFocusIdx = newFocus; updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); }
     window.historyPrev = historyPrev; window.historyNext = historyNext; window.moveSidebarFocus = moveSidebarFocus; window.toggleAuto = toggleAuto; window.toggleSidebar = toggleSidebar; window.switchTab = switchTab; window.toggleMenu = toggleMenu; window.pickRandom = pickRandom; window.loadWordByMode = loadWordByMode;
