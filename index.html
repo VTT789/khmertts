@@ -981,18 +981,22 @@
         
         .copy-toast {
             position: fixed;
-            bottom: 30px;
+            bottom: 80px;
             left: 50%;
             transform: translateX(-50%);
-            background: #333;
+            background: rgba(0,0,0,0.85);
             color: white;
-            padding: 8px 16px;
+            padding: 10px 20px;
             border-radius: 40px;
             font-size: 14px;
             z-index: 20001;
             pointer-events: none;
-            opacity: 0.9;
             white-space: nowrap;
+            max-width: 85vw;
+            white-space: normal;
+            text-align: center;
+            font-weight: 500;
+            backdrop-filter: blur(8px);
         }
     </style>
 </head>
@@ -1201,7 +1205,7 @@
     let userSetPinyinFontSize = 55;
     let userSetBottomFontSize = 55;
     
-    // Helper: get scale factor based on character count
+    // Helper: get scale factor based on character count for bottom character
     function getBottomScaleFactor(charCount) {
         if (charCount <= 2) return 1.0;
         if (charCount <= 5) return 0.8;
@@ -1222,12 +1226,6 @@
         container.querySelectorAll('.chinese-bottom').forEach(el => {
             el.style.fontSize = finalSize + 'px';
         });
-        // Save to UI slider if needed
-        const bottomSizeSlider = document.getElementById('bottomSizePx');
-        if (bottomSizeSlider && !bottomSizeSlider._updating) {
-            bottomSizeSlider.value = userBaseSize;
-            document.getElementById('bottomSizeVal').innerText = userBaseSize + 'px';
-        }
     }
     
     function shrinkChineseToFit() {
@@ -1266,7 +1264,7 @@
         element.style.transform = originalTransform || 'translate(-50%, -50%)';
         document.getElementById('mZhSizeVal').innerText = Math.round(finalSize) + 'vh';
         
-        // Auto-shrink Top Pinyin based on character count
+        // Auto-shrink Top Pinyin
         const chineseText = element.getAttribute('data-plain') || '';
         const charCount = chineseText.length;
         let targetScale = 1.0;
@@ -1277,7 +1275,6 @@
         else if (charCount >= 5) targetScale = 0.40;
         else if (charCount >= 4) targetScale = 0.60;
         else if (charCount >= 3) targetScale = 0.80;
-        else targetScale = 1.0;
         
         const appliedSize = Math.max(10, Math.min(120, Math.round(userSetPinyinFontSize * targetScale)));
         const pinyinFont = document.getElementById('pinyinFont').value;
@@ -1290,7 +1287,7 @@
             el.style.fontSize = appliedSize + 'px';
         });
         
-        // Apply bottom auto-scale
+        // Apply bottom auto-scale based on character count
         applyBottomAutoScale();
     }
     
@@ -1474,8 +1471,103 @@
     window.addEventListener('resize', () => { if (resizeDebounce) clearTimeout(resizeDebounce); resizeDebounce = setTimeout(() => { forceShrink(); applyBottomAutoScale(); }, 150); });
     window.addEventListener('orientationchange', () => { setTimeout(() => { forceShrink(); applyBottomAutoScale(); }, 100); });
     
-    // ========== MODE, PAGINATION (rest preserved - similar to original) ==========
-    let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = false;
+    // ========== IPHONE FRIENDLY CLIPBOARD COPY ==========
+    let copyToastTimeout = null;
+    
+    function showToast(message) {
+        let toast = document.querySelector('.copy-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.className = 'copy-toast';
+            document.body.appendChild(toast);
+        }
+        toast.innerText = message;
+        toast.style.display = 'block';
+        if (copyToastTimeout) clearTimeout(copyToastTimeout);
+        copyToastTimeout = setTimeout(() => { 
+            toast.style.opacity = '0';
+            setTimeout(() => { toast.style.display = 'none'; toast.style.opacity = ''; }, 300);
+        }, 2000);
+    }
+    
+    async function copyToClipboard(text, label) {
+        if (!text) return;
+        
+        // Method 1: Modern Clipboard API (works on most devices including newer iOS)
+        if (navigator.clipboard && window.isSecureContext) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast(`📋 Copied ${label}: ${text.substring(0, 35)}${text.length > 35 ? '...' : ''}`);
+                return;
+            } catch (err) {
+                console.warn('Clipboard API error:', err);
+            }
+        }
+        
+        // Method 2: iOS Fallback - using execCommand with visible but off-screen element
+        try {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '-9999px';
+            textarea.style.opacity = '0';
+            textarea.style.pointerEvents = 'none';
+            document.body.appendChild(textarea);
+            
+            textarea.focus();
+            textarea.select();
+            textarea.setSelectionRange(0, text.length);
+            
+            const success = document.execCommand('copy');
+            document.body.removeChild(textarea);
+            
+            if (success) {
+                showToast(`📋 Copied ${label}: ${text.substring(0, 35)}${text.length > 35 ? '...' : ''}`);
+                return;
+            }
+        } catch (err) {
+            console.warn('execCommand fallback error:', err);
+        }
+        
+        // Method 3: Selection API fallback
+        try {
+            const selection = window.getSelection();
+            const range = document.createRange();
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'fixed';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.top = '-9999px';
+            tempDiv.textContent = text;
+            document.body.appendChild(tempDiv);
+            range.selectNodeContents(tempDiv);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            const success = document.execCommand('copy');
+            selection.removeAllRanges();
+            document.body.removeChild(tempDiv);
+            
+            if (success) {
+                showToast(`📋 Copied ${label}: ${text.substring(0, 35)}${text.length > 35 ? '...' : ''}`);
+                return;
+            }
+        } catch (err) {
+            console.warn('Selection fallback error:', err);
+        }
+        
+        // Ultimate fallback
+        showToast(`⚠️ Long press "${text.substring(0, 20)}..." to copy manually`);
+    }
+    
+    // ========== MODE, PAGINATION ==========
+    let vocabList = [
+        { chinese: "你好", khmer: "ជំរាបសួរ" },
+        { chinese: "谢谢", khmer: "អរគុណ" },
+        { chinese: "再见", khmer: "លាហើយ" },
+        { chinese: "早上好", khmer: "អរុណសួស្តី" },
+        { chinese: "晚上好", khmer: "សាយ័ណ្ឌសួស្តី" }
+    ];
+    let history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = false;
     let appMode = 'random';
     let normalCurrentIdx = 0;
     let normalCurrentPage = 0;
@@ -1600,7 +1692,7 @@
         updateResults();
     }
     
-    // ========== DRAG & ZOOM (preserved, shortened for brevity but functional) ==========
+    // ========== DRAG & ZOOM (preserved) ==========
     let chineseElement = null, khmerElement = null;
     let chineseX = 50, chineseY = 40, khmerX = 50, khmerY = 70;
     let topLayerX = 0, topLayerY = 0, bottomLayerX = 0, bottomLayerY = 0;
@@ -1620,35 +1712,6 @@
     function resetChinesePosition() { chineseX = 50; chineseY = 40; if (chineseElement) { chineseElement.style.left = '50%'; chineseElement.style.top = '40%'; } saveAllDragPositions(); forceShrink(); }
     function resetKhmerPosition() { khmerX = 50; khmerY = 70; if (khmerElement) { khmerElement.style.left = '50%'; khmerElement.style.top = '70%'; } saveAllDragPositions(); forceShrink(); }
     function resetLayerOffsets() { topLayerX = 0; topLayerY = 0; bottomLayerX = 0; bottomLayerY = 0; applyLayerTransforms(); saveAllDragPositions(); }
-    
-    function showToast(message) {
-        let toast = document.querySelector('.copy-toast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.className = 'copy-toast';
-            document.body.appendChild(toast);
-        }
-        toast.innerText = message;
-        toast.style.display = 'block';
-        setTimeout(() => { toast.style.display = 'none'; }, 1500);
-    }
-    
-    // Mobile-friendly clipboard copy using fallback
-    async function copyToClipboard(text, label) {
-        try {
-            await navigator.clipboard.writeText(text);
-            showToast(`📋 Copied ${label}: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`);
-        } catch (err) {
-            // Fallback for mobile
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            showToast(`📋 Copied ${label}: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`);
-        }
-    }
     
     function showLayerChoiceModal() { return new Promise((resolve) => {
         const modalDiv = document.createElement('div');
@@ -1880,7 +1943,7 @@
         khmerElement.addEventListener('touchstart', onKhmerPointerDown, { passive: false });
     }
     
-    // ========== SIDEBAR UI & CONTROLS (preserved, shortened) ==========
+    // ========== SIDEBAR UI & CONTROLS ==========
     function saveAllData() {
         const settings = { mZhSize: userSetChineseFontSize, mKmSize: userSetKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: userSetBottomFontSize, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage, shadow: document.getElementById('shadowSlider').value };
         localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList));
@@ -1989,7 +2052,7 @@
     function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
     function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
     
-    // Draggable floating menu (preserved)
+    // Draggable floating menu
     let menuDragActive = false, menuStartX = 0, menuStartY = 0, currentMenuTransform = { x: 0, y: 0 };
     const floatingMenuDiv = document.getElementById('floatingMenu');
     function applyStoredMenuPosition() { const storedX = parseFloat(localStorage.getItem('menuPosX')) || 0; const storedY = parseFloat(localStorage.getItem('menuPosY')) || 0; if (!isNaN(storedX) && !isNaN(storedY)) { currentMenuTransform.x = storedX; currentMenuTransform.y = storedY; floatingMenuDiv.style.transform = `translate3d(${storedX}px, ${storedY}px, 0)`; } }
@@ -1998,7 +2061,7 @@
     function onMenuTouchStart(e) { const target = e.target; if (target.closest('button') || target.closest('select') || target.closest('input') || target.closest('.toggle-section-btn') || target.closest('.drag-dark-toggle') || target.closest('.aba-icon-inline') || target.closest('.tab-btn') || target.closest('.vis-toggle-btn')) return; e.preventDefault(); menuDragActive = true; const touch = e.touches[0]; const startClientX = touch.clientX, startClientY = touch.clientY, startTranslateX = currentMenuTransform.x, startTranslateY = currentMenuTransform.y; function onTouchMove(moveEvent) { if (!menuDragActive) return; moveEvent.preventDefault(); const moveTouch = moveEvent.touches[0]; const dx = moveTouch.clientX - startClientX, dy = moveTouch.clientY - startClientY; currentMenuTransform.x = startTranslateX + dx; currentMenuTransform.y = startTranslateY + dy; floatingMenuDiv.style.transform = `translate3d(${currentMenuTransform.x}px, ${currentMenuTransform.y}px, 0)`; } function onTouchEnd() { menuDragActive = false; saveMenuPosition(); document.removeEventListener('touchmove', onTouchMove); document.removeEventListener('touchend', onTouchEnd); } document.addEventListener('touchmove', onTouchMove, { passive: false }); document.addEventListener('touchend', onTouchEnd); }
     floatingMenuDiv.addEventListener('mousedown', onMenuMouseDown); floatingMenuDiv.addEventListener('touchstart', onMenuTouchStart, { passive: false }); applyStoredMenuPosition();
     
-    // File loader (preserved)
+    // File loader
     const modal = document.getElementById('fileSourceModal'), insertBtn = document.getElementById('insertDataBtn'), closeModalBtn = document.getElementById('closeModalBtn'), chooseLocalBtn = document.getElementById('chooseLocalBtn'), chooseUrlBtn = document.getElementById('chooseUrlBtn'), urlInputArea = document.getElementById('urlInputArea'), confirmUrlLoad = document.getElementById('confirmUrlLoad'), sheetUrlModal = document.getElementById('sheetUrlInputModal');
     function showModal() { modal.style.display = 'flex'; } function hideModal() { modal.style.display = 'none'; urlInputArea.style.display = 'none'; }
     insertBtn.onclick = showModal; closeModalBtn.onclick = hideModal; modal.onclick = (e) => { if(e.target === modal) hideModal(); };
@@ -2022,6 +2085,7 @@
         loadSettings(); 
         const savedList = localStorage.getItem('vocabMaster_List'); 
         if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) { if (appMode === 'random') pickRandom(); else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } } }
+        if(vocabList.length === 0) { pickRandom(); }
         initNightMode(); applyStyles(); initGearDrag(); setupQRPopup(); setupBackgroundClick(); initChineseDrag(); initKhmerDrag(); loadAllDragPositions();
         if (!sidebarVisible) document.getElementById('sidebarControlsContainer')?.classList.add('sidebar-controls-hidden');
         const topSection = document.getElementById('topPinyinSection');
