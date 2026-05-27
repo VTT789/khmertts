@@ -979,7 +979,6 @@
             #floatingMenu { width: 320px; }
         }
         
-        /* COPY POPUP STYLES */
         .copy-popup {
             position: fixed;
             top: 50%;
@@ -1201,7 +1200,6 @@
     </div>
 </div>
 
-<!-- COPY POPUP FOR IOS -->
 <div id="copyPopup" class="copy-popup">
     <span id="popupMessage">📋 Ready to copy</span>
     <button id="copyActionBtn">Copy</button>
@@ -1241,7 +1239,6 @@
             showToast(`📋 Copied ${label}: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`);
             return true;
         } catch (err) {
-            // fallback
             const textarea = document.createElement('textarea');
             textarea.value = text;
             document.body.appendChild(textarea);
@@ -1311,7 +1308,136 @@
         }, 3000);
     }
     
-    // ========== REST OF THE APP (simplified but complete) ==========
+    // ========== IMPROVED SPEECH SYSTEM FOR iOS ==========
+    let currentAudio = null;
+    let speechQueue = [];
+    let isProcessingQueue = false;
+    
+    async function callEdgeTTS(text, voice, ratePercent = null, retries = 2) {
+        if (!text) return false;
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                let formData = new URLSearchParams();
+                formData.append('text', text);
+                formData.append('voice', voice);
+                if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent);
+                const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const audio = new Audio();
+                audio.src = url;
+                return new Promise((resolve, reject) => {
+                    audio.onended = () => {
+                        URL.revokeObjectURL(url);
+                        resolve(true);
+                    };
+                    audio.onerror = (err) => {
+                        URL.revokeObjectURL(url);
+                        reject(err);
+                    };
+                    audio.play().catch(reject);
+                    if (currentAudio && !currentAudio.paused) currentAudio.pause();
+                    currentAudio = audio;
+                });
+            } catch(err) {
+                console.warn(`TTS attempt ${attempt+1} failed:`, err);
+                if (attempt === retries) return false;
+                await new Promise(r => setTimeout(r, 300));
+            }
+        }
+        return false;
+    }
+    
+    async function processSpeechQueue() {
+        if (isProcessingQueue || speechQueue.length === 0) return;
+        isProcessingQueue = true;
+        while (speechQueue.length) {
+            const { text, voice, rate } = speechQueue.shift();
+            try {
+                await callEdgeTTS(text, voice, rate);
+                // Small gap between utterances helps iOS
+                await new Promise(r => setTimeout(r, 80));
+            } catch(err) {
+                console.warn("TTS failed:", err);
+            }
+        }
+        isProcessingQueue = false;
+    }
+    
+    function enqueueSpeech(text, voice, rate = null) {
+        if (!text) return;
+        speechQueue.push({ text, voice, rate });
+        processSpeechQueue();
+    }
+    
+    function killAllSpeech() {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.src = "";
+            currentAudio = null;
+        }
+        speechQueue = [];
+        isProcessingQueue = false;
+    }
+    
+    function speakChineseEdge(text) {
+        if (!text) return;
+        const voice = document.getElementById('zhVoiceSelect').value;
+        const rateSlider = document.getElementById('zhRateSlider');
+        let rateValue = rateSlider ? parseInt(rateSlider.value) : 0;
+        let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%");
+        enqueueSpeech(text, voice, rateFormatted);
+    }
+    
+    function speakKhmerEdge(text) {
+        if (!text) return;
+        const voice = document.getElementById('kmVoiceSelect').value;
+        enqueueSpeech(text, voice, null);
+    }
+    
+    function speakChineseFromMain() {
+        const container = document.getElementById('chineseWord');
+        const plainText = container ? container.getAttribute('data-plain') || '' : '';
+        if(plainText) {
+            killAllSpeech();
+            speakChineseEdge(plainText);
+        }
+    }
+    
+    function speakKhmerFromMain() {
+        const container = document.getElementById('khmerWord');
+        const plainText = container ? container.innerText : '';
+        if(plainText) {
+            killAllSpeech();
+            speakKhmerEdge(plainText);
+        }
+    }
+    
+    async function speakAutoSequence(zhText, kmText) {
+        killAllSpeech();
+        const zhReps = parseInt(document.getElementById('zhReps').value);
+        const kmReps = parseInt(document.getElementById('kmReps').value);
+        const zhVoice = document.getElementById('zhVoiceSelect').value;
+        const kmVoice = document.getElementById('kmVoiceSelect').value;
+        const rateSlider = document.getElementById('zhRateSlider');
+        let rateValue = rateSlider ? parseInt(rateSlider.value) : 0;
+        let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%");
+        
+        for(let i=0; i<zhReps; i++) {
+            await callEdgeTTS(zhText, zhVoice, rateFormatted);
+            await new Promise(r => setTimeout(r, 60));
+        }
+        if(kmText && kmText.trim()) {
+            for(let j=0; j<kmReps; j++) {
+                await callEdgeTTS(kmText, kmVoice, null);
+                await new Promise(r => setTimeout(r, 60));
+            }
+        }
+        if(autoActive) startAutoCycle();
+    }
+    
+    // ========== REST OF ORIGINAL CODE (preserved) ==========
     let userSetChineseFontSize = 42;
     let userSetKhmerFontSize = 42;
     let userSetPinyinFontSize = 55;
@@ -1436,7 +1562,6 @@
     
     function forceShrink() { setTimeout(() => { shrinkChineseToFit(); shrinkKhmerToFit(); }, 50); }
     
-    // ========== TRIPLE HTML ==========
     const tripleHtmlCache = new Map();
     function getTripleHTML(chineseText) {
         if (!chineseText) return '';
@@ -1566,7 +1691,7 @@
     window.addEventListener('resize', () => { if (resizeDebounce) clearTimeout(resizeDebounce); resizeDebounce = setTimeout(() => { forceShrink(); applyBottomAutoScale(); }, 150); });
     window.addEventListener('orientationchange', () => { setTimeout(() => { forceShrink(); applyBottomAutoScale(); }, 100); });
     
-    // ========== SIMPLIFIED VOCAB SYSTEM ==========
+    // ========== VOCAB SYSTEM ==========
     let vocabList = [], history = [], historyIndex = -1, sidebarIndices = [], sidebarFocusIdx = 0, autoActive = false, autoTimer = null, sidebarVisible = false;
     let appMode = 'random';
     let normalCurrentIdx = 0;
@@ -1611,7 +1736,6 @@
     
     function showLayerChoiceModal() { return new Promise((resolve) => { const modalDiv = document.createElement('div'); modalDiv.className = 'modal-overlay'; modalDiv.innerHTML = `<div class="choice-modal"><h3>✧ CHOOSE ACTION ✧</h3><div class="choice-buttons"><button class="choice-top">🔶 Drag Top Pinyin</button><button class="choice-bottom">🔷 Drag Bottom Char</button><div class="choice-reset-group"><button class="choice-reset-chinese">⟳ Reset Chinese Pos</button><button class="choice-reset-khmer">⟳ Reset Khmer Pos</button><button class="choice-reset-layers">⟳ Reset Layer Offsets</button></div><button class="choice-cancel">✕ Cancel</button></div></div>`; document.body.appendChild(modalDiv); const topBtn = modalDiv.querySelector('.choice-top'); const bottomBtn = modalDiv.querySelector('.choice-bottom'); const resetChineseBtn = modalDiv.querySelector('.choice-reset-chinese'); const resetKhmerBtn = modalDiv.querySelector('.choice-reset-khmer'); const resetLayersBtn = modalDiv.querySelector('.choice-reset-layers'); const cancelBtn = modalDiv.querySelector('.choice-cancel'); const cleanup = (result) => { modalDiv.remove(); resolve(result); }; topBtn.onclick = () => cleanup('top'); bottomBtn.onclick = () => cleanup('bottom'); resetChineseBtn.onclick = () => { resetChinesePosition(); cleanup(null); }; resetKhmerBtn.onclick = () => { resetKhmerPosition(); cleanup(null); }; resetLayersBtn.onclick = () => { resetLayerOffsets(); cleanup(null); }; cancelBtn.onclick = () => cleanup(null); modalDiv.onclick = (e) => { if (e.target === modalDiv) cleanup(null); }; }); }
     
-    // INTELLIGENT LONG PRESS: iOS shows popup, others auto-copy
     function onChinesePointerDown(e) {
         e.preventDefault(); e.stopPropagation();
         const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
@@ -1691,7 +1815,7 @@
     function initChineseDrag() { chineseElement = document.getElementById('chineseWord'); if (!chineseElement) return; chineseElement.style.position = 'absolute'; chineseElement.style.left = chineseX + '%'; chineseElement.style.top = chineseY + '%'; chineseElement.style.transform = 'translate(-50%, -50%)'; chineseElement.style.cursor = 'grab'; chineseElement.addEventListener('click', (e) => { e.stopPropagation(); speakChineseFromMain(); }); chineseElement.addEventListener('mousedown', onChinesePointerDown); chineseElement.addEventListener('touchstart', onChinesePointerDown, { passive: false }); chineseElement.addEventListener('touchstart', (e) => handlePinchStart(e, 'chinese'), { passive: false }); chineseElement.addEventListener('touchmove', (e) => handlePinchMove(e, 'chinese'), { passive: false }); chineseElement.addEventListener('touchend', handlePinchEnd); }
     function initKhmerDrag() { khmerElement = document.getElementById('khmerWord'); if (!khmerElement) return; khmerElement.style.position = 'absolute'; khmerElement.style.left = khmerX + '%'; khmerElement.style.top = khmerY + '%'; khmerElement.style.transform = 'translate(-50%, -50%)'; khmerElement.style.cursor = 'grab'; khmerElement.addEventListener('click', (e) => { e.stopPropagation(); speakKhmerFromMain(); }); khmerElement.addEventListener('touchstart', (e) => handlePinchStart(e, 'khmer'), { passive: false }); khmerElement.addEventListener('touchmove', (e) => handlePinchMove(e, 'khmer'), { passive: false }); khmerElement.addEventListener('touchend', handlePinchEnd); let khmerDragActive = false, khmerStartMouseX, khmerStartMouseY, khmerStartLeft, khmerStartTop, khmerMoved = false; const onStart = (e) => { e.preventDefault(); e.stopPropagation(); khmerDragActive = true; khmerMoved = false; const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); khmerStartMouseX = clientX; khmerStartMouseY = clientY; khmerStartLeft = khmerX; khmerStartTop = khmerY; khmerElement.style.cursor = 'grabbing'; const onMove = (e2) => { if (!khmerDragActive) return; e2.preventDefault(); const cx = e2.clientX ?? (e2.touches ? e2.touches[0].clientX : 0); const cy = e2.clientY ?? (e2.touches ? e2.touches[0].clientY : 0); const dx = cx - khmerStartMouseX, dy = cy - khmerStartMouseY; if (!khmerMoved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) khmerMoved = true; const canvasRect = canvas.getBoundingClientRect(); let originalPxX = (khmerStartLeft / 100) * canvasRect.width; let originalPxY = (khmerStartTop / 100) * canvasRect.height; let newPxX = originalPxX + dx, newPxY = originalPxY + dy; khmerX = (newPxX / canvasRect.width) * 100; khmerY = (newPxY / canvasRect.height) * 100; khmerElement.style.left = khmerX + '%'; khmerElement.style.top = khmerY + '%'; }; const onEnd = () => { khmerDragActive = false; khmerElement.style.cursor = 'grab'; if (!khmerMoved) { speakKhmerFromMain(); } saveAllDragPositions(); window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onEnd); window.removeEventListener('touchmove', onMove); window.removeEventListener('touchend', onEnd); forceShrink(); }; window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); }; khmerElement.addEventListener('mousedown', onStart); khmerElement.addEventListener('touchstart', onStart, { passive: false }); khmerElement.addEventListener('mousedown', onKhmerPointerDown); khmerElement.addEventListener('touchstart', onKhmerPointerDown, { passive: false }); }
     
-    // ========== SIDEBAR UI & STYLES ==========
+    // ========== SIDEBAR UI ==========
     function saveAllData() { const settings = { mZhSize: userSetChineseFontSize, mKmSize: userSetKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: userSetBottomFontSize, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage, shadow: document.getElementById('shadowSlider').value }; localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList)); localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings)); }
     function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings) { const s = JSON.parse(savedSettings); userSetChineseFontSize = s.mZhSize || 42; userSetKhmerFontSize = s.mKmSize || 42; document.getElementById('mZhSize').value = userSetChineseFontSize; document.getElementById('mKmSize').value = userSetKhmerFontSize; document.getElementById('mZhColor').value = s.mZhColor || "#000000"; document.getElementById('mKmColor').value = s.mKmColor || "#000000"; document.getElementById('zhReps').value = s.zhReps || 3; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor; document.getElementById('sVocabSpacing').value = s.vocabSpacing || 8; document.body.style.setProperty('--vocab-spacing', (s.vocabSpacing || 8) + 'px'); document.getElementById('vocabSpacingVal').innerText = (s.vocabSpacing || 8) + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.pinyinFont) document.getElementById('pinyinFont').value = s.pinyinFont; if(s.pinyinColor) document.getElementById('pinyinColor').value = s.pinyinColor; if(s.pinyinBold !== undefined) { const btn = document.getElementById('pinyinBold'); if(s.pinyinBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.pinyinSizePx) { document.getElementById('pinyinSizePx').value = s.pinyinSizePx; userSetPinyinFontSize = parseInt(s.pinyinSizePx); } if(s.pinyinSpacing) document.getElementById('pinyinSpacing').value = s.pinyinSpacing; if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont; if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor; if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomFontSize = parseInt(s.bottomSizePx); } if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible; if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible; if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; document.getElementById('modeNormalBtn').classList.add('active'); document.getElementById('modeRandomBtn').classList.remove('active'); } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; document.getElementById('modeRandomBtn').classList.add('active'); document.getElementById('modeNormalBtn').classList.remove('active'); } normalCurrentIdx = s.normalCurrentIdx || 0; normalCurrentPage = s.normalCurrentPage || 0; sidebarVisible = s.sidebarVisible !== undefined ? s.sidebarVisible : false; if(!sidebarVisible) { document.getElementById('rightSide').classList.add('hidden'); document.getElementById('dragResizer').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; } } else { document.getElementById('pinyinFont').value = "'Baguette Simplified'"; document.getElementById('pinyinColor').value = "#000000"; document.getElementById('pinyinSizePx').value = "55"; userSetPinyinFontSize = 55; document.getElementById('pinyinSpacing').value = "0"; document.getElementById('bottomSizePx').value = "55"; userSetBottomFontSize = 55; document.getElementById('mKmColor').value = "#000000"; document.getElementById('bottomCharColor').value = "#2563eb"; document.getElementById('shadowSlider').value = "3"; sidebarVisible = false; document.getElementById('rightSide').classList.add('hidden'); document.getElementById('dragResizer').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; applyPinyinStyles(); applyBottomStyles(); } const mZhFontSelect = document.getElementById('mZhFont'); if(mZhFontSelect && (!savedSettings || !savedSettings.mZhFont)) { mZhFontSelect.value = "'Baguette Simplified'"; } applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility(); setKhmerFontSize(userSetKhmerFontSize); applyShadow(); applyBottomAutoScale(); }
     function renderSidebarUI() { const list = document.getElementById('sidebarList'); list.innerHTML = ''; for (let sIdx = 0; sIdx < sidebarIndices.length; sIdx++) { const idx = sidebarIndices[sIdx]; const div = document.createElement('div'); div.className = `vocab-item ${sIdx === sidebarFocusIdx ? 'active' : ''}`; const rowNumber = idx + 1; div.innerHTML = `<div class="side-number">#${rowNumber}</div><div class="word-wrapper" onclick="selectSidebarItem(${sIdx}); event.stopPropagation()"><span class="side-zh">${vocabList[idx].chinese}</span><span class="side-km">${vocabList[idx].khmer}</span></div><button class="select-main-btn" onclick="loadWordByMode(${idx}); event.stopPropagation()">MAIN</button>`; list.appendChild(div); } applySidebarStyles(); if (appMode === 'normal') updatePaginationControls(); scrollToActiveSidebarItem(); }
@@ -1708,7 +1832,7 @@
     function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
     function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
     
-    // ========== DRAGGABLE MENU ==========
+    // Draggable menu
     let menuDragActive = false, menuStartX = 0, menuStartY = 0, currentMenuTransform = { x: 0, y: 0 };
     const floatingMenuDiv = document.getElementById('floatingMenu');
     function applyStoredMenuPosition() { const storedX = parseFloat(localStorage.getItem('menuPosX')) || 0; const storedY = parseFloat(localStorage.getItem('menuPosY')) || 0; if (!isNaN(storedX) && !isNaN(storedY)) { currentMenuTransform.x = storedX; currentMenuTransform.y = storedY; floatingMenuDiv.style.transform = `translate3d(${storedX}px, ${storedY}px, 0)`; } }
@@ -1717,7 +1841,7 @@
     function onMenuTouchStart(e) { const target = e.target; if (target.closest('button') || target.closest('select') || target.closest('input') || target.closest('.toggle-section-btn') || target.closest('.drag-dark-toggle') || target.closest('.aba-icon-inline') || target.closest('.tab-btn') || target.closest('.vis-toggle-btn')) return; e.preventDefault(); menuDragActive = true; const touch = e.touches[0]; const startClientX = touch.clientX, startClientY = touch.clientY, startTranslateX = currentMenuTransform.x, startTranslateY = currentMenuTransform.y; function onTouchMove(moveEvent) { if (!menuDragActive) return; moveEvent.preventDefault(); const moveTouch = moveEvent.touches[0]; const dx = moveTouch.clientX - startClientX, dy = moveTouch.clientY - startClientY; currentMenuTransform.x = startTranslateX + dx; currentMenuTransform.y = startTranslateY + dy; floatingMenuDiv.style.transform = `translate3d(${currentMenuTransform.x}px, ${currentMenuTransform.y}px, 0)`; } function onTouchEnd() { menuDragActive = false; saveMenuPosition(); document.removeEventListener('touchmove', onTouchMove); document.removeEventListener('touchend', onTouchEnd); } document.addEventListener('touchmove', onTouchMove, { passive: false }); document.addEventListener('touchend', onTouchEnd); }
     floatingMenuDiv.addEventListener('mousedown', onMenuMouseDown); floatingMenuDiv.addEventListener('touchstart', onMenuTouchStart, { passive: false }); applyStoredMenuPosition();
     
-    // ========== FILE LOADER ==========
+    // File loader
     const modal = document.getElementById('fileSourceModal'), insertBtn = document.getElementById('insertDataBtn'), closeModalBtn = document.getElementById('closeModalBtn'), chooseLocalBtn = document.getElementById('chooseLocalBtn'), chooseUrlBtn = document.getElementById('chooseUrlBtn'), urlInputArea = document.getElementById('urlInputArea'), confirmUrlLoad = document.getElementById('confirmUrlLoad'), sheetUrlModal = document.getElementById('sheetUrlInputModal');
     function showModal() { modal.style.display = 'flex'; } function hideModal() { modal.style.display = 'none'; urlInputArea.style.display = 'none'; }
     insertBtn.onclick = showModal; closeModalBtn.onclick = hideModal; modal.onclick = (e) => { if(e.target === modal) hideModal(); };
@@ -1736,18 +1860,6 @@
     function toggleNightMode(){ document.body.classList.toggle('night-mode'); localStorage.setItem('vocabMaster_NightMode',document.body.classList.contains('night-mode')); const btn = document.getElementById('dragDarkModeBtn'); if(btn) btn.innerHTML = document.body.classList.contains('night-mode') ? '☀️' : '🌙'; applyStyles(); renderSidebarUI(); }
     function initNightMode(){ if(localStorage.getItem('vocabMaster_NightMode')==='true') document.body.classList.add('night-mode'); const btn = document.getElementById('dragDarkModeBtn'); if(btn) btn.innerHTML = document.body.classList.contains('night-mode') ? '☀️' : '🌙'; }
     function setupQRPopup() { const overlay = document.getElementById('qrPopupOverlay'); const closeBtn = document.getElementById('qrCloseBtn'); const inlineIcon = document.getElementById('abaIconInline'); if (inlineIcon) { inlineIcon.addEventListener('click', async (e) => { e.stopPropagation(); overlay.style.display = 'flex'; await loadFromSpecificSheet(); }); } if (closeBtn) closeBtn.addEventListener('click', () => overlay.style.display = 'none'); overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; }); }
-    
-    // ========== SPEECH ==========
-    let currentAudio = null, speechQueue = [], isProcessingQueue = false;
-    async function callEdgeTTS(text, voice, ratePercent = null) { if (!text) return; try { let formData = new URLSearchParams(); formData.append('text', text); formData.append('voice', voice); if (voice.startsWith('zh-') && ratePercent !== null) formData.append('rate', ratePercent); const response = await fetch("/speak", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const audio = new Audio(); audio.src = url; return new Promise((resolve, reject) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => reject(); audio.play().catch(reject); if (currentAudio && !currentAudio.paused) currentAudio.pause(); currentAudio = audio; }); } catch(err) { console.error(err); return Promise.reject(err); } }
-    async function processSpeechQueue() { if (isProcessingQueue || speechQueue.length === 0) return; isProcessingQueue = true; while (speechQueue.length) { const { text, voice, rate } = speechQueue.shift(); try { await callEdgeTTS(text, voice, rate); await new Promise(r => setTimeout(r, 0)); } catch(err) { console.warn(err); } } isProcessingQueue = false; }
-    function enqueueSpeech(text, voice, rate = null) { if (!text) return; speechQueue.push({ text, voice, rate }); processSpeechQueue(); }
-    function killAllSpeech() { if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; } speechQueue = []; isProcessingQueue = false; }
-    function speakChineseEdge(text) { if (!text) return; const voice = document.getElementById('zhVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); enqueueSpeech(text, voice, rateFormatted); }
-    function speakKhmerEdge(text) { if (!text) return; const voice = document.getElementById('kmVoiceSelect').value; enqueueSpeech(text, voice, null); }
-    function speakChineseFromMain() { const container = document.getElementById('chineseWord'); const plainText = container ? container.getAttribute('data-plain') || '' : ''; if(plainText) { killAllSpeech(); speakChineseEdge(plainText); } }
-    function speakKhmerFromMain() { const container = document.getElementById('khmerWord'); const plainText = container ? container.innerText : ''; if(plainText) { killAllSpeech(); speakKhmerEdge(plainText); } }
-    async function speakAutoSequence(zhText, kmText) { killAllSpeech(); const zhReps = parseInt(document.getElementById('zhReps').value); const kmReps = parseInt(document.getElementById('kmReps').value); const zhVoice = document.getElementById('zhVoiceSelect').value; const kmVoice = document.getElementById('kmVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); for(let i=0; i<zhReps; i++) { await callEdgeTTS(zhText, zhVoice, rateFormatted); } if(kmText && kmText.trim()) { for(let j=0; j<kmReps; j++) { await callEdgeTTS(kmText, kmVoice, null); } } if(autoActive) startAutoCycle(); }
     
     function applyShadow() {
         const shadowValue = document.getElementById('shadowSlider').value;
