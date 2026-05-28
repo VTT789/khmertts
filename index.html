@@ -2057,7 +2057,7 @@
     function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
     function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
     
-    // ========== SWIPE GESTURES (MOBILE) ==========
+    // ========== SWIPE GESTURES (MOBILE) - Swipe Up = moveSidebarFocus(-1), Swipe Down = moveSidebarFocus(1) ==========
     let touchStartY = 0;
     let touchStartTime = 0;
     const SWIPE_THRESHOLD = 50;
@@ -2086,14 +2086,15 @@
             touchStartY = null;
             // Skip if moved too little or too slow
             if (Math.abs(deltaY) < SWIPE_THRESHOLD || elapsed > SWIPE_MAX_TIME) return;
+            e.preventDefault();
             if (deltaY < 0) {
-                // Swipe UP -> next word
-                pickRandom();
-                showToast("⬆️ Next word");
+                // Swipe UP -> move sidebar focus UP (previous item in sidebar list)
+                moveSidebarFocus(-1);
+                showToast("⬆️ Previous word");
             } else if (deltaY > 0) {
-                // Swipe DOWN -> previous word
-                historyPrev();
-                showToast("⬇️ Previous word");
+                // Swipe DOWN -> move sidebar focus DOWN (next item in sidebar list)
+                moveSidebarFocus(1);
+                showToast("⬇️ Next word");
             }
         });
     }
@@ -2201,6 +2202,18 @@
         cancelBtn.onclick = () => modalDiv.remove();
     }
     
+    function moveSidebarFocus(delta) { 
+        if (!sidebarIndices.length) return; 
+        let newFocus = sidebarFocusIdx + delta; 
+        if (newFocus < 0) newFocus = sidebarIndices.length - 1; 
+        if (newFocus >= sidebarIndices.length) newFocus = 0; 
+        sidebarFocusIdx = newFocus; 
+        updateDisplay(); 
+        const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; 
+        if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); 
+        scrollToActiveSidebarItem(); 
+    }
+    
     window.onload = () => {
         initCopyPopup();
         loadSettings(); 
@@ -2247,7 +2260,7 @@
         if(vocabList.length) updateDisplay();
         setTimeout(() => { loadAllDragPositions(); forceShrink(); applyBottomAutoScale(); }, 100);
     };
-    function moveSidebarFocus(delta) { if (!sidebarIndices.length) return; let newFocus = sidebarFocusIdx + delta; if (newFocus < 0) newFocus = sidebarIndices.length - 1; if (newFocus >= sidebarIndices.length) newFocus = 0; sidebarFocusIdx = newFocus; updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); }
+    
     window.historyPrev = historyPrev; window.historyNext = historyNext; window.moveSidebarFocus = moveSidebarFocus; window.toggleAuto = toggleAuto; window.toggleSidebar = toggleSidebar; window.switchTab = switchTab; window.toggleMenu = toggleMenu; window.pickRandom = pickRandom; window.loadWordByMode = loadWordByMode;
     window.toggleBold = toggleBold;
 </script>
