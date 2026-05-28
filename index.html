@@ -909,13 +909,12 @@
             border: 1px solid rgba(255,255,255,0.2);
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             animation: fadeIn 0.2s ease;
-            min-width: 420px;
-            max-width: 90vw;
+            min-width: 320px;
         }
         .choice-modal h3 {
             color: white;
-            margin-bottom: 24px;
-            font-size: 1.6rem;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
         }
         .choice-buttons {
             display: flex;
@@ -976,7 +975,7 @@
             .chinese-word { gap: 4px 8px; padding: 8px 12px; }
             .khmer-text { font-size: 22px; padding: 8px 12px; }
             .sidebar .sidebar-close-btn { top: 8px; left: -18px; width: 26px; height: 26px; font-size: 16px; }
-            .choice-modal { min-width: 85vw; padding: 20px; }
+            .choice-modal { min-width: 280px; padding: 20px; }
             #floatingMenu { width: 320px; }
         }
         
@@ -1034,37 +1033,18 @@
             opacity: 0.9;
             white-space: nowrap;
         }
-        /* edit/add icons inside choice modal - LARGER BUTTONS */
+        /* edit/add icons inside choice modal */
         .edit-group-buttons {
             display: flex;
-            gap: 16px;
-            margin-top: 12px;
+            gap: 12px;
+            margin-top: 8px;
         }
         .edit-group-buttons button {
             flex: 1;
-            padding: 16px 12px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border-radius: 60px;
-            transition: all 0.2s;
-            cursor: pointer;
-            border: none;
-        }
-        .edit-group-buttons button:first-child {
             background: #f59e0b;
-            color: white;
-        }
-        .edit-group-buttons button:first-child:hover {
-            background: #e67e22;
-            transform: scale(0.98);
         }
         .edit-group-buttons button:last-child {
-            background: #475569;
-            color: white;
-        }
-        .edit-group-buttons button:last-child:hover {
-            background: #334155;
-            transform: scale(0.98);
+            background: #10b981;
         }
 
         /* NEW: inline edit icons in sidebar */
@@ -1090,22 +1070,6 @@
         }
         body.night-mode .edit-side-icon:hover {
             background: rgba(255,255,255,0.15);
-        }
-        
-        /* BIG INPUT STYLES FOR EDIT MODAL */
-        .big-edit-input {
-            font-size: 1.3rem !important;
-            padding: 16px 20px !important;
-            width: 90% !important;
-            border-radius: 60px !important;
-            border: 1px solid #475569 !important;
-            background: #334155 !important;
-            color: white !important;
-            margin-bottom: 20px !important;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            text-align: center;
         }
     </style>
 </head>
@@ -1666,7 +1630,7 @@
         }
     }
     
-    // UPDATE - NO AUTOMATIC RELOAD TO PREVENT REVERT
+    // UPDATE vocabulary by row number (row = side-number + 1, matches Google Sheets row)
     async function updateVocabByRow(rowNumber, newKhmer, newChinese) {
         if (!rowNumber || rowNumber < 1) {
             showToast("❌ Invalid row number");
@@ -1680,7 +1644,9 @@
         };
         const result = await callSheetApi(payload);
         if (result && result.row) {
-            showToast(`✅ Updated Row ${rowNumber}`);
+            showToast(`✅ Updated Row ${rowNumber}: ${newKhmer} / ${newChinese}`);
+            // Reload the vocabulary list from sheet to reflect changes
+            await loadFromSpecificSheet();
             return true;
         } else {
             showToast(`❌ Update failed: ${result?.error || "server error"}`);
@@ -1688,6 +1654,7 @@
         }
     }
     
+    // ADD new vocabulary to last row
     async function addVocabToSheet(khmer, chinese) {
         if (!khmer && !chinese) {
             showToast("⚠️ Please enter Khmer or Chinese");
@@ -1701,7 +1668,7 @@
         const result = await callSheetApi(payload);
         if (result && result.row) {
             showToast(`➕ Added new word at Row ${result.row}`);
-            await loadFromSpecificSheet(); // only reload on add to get new row
+            await loadFromSpecificSheet();
             return true;
         } else {
             showToast(`❌ Add failed: ${result?.error || "unknown error"}`);
@@ -1709,67 +1676,7 @@
         }
     }
     
-    function escapeHtml(str) { if(!str) return ""; return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
-    
-    // Helper to block navigation keys (arrows, space, etc.) inside input fields
-    function blockNavKeys(e) {
-        const key = e.code;
-        if (key === 'Space' || key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown' || key === 'Home' || key === 'End' || key === 'PageUp' || key === 'PageDown') {
-            e.stopPropagation();
-        }
-    }
-    
-    // FIXED: large modal, immediate close, stopPropagation for arrow keys, update without revert
-    window.showInlineEditModalForCurrentByRow = function(sheetRow, currentKhmer, currentChinese, idx) {
-        const modalDiv = document.createElement('div');
-        modalDiv.className = 'modal-overlay';
-        modalDiv.innerHTML = `
-            <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;">
-                <h3>✏️ EDIT ROW ${sheetRow}</h3>
-                <div style="margin-bottom:16px;">
-                    <input id="editKhmerInputInline" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input">
-                    <input id="editChineseInputInline" placeholder="Chinese word" value="${escapeHtml(currentChinese)}" class="big-edit-input">
-                </div>
-                <div class="edit-group-buttons">
-                    <button id="confirmUpdateInlineBtn">💾 UPDATE SHEET</button>
-                    <button id="cancelEditInlineBtn">✕ CANCEL</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modalDiv);
-        
-        // Block navigation keys inside inputs
-        const khmerInput = document.getElementById('editKhmerInputInline');
-        const chineseInput = document.getElementById('editChineseInputInline');
-        khmerInput.addEventListener('keydown', blockNavKeys);
-        chineseInput.addEventListener('keydown', blockNavKeys);
-        
-        const confirmBtn = document.getElementById('confirmUpdateInlineBtn');
-        const cancelBtn = document.getElementById('cancelEditInlineBtn');
-        
-        confirmBtn.onclick = async () => {
-            const newKhmer = khmerInput.value.trim();
-            const newChinese = chineseInput.value.trim();
-            if (!newKhmer && !newChinese) {
-                showToast("⚠️ At least one field required");
-                return;
-            }
-            // update local data immediately for responsive UI
-            if (idx !== undefined && vocabList[idx]) {
-                vocabList[idx].khmer = newKhmer || currentKhmer;
-                vocabList[idx].chinese = newChinese || currentChinese;
-                renderSidebarUI();       // refresh sidebar list
-                updateDisplay();         // refresh main words (chinese & khmer)
-            }
-            // update sheet in background (no reload to avoid revert)
-            await updateVocabByRow(sheetRow, newKhmer || currentKhmer, newChinese || currentChinese);
-            // close modal immediately
-            modalDiv.remove();
-        };
-        cancelBtn.onclick = () => modalDiv.remove();
-    };
-    
-    // Also fix the "EDIT CURRENT" button inside layer choice modal
+    // EDIT MODAL for updating current vocab (uses sidebar selected item)
     function showInlineEditModalForCurrent() {
         const idx = sidebarIndices[sidebarFocusIdx];
         if (idx === undefined || !vocabList[idx]) {
@@ -1777,50 +1684,84 @@
             return;
         }
         const item = vocabList[idx];
-        const sheetRow = idx + 2;
+        const rowNumber = idx + 1; // row number in sheet (0-index + 1)
+        
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
         modalDiv.innerHTML = `
-            <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;">
-                <h3>✏️ EDIT VOCAB (Row ${sheetRow})</h3>
+            <div class="choice-modal" style="background:#1e293b; max-width:380px;">
+                <h3>✏️ EDIT VOCAB (Row ${rowNumber})</h3>
                 <div style="margin-bottom:16px;">
-                    <input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(item.khmer)}" class="big-edit-input">
-                    <input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(item.chinese)}" class="big-edit-input">
+                    <input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(item.khmer)}" style="width:90%; padding:10px; border-radius:40px; border: none; margin-bottom:12px; background:#334155; color:white;">
+                    <input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(item.chinese)}" style="width:90%; padding:10px; border-radius:40px; border: none; background:#334155; color:white;">
                 </div>
                 <div class="edit-group-buttons">
-                    <button id="confirmUpdateSheetBtn">💾 UPDATE SHEET</button>
-                    <button id="cancelEditSheetBtn">✕ CANCEL</button>
+                    <button id="confirmUpdateSheetBtn" style="background:#f59e0b;">💾 UPDATE SHEET</button>
+                    <button id="cancelEditSheetBtn" style="background:#475569;">CANCEL</button>
                 </div>
             </div>
         `;
         document.body.appendChild(modalDiv);
         
-        const khmerInput = document.getElementById('editKhmerInput');
-        const chineseInput = document.getElementById('editChineseInput');
-        khmerInput.addEventListener('keydown', blockNavKeys);
-        chineseInput.addEventListener('keydown', blockNavKeys);
-        
         const confirmBtn = document.getElementById('confirmUpdateSheetBtn');
         const cancelBtn = document.getElementById('cancelEditSheetBtn');
         
         confirmBtn.onclick = async () => {
-            const newKhmer = khmerInput.value.trim();
-            const newChinese = chineseInput.value.trim();
+            const newKhmer = document.getElementById('editKhmerInput').value.trim();
+            const newChinese = document.getElementById('editChineseInput').value.trim();
             if (!newKhmer && !newChinese) {
                 showToast("⚠️ At least one field required");
                 return;
             }
-            // update local
+            // Update local first for immediate feedback
             vocabList[idx].khmer = newKhmer || item.khmer;
             vocabList[idx].chinese = newChinese || item.chinese;
             renderSidebarUI();
             updateDisplay();
-            await updateVocabByRow(sheetRow, newKhmer || item.khmer, newChinese || item.chinese);
+            
+            // Push update to Google Sheets
+            await updateVocabByRow(rowNumber, newKhmer || item.khmer, newChinese || item.chinese);
             modalDiv.remove();
         };
         cancelBtn.onclick = () => modalDiv.remove();
     }
     
+    // ADD NEW modal
+    function showAddNewModal() {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal-overlay';
+        modalDiv.innerHTML = `
+            <div class="choice-modal" style="background:#1e293b; max-width:380px;">
+                <h3>➕ ADD NEW VOCABULARY</h3>
+                <div style="margin-bottom:16px;">
+                    <input id="addKhmerInput" placeholder="Khmer word" style="width:90%; padding:10px; border-radius:40px; border: none; margin-bottom:12px; background:#334155; color:white;">
+                    <input id="addChineseInput" placeholder="Chinese word" style="width:90%; padding:10px; border-radius:40px; border: none; background:#334155; color:white;">
+                </div>
+                <div class="edit-group-buttons">
+                    <button id="confirmAddSheetBtn" style="background:#10b981;">✅ ADD TO SHEET</button>
+                    <button id="cancelAddSheetBtn" style="background:#475569;">CANCEL</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+        
+        const confirmBtn = document.getElementById('confirmAddSheetBtn');
+        const cancelBtn = document.getElementById('cancelAddSheetBtn');
+        
+        confirmBtn.onclick = async () => {
+            const khmer = document.getElementById('addKhmerInput').value.trim();
+            const chinese = document.getElementById('addChineseInput').value.trim();
+            if (!khmer && !chinese) {
+                showToast("⚠️ Please enter Khmer or Chinese");
+                return;
+            }
+            await addVocabToSheet(khmer, chinese);
+            modalDiv.remove();
+        };
+        cancelBtn.onclick = () => modalDiv.remove();
+    }
+    
+    // Override loadFromSpecificSheet to refresh vocab list after updates
     async function loadFromSpecificSheet() {
         const sheetId = "14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM";
         const apiUrl = `https://opensheet.elk.sh/${sheetId}/Sheet1`;
@@ -1855,6 +1796,7 @@
             saveAllData();
             if (appMode === 'random') {
                 if (historyIndex >= 0 && history[historyIndex] < vocabList.length) {
+                    // keep current selection if possible
                 } else {
                     pickRandom();
                 }
@@ -1906,6 +1848,9 @@
     function resetChinesePosition() { chineseX = 50; chineseY = 40; if (chineseElement) { chineseElement.style.left = '50%'; chineseElement.style.top = '40%'; } saveAllDragPositions(); forceShrink(); }
     function resetKhmerPosition() { khmerX = 50; khmerY = 70; if (khmerElement) { khmerElement.style.left = '50%'; khmerElement.style.top = '70%'; } saveAllDragPositions(); forceShrink(); }
     function resetLayerOffsets() { topLayerX = 0; topLayerY = 0; bottomLayerX = 0; bottomLayerY = 0; applyLayerTransforms(); saveAllDragPositions(); }
+    
+    // ===== EDIT / UPDATE with Google Sheets (INLINE) =====
+    function escapeHtml(str) { if(!str) return ""; return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
     
     function showLayerChoiceModal() {
         return new Promise((resolve) => {
@@ -2025,15 +1970,15 @@
             const idx = sidebarIndices[sIdx]; 
             const div = document.createElement('div'); 
             div.className = `vocab-item ${sIdx === sidebarFocusIdx ? 'active' : ''}`; 
-            const sideNumber = idx + 2; 
+            const rowNumber = idx + 1; 
             div.innerHTML = `
-                <div class="side-number">#${sideNumber}</div>
+                <div class="side-number">#${rowNumber}</div>
                 <div class="word-wrapper" onclick="selectSidebarItem(${sIdx}); event.stopPropagation()">
                     <span class="side-zh">${escapeHtml(vocabList[idx].chinese)}</span>
                     <span class="side-km">${escapeHtml(vocabList[idx].khmer)}</span>
                 </div>
                 <div class="sidebar-action-icons">
-                    <button class="edit-side-icon" onclick="event.stopPropagation(); showInlineEditModalForCurrentByRow(${idx + 2}, '${escapeHtml(vocabList[idx].khmer)}', '${escapeHtml(vocabList[idx].chinese)}', ${idx})" title="Edit in Google Sheets">✏️</button>
+                    <button class="edit-side-icon" onclick="event.stopPropagation(); showInlineEditModalForCurrentByRow(${rowNumber}, '${escapeHtml(vocabList[idx].khmer)}', '${escapeHtml(vocabList[idx].chinese)}', ${idx})" title="Edit in Google Sheets">✏️</button>
                     <button class="select-main-btn" onclick="loadWordByMode(${idx}); event.stopPropagation()">MAIN</button>
                 </div>
             `; 
@@ -2043,6 +1988,46 @@
         if (appMode === 'normal') updatePaginationControls(); 
         scrollToActiveSidebarItem(); 
     }
+    
+    // Helper for inline edit from sidebar icon
+    window.showInlineEditModalForCurrentByRow = function(rowNum, currentKhmer, currentChinese, idx) {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal-overlay';
+        modalDiv.innerHTML = `
+            <div class="choice-modal" style="background:#1e293b; max-width:380px;">
+                <h3>✏️ EDIT ROW ${rowNum}</h3>
+                <div style="margin-bottom:16px;">
+                    <input id="editKhmerInputInline" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" style="width:90%; padding:10px; border-radius:40px; border: none; margin-bottom:12px; background:#334155; color:white;">
+                    <input id="editChineseInputInline" placeholder="Chinese word" value="${escapeHtml(currentChinese)}" style="width:90%; padding:10px; border-radius:40px; border: none; background:#334155; color:white;">
+                </div>
+                <div class="edit-group-buttons">
+                    <button id="confirmUpdateInlineBtn" style="background:#f59e0b;">💾 UPDATE SHEET</button>
+                    <button id="cancelEditInlineBtn" style="background:#475569;">CANCEL</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+        const confirmBtn = document.getElementById('confirmUpdateInlineBtn');
+        const cancelBtn = document.getElementById('cancelEditInlineBtn');
+        confirmBtn.onclick = async () => {
+            const newKhmer = document.getElementById('editKhmerInputInline').value.trim();
+            const newChinese = document.getElementById('editChineseInputInline').value.trim();
+            if (!newKhmer && !newChinese) {
+                showToast("⚠️ At least one field required");
+                return;
+            }
+            // Update local
+            if (idx !== undefined && vocabList[idx]) {
+                vocabList[idx].khmer = newKhmer || currentKhmer;
+                vocabList[idx].chinese = newChinese || currentChinese;
+                renderSidebarUI();
+                updateDisplay();
+            }
+            await updateVocabByRow(rowNum, newKhmer || currentKhmer, newChinese || currentChinese);
+            modalDiv.remove();
+        };
+        cancelBtn.onclick = () => modalDiv.remove();
+    };
     
     function selectSidebarItem(sideIdx) { sidebarFocusIdx = sideIdx; const idx = sidebarIndices[sideIdx]; if (appMode === 'normal') normalCurrentIdx = idx; updateDisplay(); const item = vocabList[idx]; if (item) speakAutoSequence(item.chinese, item.khmer); saveAllData(); scrollToActiveSidebarItem(); }
     window.selectSidebarItem = selectSidebarItem;
@@ -2056,47 +2041,6 @@
     function switchTab(tab) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active'); document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab))); }
     function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
     function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
-    
-    // ========== SWIPE GESTURES (MOBILE) ==========
-    let touchStartY = 0;
-    let touchStartTime = 0;
-    const SWIPE_THRESHOLD = 50;
-    const SWIPE_MAX_TIME = 300;
-    function initSwipeDetection() {
-        const displayArea = document.getElementById('displayArea');
-        if (!displayArea) return;
-        displayArea.addEventListener('touchstart', (e) => {
-            // Only detect if touch is not on draggable elements (Chinese or Khmer word)
-            const target = e.target;
-            if (target.closest('.chinese-word') || target.closest('.khmer-text')) return;
-            touchStartY = e.touches[0].clientY;
-            touchStartTime = Date.now();
-        }, { passive: false });
-        displayArea.addEventListener('touchmove', (e) => {
-            // Prevent default scrolling only if we are potentially swiping
-            if (touchStartY !== null && !(e.target.closest('.chinese-word') || e.target.closest('.khmer-text'))) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-        displayArea.addEventListener('touchend', (e) => {
-            if (touchStartY === null) return;
-            const touchEndY = e.changedTouches[0].clientY;
-            const deltaY = touchEndY - touchStartY;
-            const elapsed = Date.now() - touchStartTime;
-            touchStartY = null;
-            // Skip if moved too little or too slow
-            if (Math.abs(deltaY) < SWIPE_THRESHOLD || elapsed > SWIPE_MAX_TIME) return;
-            if (deltaY < 0) {
-                // Swipe UP -> next word
-                pickRandom();
-                showToast("⬆️ Next word");
-            } else if (deltaY > 0) {
-                // Swipe DOWN -> previous word
-                historyPrev();
-                showToast("⬇️ Previous word");
-            }
-        });
-    }
     
     // ========== DRAGGABLE MENU ==========
     let menuDragActive = false, menuStartX = 0, menuStartY = 0, currentMenuTransform = { x: 0, y: 0 };
@@ -2165,49 +2109,12 @@
         }
     }
     
-    function showAddNewModal() {
-        const modalDiv = document.createElement('div');
-        modalDiv.className = 'modal-overlay';
-        modalDiv.innerHTML = `
-            <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;">
-                <h3>➕ ADD NEW VOCABULARY</h3>
-                <div style="margin-bottom:16px;">
-                    <input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input">
-                    <input id="addChineseInput" placeholder="Chinese word" class="big-edit-input">
-                </div>
-                <div class="edit-group-buttons">
-                    <button id="confirmAddSheetBtn" style="background:#10b981;">✅ ADD TO SHEET</button>
-                    <button id="cancelAddSheetBtn" style="background:#475569;">✕ CANCEL</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modalDiv);
-        const addKhmer = document.getElementById('addKhmerInput');
-        const addChinese = document.getElementById('addChineseInput');
-        addKhmer.addEventListener('keydown', blockNavKeys);
-        addChinese.addEventListener('keydown', blockNavKeys);
-        const confirmBtn = document.getElementById('confirmAddSheetBtn');
-        const cancelBtn = document.getElementById('cancelAddSheetBtn');
-        confirmBtn.onclick = async () => {
-            const khmer = addKhmer.value.trim();
-            const chinese = addChinese.value.trim();
-            if (!khmer && !chinese) {
-                showToast("⚠️ Please enter Khmer or Chinese");
-                return;
-            }
-            await addVocabToSheet(khmer, chinese);
-            modalDiv.remove();
-        };
-        cancelBtn.onclick = () => modalDiv.remove();
-    }
-    
     window.onload = () => {
         initCopyPopup();
         loadSettings(); 
         const savedList = localStorage.getItem('vocabMaster_List'); 
         if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) { if (appMode === 'random') pickRandom(); else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } } }
         initNightMode(); applyStyles(); initGearDrag(); setupQRPopup(); setupBackgroundClick(); initChineseDrag(); initKhmerDrag(); loadAllDragPositions();
-        initSwipeDetection(); // Initialize mobile swipe gestures
         if (!sidebarVisible) document.getElementById('sidebarControlsContainer')?.classList.add('sidebar-controls-hidden');
         const topSection = document.getElementById('topPinyinSection');
         const topToggleBtn = document.getElementById('toggleTopPinyinSectionBtn');
@@ -2250,6 +2157,7 @@
     function moveSidebarFocus(delta) { if (!sidebarIndices.length) return; let newFocus = sidebarFocusIdx + delta; if (newFocus < 0) newFocus = sidebarIndices.length - 1; if (newFocus >= sidebarIndices.length) newFocus = 0; sidebarFocusIdx = newFocus; updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); }
     window.historyPrev = historyPrev; window.historyNext = historyNext; window.moveSidebarFocus = moveSidebarFocus; window.toggleAuto = toggleAuto; window.toggleSidebar = toggleSidebar; window.switchTab = switchTab; window.toggleMenu = toggleMenu; window.pickRandom = pickRandom; window.loadWordByMode = loadWordByMode;
     window.toggleBold = toggleBold;
+    window.showInlineEditModalForCurrentByRow = showInlineEditModalForCurrentByRow;
 </script>
 </body>
 </html>
