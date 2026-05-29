@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Vocab Master Pro | Fixed Speech + Drag + Auto-Shrink</title>
+    <title>Vocab Master Pro | Clean Modals + Ctrl+Wheel Resize</title>
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
     <style>
-        /* ========== CUSTOM WEB FONTS ========== */
+        /* ========== CUSTOM WEB FONTS (same as original - truncated for brevity) ========== */
         @font-face {
             font-family: 'BaguettePinyin';
             src: url('/static/Fonts/Chinese/pinyin-baguette.woff2') format('woff2');
@@ -921,17 +921,20 @@
             align-items: center;
             z-index: 20000;
         }
+        
+        /* MODAL WITH NO BACKGROUND */
         .choice-modal {
-            background: #1e293b;
+            background: transparent !important;
             border-radius: 32px;
             padding: 30px;
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border: none;
+            box-shadow: none;
             animation: fadeIn 0.2s ease;
             min-width: 420px;
             max-width: 90vw;
         }
+        
         .choice-modal h3 {
             color: white;
             margin-bottom: 24px;
@@ -940,13 +943,22 @@
             align-items: center;
             justify-content: center;
             gap: 12px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            background: rgba(0,0,0,0.5);
+            padding: 12px 24px;
+            border-radius: 60px;
+            display: inline-flex;
+            margin-left: auto;
+            margin-right: auto;
         }
+        
         .choice-buttons {
             display: flex;
             flex-direction: column;
             gap: 12px;
             justify-content: center;
         }
+        
         .choice-buttons button {
             padding: 12px 20px;
             font-size: 14px;
@@ -956,7 +968,9 @@
             font-weight: 600;
             cursor: pointer;
             width: 100%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
+        
         .choice-top { background: #f97316; }
         .choice-bottom { background: #3b82f6; }
         .choice-reset-group {
@@ -968,6 +982,7 @@
         .choice-reset-khmer { background: #8b5cf6; flex: 1; }
         .choice-reset-layers { background: #ef4444; flex: 1; }
         .choice-cancel { background: #475569; margin-top: 12px; }
+        
         .modal-sheet-link {
             background: #3b82f6;
             color: white;
@@ -986,6 +1001,52 @@
             background: #2563eb;
             transform: scale(1.02);
         }
+        
+        /* CANCEL ICON - CENTERED */
+        .cancel-icon {
+            background: #475569;
+            color: white;
+            border: none;
+            border-radius: 60px;
+            width: 50px;
+            height: 50px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            margin: 16px auto 0 auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .cancel-icon:hover {
+            background: #334155;
+            transform: scale(0.98);
+        }
+        
+        /* Semi-transparent inputs for better visibility */
+        .big-edit-input {
+            font-size: 1.3rem !important;
+            padding: 16px 20px !important;
+            width: 90% !important;
+            border-radius: 60px !important;
+            border: 1px solid rgba(255,255,255,0.3) !important;
+            background: rgba(51, 65, 85, 0.95) !important;
+            backdrop-filter: blur(8px);
+            color: white !important;
+            margin-bottom: 20px !important;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+        
+        .edit-group-buttons button,
+        .delete-group-btn button {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
@@ -1153,22 +1214,6 @@
         }
         body.night-mode .edit-side-icon:hover {
             background: rgba(255,255,255,0.15);
-        }
-        
-        /* BIG INPUT STYLES FOR EDIT MODAL */
-        .big-edit-input {
-            font-size: 1.3rem !important;
-            padding: 16px 20px !important;
-            width: 90% !important;
-            border-radius: 60px !important;
-            border: 1px solid #475569 !important;
-            background: #334155 !important;
-            color: white !important;
-            margin-bottom: 20px !important;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            text-align: center;
         }
     </style>
 </head>
@@ -1575,6 +1620,59 @@
     
     function forceShrink() { setTimeout(() => { shrinkChineseToFit(); shrinkKhmerToFit(); }, 50); }
     
+    // ========== CTRL + MOUSE WHEEL RESIZE ==========
+    function initCtrlWheelResize() {
+        const chineseWord = document.getElementById('chineseWord');
+        const khmerWord = document.getElementById('khmerWord');
+        
+        if (chineseWord) {
+            chineseWord.addEventListener('wheel', function(e) {
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    const delta = e.deltaY > 0 ? -1 : 1;
+                    let newSize = userSetChineseFontSize + delta;
+                    newSize = Math.max(10, Math.min(150, newSize));
+                    setChineseFontSize(newSize);
+                }
+            });
+        }
+        
+        if (khmerWord) {
+            khmerWord.addEventListener('wheel', function(e) {
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    const delta = e.deltaY > 0 ? -1 : 1;
+                    let newSize = userSetKhmerFontSize + delta;
+                    newSize = Math.max(10, Math.min(150, newSize));
+                    setKhmerFontSize(newSize);
+                }
+            });
+        }
+    }
+    
+    function setChineseFontSize(newSize) {
+        newSize = Math.max(2, Math.min(150, newSize));
+        userSetChineseFontSize = newSize;
+        const chineseWord = document.getElementById('chineseWord');
+        if (chineseWord) chineseWord.style.fontSize = userSetChineseFontSize + 'vh';
+        document.getElementById('mZhSize').value = userSetChineseFontSize;
+        document.getElementById('mZhSizeVal').innerText = userSetChineseFontSize + 'vh';
+        saveAllData();
+        forceShrink();
+    }
+    
+    function setKhmerFontSize(newSize) {
+        newSize = Math.max(2, Math.min(150, newSize));
+        userSetKhmerFontSize = newSize;
+        const khmerWord = document.getElementById('khmerWord');
+        if (khmerWord) khmerWord.style.fontSize = userSetKhmerFontSize + 'vh';
+        document.getElementById('mKmSize').value = userSetKhmerFontSize;
+        document.getElementById('mKmSizeVal').innerText = userSetKhmerFontSize + 'vh';
+        applyShadow();
+        saveAllData();
+        forceShrink();
+    }
+    
     // ========== TRIPLE HTML ==========
     const tripleHtmlCache = new Map();
     function getTripleHTML(chineseText) {
@@ -1640,16 +1738,6 @@
         forceShrink();
     }
     
-    function setChineseFontSize(newSize) {
-        newSize = Math.max(2, Math.min(150, newSize));
-        userSetChineseFontSize = newSize;
-        document.getElementById('chineseWord').style.fontSize = userSetChineseFontSize + 'vh';
-        document.getElementById('mZhSize').value = userSetChineseFontSize;
-        document.getElementById('mZhSizeVal').innerText = userSetChineseFontSize + 'vh';
-        saveAllData();
-        forceShrink();
-    }
-    
     function applyPinyinStyles() {
         const pinyinFont = document.getElementById('pinyinFont').value;
         const pinyinColor = document.getElementById('pinyinColor').value;
@@ -1682,19 +1770,6 @@
         });
         document.getElementById('bottomSizeVal').innerText = userSetBottomFontSize + 'px';
         applyBottomAutoScale();
-        saveAllData();
-        forceShrink();
-    }
-    
-    function setKhmerFontSize(newSize) {
-        const el = document.getElementById('khmerWord');
-        if (!el) return;
-        newSize = Math.max(2, Math.min(150, newSize));
-        userSetKhmerFontSize = newSize;
-        el.style.fontSize = userSetKhmerFontSize + 'vh';
-        document.getElementById('mKmSize').value = userSetKhmerFontSize;
-        document.getElementById('mKmSizeVal').innerText = userSetKhmerFontSize + 'vh';
-        applyShadow();
         saveAllData();
         forceShrink();
     }
@@ -1740,7 +1815,7 @@
         return idx + 4;
     }
     
-    async function deleteVocabByRow(sheetRow) {
+    async function deleteVocabByRow(sheetRow, idx) {
         if (!sheetRow || sheetRow < 4) {
             showToast("❌ Invalid row number (must be >=4)");
             return false;
@@ -1749,7 +1824,23 @@
         const result = await callSheetApi(payload);
         if (result && result.result !== "error") {
             showToast(`🗑️ Deleted Row ${sheetRow}`);
-            await loadFromSpecificSheet();
+            vocabList.splice(idx, 1);
+            if (appMode === 'random') {
+                if (historyIndex >= idx) historyIndex--;
+                history = history.filter(h => h !== idx).map(h => h > idx ? h - 1 : h);
+                if (history.length === 0 && vocabList.length) pickRandom();
+                else if (historyIndex >= 0 && history[historyIndex] !== undefined) renderRandomSidebar(history[historyIndex]);
+                else if (vocabList.length) pickRandom();
+                else { vocabList = []; renderSidebarUI(); updateDisplay(); }
+            } else {
+                if (normalCurrentIdx > idx) normalCurrentIdx--;
+                else if (normalCurrentIdx === idx) {
+                    if (normalCurrentIdx >= vocabList.length) normalCurrentIdx = Math.max(0, vocabList.length - 1);
+                }
+                normalCurrentPage = getNormalPageForIndex(normalCurrentIdx);
+                renderNormalSidebar();
+            }
+            saveAllData();
             return true;
         } else {
             showToast(`❌ Delete failed: ${result?.error || "server error"}`);
@@ -1757,7 +1848,7 @@
         }
     }
     
-    async function updateVocabByRow(sheetRow, newKhmer, newChinese) {
+    async function updateVocabByRow(sheetRow, newKhmer, newChinese, idx) {
         if (!sheetRow || sheetRow < 4) {
             showToast("❌ Invalid row number (must be >=4)");
             return false;
@@ -1766,7 +1857,13 @@
         const result = await callSheetApi(payload);
         if (result && result.result !== "error") {
             showToast(`✅ Updated Row ${sheetRow}`);
-            await loadFromSpecificSheet();
+            if (idx !== undefined && vocabList[idx]) {
+                vocabList[idx].khmer = newKhmer;
+                vocabList[idx].chinese = newChinese;
+                renderSidebarUI();
+                updateDisplay();
+                saveAllData();
+            }
             return true;
         } else {
             showToast(`❌ Update failed: ${result?.error || "server error"}`);
@@ -1783,7 +1880,19 @@
         const result = await callSheetApi(payload);
         if (result && result.row) {
             showToast(`➕ Added new word at Row ${result.row}`);
-            await loadFromSpecificSheet();
+            const newItem = { khmer: khmer, chinese: chinese };
+            vocabList.push(newItem);
+            const newIdx = vocabList.length - 1;
+            if (appMode === 'normal') {
+                normalCurrentIdx = newIdx;
+                normalCurrentPage = getNormalPageForIndex(newIdx);
+                renderNormalSidebar();
+            } else {
+                history = [newIdx];
+                historyIndex = 0;
+                renderRandomSidebar(newIdx);
+            }
+            saveAllData();
             return true;
         } else {
             showToast(`❌ Add failed: ${result?.error || "unknown error"}`);
@@ -1809,38 +1918,38 @@
                     <a href="${GOOGLE_SHEET_URL}" target="_blank" class="modal-sheet-link" title="Open Google Sheets">📊 Open Sheet</a>
                 </h3>
                 <div style="margin-bottom:16px;">
-                    <input id="editKhmerInputInline" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input">
                     <input id="editChineseInputInline" placeholder="Chinese word" value="${escapeHtml(currentChinese)}" class="big-edit-input">
+                    <input id="editKhmerInputInline" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input">
                 </div>
                 <div class="edit-group-buttons">
                     <button id="confirmUpdateInlineBtn">💾 UPDATE SHEET</button>
-                    <button id="cancelEditInlineBtn">✕ CANCEL</button>
                 </div>
                 <div class="delete-group-btn">
                     <button id="deleteRowInlineBtn">🗑️ DELETE THIS ROW (Row ${sheetRow})</button>
                 </div>
+                <button id="cancelEditInlineBtn" class="cancel-icon">✕</button>
             </div>
         `;
         document.body.appendChild(modalDiv);
         
-        const khmerInput = document.getElementById('editKhmerInputInline');
         const chineseInput = document.getElementById('editChineseInputInline');
-        khmerInput.addEventListener('keydown', blockNavKeys);
+        const khmerInput = document.getElementById('editKhmerInputInline');
         chineseInput.addEventListener('keydown', blockNavKeys);
+        khmerInput.addEventListener('keydown', blockNavKeys);
         
         const confirmBtn = document.getElementById('confirmUpdateInlineBtn');
         const cancelBtn = document.getElementById('cancelEditInlineBtn');
         const deleteBtn = document.getElementById('deleteRowInlineBtn');
         
         confirmBtn.onclick = async () => {
-            const newKhmer = khmerInput.value.trim();
             const newChinese = chineseInput.value.trim();
-            if (!newKhmer && !newChinese) {
+            const newKhmer = khmerInput.value.trim();
+            if (!newChinese && !newKhmer) {
                 showToast("⚠️ At least one field required");
                 return;
             }
             modalDiv.remove();
-            await updateVocabByRow(sheetRow, newKhmer || currentKhmer, newChinese || currentChinese);
+            await updateVocabByRow(sheetRow, newKhmer || currentKhmer, newChinese || currentChinese, idx);
         };
         
         cancelBtn.onclick = () => {
@@ -1850,7 +1959,7 @@
         deleteBtn.onclick = async () => {
             if (confirm(`⚠️ Are you sure you want to DELETE Row ${sheetRow}?\nThis action cannot be undone!`)) {
                 modalDiv.remove();
-                await deleteVocabByRow(sheetRow);
+                await deleteVocabByRow(sheetRow, idx);
             }
         };
     };
@@ -1871,38 +1980,38 @@
                     <a href="${GOOGLE_SHEET_URL}" target="_blank" class="modal-sheet-link" title="Open Google Sheets">📊 Open Sheet</a>
                 </h3>
                 <div style="margin-bottom:16px;">
-                    <input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(item.khmer)}" class="big-edit-input">
                     <input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(item.chinese)}" class="big-edit-input">
+                    <input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(item.khmer)}" class="big-edit-input">
                 </div>
                 <div class="edit-group-buttons">
                     <button id="confirmUpdateSheetBtn">💾 UPDATE SHEET</button>
-                    <button id="cancelEditSheetBtn">✕ CANCEL</button>
                 </div>
                 <div class="delete-group-btn">
                     <button id="deleteRowSheetBtn">🗑️ DELETE THIS ROW (Row ${sheetRow})</button>
                 </div>
+                <button id="cancelEditSheetBtn" class="cancel-icon">✕</button>
             </div>
         `;
         document.body.appendChild(modalDiv);
         
-        const khmerInput = document.getElementById('editKhmerInput');
         const chineseInput = document.getElementById('editChineseInput');
-        khmerInput.addEventListener('keydown', blockNavKeys);
+        const khmerInput = document.getElementById('editKhmerInput');
         chineseInput.addEventListener('keydown', blockNavKeys);
+        khmerInput.addEventListener('keydown', blockNavKeys);
         
         const confirmBtn = document.getElementById('confirmUpdateSheetBtn');
         const cancelBtn = document.getElementById('cancelEditSheetBtn');
         const deleteBtn = document.getElementById('deleteRowSheetBtn');
         
         confirmBtn.onclick = async () => {
-            const newKhmer = khmerInput.value.trim();
             const newChinese = chineseInput.value.trim();
-            if (!newKhmer && !newChinese) {
+            const newKhmer = khmerInput.value.trim();
+            if (!newChinese && !newKhmer) {
                 showToast("⚠️ At least one field required");
                 return;
             }
             modalDiv.remove();
-            await updateVocabByRow(sheetRow, newKhmer || item.khmer, newChinese || item.chinese);
+            await updateVocabByRow(sheetRow, newKhmer || item.khmer, newChinese || item.chinese, idx);
         };
         
         cancelBtn.onclick = () => {
@@ -1912,7 +2021,7 @@
         deleteBtn.onclick = async () => {
             if (confirm(`⚠️ Are you sure you want to DELETE Row ${sheetRow}?\nThis action cannot be undone!`)) {
                 modalDiv.remove();
-                await deleteVocabByRow(sheetRow);
+                await deleteVocabByRow(sheetRow, idx);
             }
         };
     }
@@ -2305,28 +2414,28 @@
             <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;">
                 <h3>➕ ADD NEW VOCABULARY</h3>
                 <div style="margin-bottom:16px;">
-                    <input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input">
                     <input id="addChineseInput" placeholder="Chinese word" class="big-edit-input">
+                    <input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input">
                 </div>
                 <div class="edit-group-buttons">
                     <button id="confirmAddSheetBtn" style="background:#10b981;">✅ ADD TO SHEET</button>
-                    <button id="cancelAddSheetBtn" style="background:#475569;">✕ CANCEL</button>
                 </div>
+                <button id="cancelAddSheetBtn" class="cancel-icon">✕</button>
             </div>
         `;
         document.body.appendChild(modalDiv);
-        const addKhmer = document.getElementById('addKhmerInput');
         const addChinese = document.getElementById('addChineseInput');
-        addKhmer.addEventListener('keydown', blockNavKeys);
+        const addKhmer = document.getElementById('addKhmerInput');
         addChinese.addEventListener('keydown', blockNavKeys);
+        addKhmer.addEventListener('keydown', blockNavKeys);
         const confirmBtn = document.getElementById('confirmAddSheetBtn');
         const cancelBtn = document.getElementById('cancelAddSheetBtn');
         
         confirmBtn.onclick = async () => {
-            const khmer = addKhmer.value.trim();
             const chinese = addChinese.value.trim();
-            if (!khmer && !chinese) {
-                showToast("⚠️ Please enter Khmer or Chinese");
+            const khmer = addKhmer.value.trim();
+            if (!chinese && !khmer) {
+                showToast("⚠️ Please enter Chinese or Khmer");
                 return;
             }
             modalDiv.remove();
@@ -2350,6 +2459,14 @@
         scrollToActiveSidebarItem(); 
     }
     
+    // FIX: Add click handler to gear icon to stop propagation
+    const gearTrigger = document.getElementById('minimizedTrigger');
+    if (gearTrigger) {
+        gearTrigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+    
     window.onload = () => {
         initCopyPopup();
         loadSettings(); 
@@ -2357,6 +2474,15 @@
         if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) { if (appMode === 'random') pickRandom(); else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } } }
         initNightMode(); applyStyles(); initGearDrag(); setupQRPopup(); setupBackgroundClick(); initChineseDrag(); initKhmerDrag(); loadAllDragPositions();
         initSwipeDetection();
+        initCtrlWheelResize();
+        
+        const gearIcon = document.getElementById('minimizedTrigger');
+        if (gearIcon) {
+            gearIcon.addEventListener('click', (e) => e.stopPropagation());
+            gearIcon.addEventListener('touchstart', (e) => e.stopPropagation());
+            gearIcon.addEventListener('mousedown', (e) => e.stopPropagation());
+        }
+        
         if (!sidebarVisible) document.getElementById('sidebarControlsContainer')?.classList.add('sidebar-controls-hidden');
         const topSection = document.getElementById('topPinyinSection');
         const topToggleBtn = document.getElementById('toggleTopPinyinSectionBtn');
