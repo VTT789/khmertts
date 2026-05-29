@@ -653,10 +653,30 @@
         .pagination-bar {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 8px 12px;
             border-top: 1px solid var(--border);
             border-bottom: 1px solid var(--border);
             margin-top: 4px;
+            gap: 8px;
+        }
+        .sheet-link-icon {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .sheet-link-icon:hover {
+            opacity: 0.8;
+            transform: translateY(-1px);
         }
         .pagination-btn {
             background: var(--tab-bg);
@@ -916,6 +936,10 @@
             color: white;
             margin-bottom: 24px;
             font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
         }
         .choice-buttons {
             display: flex;
@@ -944,6 +968,24 @@
         .choice-reset-khmer { background: #8b5cf6; flex: 1; }
         .choice-reset-layers { background: #ef4444; flex: 1; }
         .choice-cancel { background: #475569; margin-top: 12px; }
+        .modal-sheet-link {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .modal-sheet-link:hover {
+            background: #2563eb;
+            transform: scale(1.02);
+        }
         @keyframes fadeIn {
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
@@ -1064,6 +1106,27 @@
         }
         .edit-group-buttons button:last-child:hover {
             background: #334155;
+            transform: scale(0.98);
+        }
+        
+        /* Delete button styling */
+        .delete-group-btn {
+            margin-top: 16px;
+        }
+        .delete-group-btn button {
+            background: #dc2626;
+            color: white;
+            padding: 16px 12px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 60px;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+        }
+        .delete-group-btn button:hover {
+            background: #b91c1c;
             transform: scale(0.98);
         }
 
@@ -1297,6 +1360,9 @@
     let popupMessageSpan = null;
     let copyTimer = null;
     
+    // Google Sheets URL
+    const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM/edit";
+    
     function showToast(message) {
         let toast = document.querySelector('.copy-toast');
         if (!toast) {
@@ -1384,7 +1450,7 @@
         }, 3000);
     }
     
-    // ========== REST OF THE APP (simplified but complete) ==========
+    // ========== REST OF THE APP ==========
     let userSetChineseFontSize = 42;
     let userSetKhmerFontSize = 42;
     let userSetPinyinFontSize = 55;
@@ -1646,8 +1712,8 @@
     let normalCurrentPage = 0;
     const ITEMS_PER_PAGE = 40;
     
-    // ========== GOOGLE SHEETS API INTEGRATION (UPDATE/ADD) ==========
-    const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbxnE8LhL-SCGbx25s3yXxchoaz9VEQ5zRLVqYOOaQhRtTcCLUyw_tirMMCMoavuiasMQQ/exec";
+    // ========== GOOGLE SHEETS API ==========
+    const SHEET_API_URL = "https://script.google.com/macros/s/AKfycby2-yyInzHyoJXYUgOqxBpZu6ImatBndGYO0WcWLm3ySOdcFwJpxutue8EfaSMWvPsVlA/exec";
     
     async function callSheetApi(payload) {
         try {
@@ -1666,21 +1732,41 @@
         }
     }
     
-    // UPDATE - NO AUTOMATIC RELOAD TO PREVENT REVERT
-    async function updateVocabByRow(rowNumber, newKhmer, newChinese) {
-        if (!rowNumber || rowNumber < 1) {
-            showToast("❌ Invalid row number");
+    function getSheetRow(idx) {
+        return idx + 4;
+    }
+    
+    function getDisplayRow(idx) {
+        return idx + 4;
+    }
+    
+    async function deleteVocabByRow(sheetRow) {
+        if (!sheetRow || sheetRow < 4) {
+            showToast("❌ Invalid row number (must be >=4)");
             return false;
         }
-        const payload = {
-            action: "update",
-            row: rowNumber,
-            vocab: newKhmer,
-            chinese: newChinese
-        };
+        const payload = { action: "delete", row: sheetRow };
         const result = await callSheetApi(payload);
-        if (result && result.row) {
-            showToast(`✅ Updated Row ${rowNumber}`);
+        if (result && result.result !== "error") {
+            showToast(`🗑️ Deleted Row ${sheetRow}`);
+            await loadFromSpecificSheet();
+            return true;
+        } else {
+            showToast(`❌ Delete failed: ${result?.error || "server error"}`);
+            return false;
+        }
+    }
+    
+    async function updateVocabByRow(sheetRow, newKhmer, newChinese) {
+        if (!sheetRow || sheetRow < 4) {
+            showToast("❌ Invalid row number (must be >=4)");
+            return false;
+        }
+        const payload = { action: "update", row: sheetRow, vocab: newKhmer, chinese: newChinese };
+        const result = await callSheetApi(payload);
+        if (result && result.result !== "error") {
+            showToast(`✅ Updated Row ${sheetRow}`);
+            await loadFromSpecificSheet();
             return true;
         } else {
             showToast(`❌ Update failed: ${result?.error || "server error"}`);
@@ -1693,15 +1779,11 @@
             showToast("⚠️ Please enter Khmer or Chinese");
             return false;
         }
-        const payload = {
-            action: "add",
-            vocab: khmer,
-            chinese: chinese
-        };
+        const payload = { action: "add", vocab: khmer, chinese: chinese };
         const result = await callSheetApi(payload);
         if (result && result.row) {
             showToast(`➕ Added new word at Row ${result.row}`);
-            await loadFromSpecificSheet(); // only reload on add to get new row
+            await loadFromSpecificSheet();
             return true;
         } else {
             showToast(`❌ Add failed: ${result?.error || "unknown error"}`);
@@ -1711,7 +1793,6 @@
     
     function escapeHtml(str) { if(!str) return ""; return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
     
-    // Helper to block navigation keys (arrows, space, etc.) inside input fields
     function blockNavKeys(e) {
         const key = e.code;
         if (key === 'Space' || key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown' || key === 'Home' || key === 'End' || key === 'PageUp' || key === 'PageDown') {
@@ -1719,13 +1800,14 @@
         }
     }
     
-    // FIXED: large modal, immediate close, stopPropagation for arrow keys, update without revert
     window.showInlineEditModalForCurrentByRow = function(sheetRow, currentKhmer, currentChinese, idx) {
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
         modalDiv.innerHTML = `
             <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;">
-                <h3>✏️ EDIT ROW ${sheetRow}</h3>
+                <h3>✏️ EDIT ROW ${sheetRow}
+                    <a href="${GOOGLE_SHEET_URL}" target="_blank" class="modal-sheet-link" title="Open Google Sheets">📊 Open Sheet</a>
+                </h3>
                 <div style="margin-bottom:16px;">
                     <input id="editKhmerInputInline" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input">
                     <input id="editChineseInputInline" placeholder="Chinese word" value="${escapeHtml(currentChinese)}" class="big-edit-input">
@@ -1734,11 +1816,13 @@
                     <button id="confirmUpdateInlineBtn">💾 UPDATE SHEET</button>
                     <button id="cancelEditInlineBtn">✕ CANCEL</button>
                 </div>
+                <div class="delete-group-btn">
+                    <button id="deleteRowInlineBtn">🗑️ DELETE THIS ROW (Row ${sheetRow})</button>
+                </div>
             </div>
         `;
         document.body.appendChild(modalDiv);
         
-        // Block navigation keys inside inputs
         const khmerInput = document.getElementById('editKhmerInputInline');
         const chineseInput = document.getElementById('editChineseInputInline');
         khmerInput.addEventListener('keydown', blockNavKeys);
@@ -1746,6 +1830,7 @@
         
         const confirmBtn = document.getElementById('confirmUpdateInlineBtn');
         const cancelBtn = document.getElementById('cancelEditInlineBtn');
+        const deleteBtn = document.getElementById('deleteRowInlineBtn');
         
         confirmBtn.onclick = async () => {
             const newKhmer = khmerInput.value.trim();
@@ -1754,22 +1839,22 @@
                 showToast("⚠️ At least one field required");
                 return;
             }
-            // update local data immediately for responsive UI
-            if (idx !== undefined && vocabList[idx]) {
-                vocabList[idx].khmer = newKhmer || currentKhmer;
-                vocabList[idx].chinese = newChinese || currentChinese;
-                renderSidebarUI();       // refresh sidebar list
-                updateDisplay();         // refresh main words (chinese & khmer)
-            }
-            // update sheet in background (no reload to avoid revert)
+            modalDiv.remove();
             await updateVocabByRow(sheetRow, newKhmer || currentKhmer, newChinese || currentChinese);
-            // close modal immediately
+        };
+        
+        cancelBtn.onclick = () => {
             modalDiv.remove();
         };
-        cancelBtn.onclick = () => modalDiv.remove();
+        
+        deleteBtn.onclick = async () => {
+            if (confirm(`⚠️ Are you sure you want to DELETE Row ${sheetRow}?\nThis action cannot be undone!`)) {
+                modalDiv.remove();
+                await deleteVocabByRow(sheetRow);
+            }
+        };
     };
     
-    // Also fix the "EDIT CURRENT" button inside layer choice modal
     function showInlineEditModalForCurrent() {
         const idx = sidebarIndices[sidebarFocusIdx];
         if (idx === undefined || !vocabList[idx]) {
@@ -1777,12 +1862,14 @@
             return;
         }
         const item = vocabList[idx];
-        const sheetRow = idx + 2;
+        const sheetRow = getSheetRow(idx);
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
         modalDiv.innerHTML = `
             <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;">
-                <h3>✏️ EDIT VOCAB (Row ${sheetRow})</h3>
+                <h3>✏️ EDIT VOCAB (Row ${sheetRow})
+                    <a href="${GOOGLE_SHEET_URL}" target="_blank" class="modal-sheet-link" title="Open Google Sheets">📊 Open Sheet</a>
+                </h3>
                 <div style="margin-bottom:16px;">
                     <input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(item.khmer)}" class="big-edit-input">
                     <input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(item.chinese)}" class="big-edit-input">
@@ -1790,6 +1877,9 @@
                 <div class="edit-group-buttons">
                     <button id="confirmUpdateSheetBtn">💾 UPDATE SHEET</button>
                     <button id="cancelEditSheetBtn">✕ CANCEL</button>
+                </div>
+                <div class="delete-group-btn">
+                    <button id="deleteRowSheetBtn">🗑️ DELETE THIS ROW (Row ${sheetRow})</button>
                 </div>
             </div>
         `;
@@ -1802,6 +1892,7 @@
         
         const confirmBtn = document.getElementById('confirmUpdateSheetBtn');
         const cancelBtn = document.getElementById('cancelEditSheetBtn');
+        const deleteBtn = document.getElementById('deleteRowSheetBtn');
         
         confirmBtn.onclick = async () => {
             const newKhmer = khmerInput.value.trim();
@@ -1810,15 +1901,20 @@
                 showToast("⚠️ At least one field required");
                 return;
             }
-            // update local
-            vocabList[idx].khmer = newKhmer || item.khmer;
-            vocabList[idx].chinese = newChinese || item.chinese;
-            renderSidebarUI();
-            updateDisplay();
+            modalDiv.remove();
             await updateVocabByRow(sheetRow, newKhmer || item.khmer, newChinese || item.chinese);
+        };
+        
+        cancelBtn.onclick = () => {
             modalDiv.remove();
         };
-        cancelBtn.onclick = () => modalDiv.remove();
+        
+        deleteBtn.onclick = async () => {
+            if (confirm(`⚠️ Are you sure you want to DELETE Row ${sheetRow}?\nThis action cannot be undone!`)) {
+                modalDiv.remove();
+                await deleteVocabByRow(sheetRow);
+            }
+        };
     }
     
     async function loadFromSpecificSheet() {
@@ -1829,6 +1925,7 @@
             if (!response.ok) throw new Error();
             const data = await response.json();
             if (!Array.isArray(data) || data.length === 0) throw new Error();
+            
             const firstRow = data[0];
             const columns = Object.keys(firstRow);
             let khmerCol = null, chineseCol = null;
@@ -1849,10 +1946,16 @@
                     chineseCol = stringCols[1];
                 } else throw new Error();
             }
-            const newVocab = data.map(row => ({ khmer: (row[khmerCol]?.toString().trim() || ""), chinese: (row[chineseCol]?.toString().trim() || "") })).filter(item => item.khmer && item.chinese);
+            
+            const newVocab = data.map(row => ({ 
+                khmer: (row[khmerCol]?.toString().trim() || ""), 
+                chinese: (row[chineseCol]?.toString().trim() || "") 
+            })).filter(item => item.khmer && item.chinese);
+            
             if (newVocab.length === 0) throw new Error();
             vocabList = newVocab;
             saveAllData();
+            
             if (appMode === 'random') {
                 if (historyIndex >= 0 && history[historyIndex] < vocabList.length) {
                 } else {
@@ -1875,7 +1978,41 @@
     function scrollToActiveSidebarItem() { setTimeout(() => { const activeItem = document.querySelector('.vocab-item.active'); if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50); }
     
     function renderNormalSidebar() { if (!vocabList.length) return; const start = normalCurrentPage * ITEMS_PER_PAGE; const end = Math.min(start + ITEMS_PER_PAGE, vocabList.length); const indices = []; for (let i = start; i < end; i++) indices.push(i); sidebarIndices = indices; let focusPos = indices.indexOf(normalCurrentIdx); if (focusPos === -1 && indices.length) { normalCurrentIdx = indices[0]; focusPos = 0; } sidebarFocusIdx = focusPos >= 0 ? focusPos : 0; renderSidebarUI(); updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); updatePaginationControls(); scrollToActiveSidebarItem(); }
-    function updatePaginationControls() { const container = document.getElementById('paginationContainer'); if (!container) return; if (appMode === 'normal' && vocabList.length > ITEMS_PER_PAGE) { const totalPages = Math.ceil(vocabList.length / ITEMS_PER_PAGE); container.style.display = 'flex'; container.innerHTML = `<div class="pagination-bar"><button id="prevPageBtn" class="pagination-btn">◀ Prev</button><span class="pagination-info">Page ${normalCurrentPage+1} / ${totalPages}</span><button id="nextPageBtn" class="pagination-btn">Next ▶</button></div>`; document.getElementById('prevPageBtn')?.addEventListener('click', () => { if (normalCurrentPage > 0) { normalCurrentPage--; normalCurrentIdx = normalCurrentPage * ITEMS_PER_PAGE; renderNormalSidebar(); } }); document.getElementById('nextPageBtn')?.addEventListener('click', () => { if (normalCurrentPage + 1 < totalPages) { normalCurrentPage++; normalCurrentIdx = normalCurrentPage * ITEMS_PER_PAGE; renderNormalSidebar(); } }); } else { container.style.display = 'none'; container.innerHTML = ''; } }
+    
+    function updatePaginationControls() { 
+        const container = document.getElementById('paginationContainer'); 
+        if (!container) return; 
+        if (appMode === 'normal' && vocabList.length > ITEMS_PER_PAGE) { 
+            const totalPages = Math.ceil(vocabList.length / ITEMS_PER_PAGE); 
+            container.style.display = 'flex'; 
+            container.innerHTML = `
+                <div class="pagination-bar">
+                    <button id="prevPageBtn" class="pagination-btn">◀ Prev</button>
+                    <span class="pagination-info">Page ${normalCurrentPage+1} / ${totalPages}</span>
+                    <button id="nextPageBtn" class="pagination-btn">Next ▶</button>
+                    <a href="${GOOGLE_SHEET_URL}" target="_blank" class="sheet-link-icon" title="Open Google Sheets">📊 Sheet</a>
+                </div>
+            `; 
+            document.getElementById('prevPageBtn')?.addEventListener('click', () => { 
+                if (normalCurrentPage > 0) { 
+                    normalCurrentPage--; 
+                    normalCurrentIdx = normalCurrentPage * ITEMS_PER_PAGE; 
+                    renderNormalSidebar(); 
+                } 
+            }); 
+            document.getElementById('nextPageBtn')?.addEventListener('click', () => { 
+                if (normalCurrentPage + 1 < totalPages) { 
+                    normalCurrentPage++; 
+                    normalCurrentIdx = normalCurrentPage * ITEMS_PER_PAGE; 
+                    renderNormalSidebar(); 
+                } 
+            }); 
+        } else { 
+            container.style.display = 'none'; 
+            container.innerHTML = ''; 
+        } 
+    }
+    
     function renderRandomSidebar(idx) { const item = vocabList[idx]; const key = item.chinese.substring(0, 1); let related = vocabList.map((it, i) => ({...it, oIdx: i})).filter(it => it.oIdx !== idx && it.chinese.includes(key)).slice(0, 50); sidebarIndices = [idx, ...related.map(i => i.oIdx)]; sidebarFocusIdx = 0; renderSidebarUI(); updateDisplay(); speakAutoSequence(item.chinese, item.khmer); scrollToActiveSidebarItem(); }
     function loadWordByMode(idx) { killAllSpeech(); if (!vocabList[idx]) return; if (appMode === 'random') { history = history.slice(0, historyIndex + 1); history.push(idx); historyIndex = history.length - 1; renderRandomSidebar(idx); } else { normalCurrentIdx = idx; const newPage = getNormalPageForIndex(idx); if (newPage !== normalCurrentPage) { normalCurrentPage = newPage; renderNormalSidebar(); } else { let focusPos = sidebarIndices.indexOf(idx); if (focusPos !== -1) { sidebarFocusIdx = focusPos; renderSidebarUI(); updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); } else { renderNormalSidebar(); } } } }
     function goPrevNormal() { if (!vocabList.length) return; let newIdx = normalCurrentIdx - 1; if (newIdx < 0) newIdx = 0; loadWordByMode(newIdx); }
@@ -1886,7 +2023,7 @@
     function toggleAppMode() { if (appMode === 'random') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; document.getElementById('modeRandomBtn').classList.remove('active'); document.getElementById('modeNormalBtn').classList.add('active'); const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; normalCurrentIdx = idx; normalCurrentPage = getNormalPageForIndex(idx); renderNormalSidebar(); } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; document.getElementById('modeNormalBtn').classList.remove('active'); document.getElementById('modeRandomBtn').classList.add('active'); const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; if (idx !== -1) { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); } else if (vocabList.length) pickRandom(); } saveAllData(); }
     function showSearchPopup() { const modalDiv = document.createElement('div'); modalDiv.className = 'modal-overlay'; modalDiv.innerHTML = `<div class="search-popup"><h3>🔍 Search Vocabulary</h3><input type="text" id="searchInput" placeholder="Type Chinese or Khmer..."><div id="searchResults" class="search-results"></div><button class="close-search close-modal">Cancel</button></div>`; document.body.appendChild(modalDiv); const input = modalDiv.querySelector('#searchInput'); const resultsDiv = modalDiv.querySelector('#searchResults'); const closeBtn = modalDiv.querySelector('.close-search'); const updateResults = () => { const term = input.value.trim().toLowerCase(); if (!term) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">Type to search...</div>'; return; } const filtered = vocabList.map((item, idx) => ({ idx, ...item })).filter(item => item.chinese.toLowerCase().includes(term) || item.khmer.toLowerCase().includes(term)); if (filtered.length === 0) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">No matches</div>'; return; } resultsDiv.innerHTML = filtered.map(item => `<div class="search-result-item" data-idx="${item.idx}"><strong>${item.chinese}</strong> — ${item.khmer}</div>`).join(''); resultsDiv.querySelectorAll('.search-result-item').forEach(el => { el.addEventListener('click', () => { const idx = parseInt(el.dataset.idx); if (appMode === 'normal') { normalCurrentIdx = idx; normalCurrentPage = getNormalPageForIndex(idx); renderNormalSidebar(); } else { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); } modalDiv.remove(); }); }); }; input.addEventListener('input', updateResults); closeBtn.onclick = () => modalDiv.remove(); modalDiv.onclick = (e) => { if (e.target === modalDiv) modalDiv.remove(); }; updateResults(); }
     
-    // ========== DRAG & LAYER (preserved) ==========
+    // ========== DRAG & LAYER (abbreviated for length - kept functional) ==========
     let chineseElement = null, khmerElement = null;
     let chineseX = 50, chineseY = 40, khmerX = 50, khmerY = 70;
     let topLayerX = 0, topLayerY = 0, bottomLayerX = 0, bottomLayerY = 0;
@@ -1934,7 +2071,6 @@
         });
     }
     
-    // INTELLIGENT LONG PRESS: iOS shows popup, others auto-copy
     function onChinesePointerDown(e) {
         e.preventDefault(); e.stopPropagation();
         const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
@@ -2014,8 +2150,9 @@
     function initChineseDrag() { chineseElement = document.getElementById('chineseWord'); if (!chineseElement) return; chineseElement.style.position = 'absolute'; chineseElement.style.left = chineseX + '%'; chineseElement.style.top = chineseY + '%'; chineseElement.style.transform = 'translate(-50%, -50%)'; chineseElement.style.cursor = 'grab'; chineseElement.addEventListener('click', (e) => { e.stopPropagation(); speakChineseFromMain(); }); chineseElement.addEventListener('mousedown', onChinesePointerDown); chineseElement.addEventListener('touchstart', onChinesePointerDown, { passive: false }); chineseElement.addEventListener('touchstart', (e) => handlePinchStart(e, 'chinese'), { passive: false }); chineseElement.addEventListener('touchmove', (e) => handlePinchMove(e, 'chinese'), { passive: false }); chineseElement.addEventListener('touchend', handlePinchEnd); }
     function initKhmerDrag() { khmerElement = document.getElementById('khmerWord'); if (!khmerElement) return; khmerElement.style.position = 'absolute'; khmerElement.style.left = khmerX + '%'; khmerElement.style.top = khmerY + '%'; khmerElement.style.transform = 'translate(-50%, -50%)'; khmerElement.style.cursor = 'grab'; khmerElement.addEventListener('click', (e) => { e.stopPropagation(); speakKhmerFromMain(); }); khmerElement.addEventListener('touchstart', (e) => handlePinchStart(e, 'khmer'), { passive: false }); khmerElement.addEventListener('touchmove', (e) => handlePinchMove(e, 'khmer'), { passive: false }); khmerElement.addEventListener('touchend', handlePinchEnd); let khmerDragActive = false, khmerStartMouseX, khmerStartMouseY, khmerStartLeft, khmerStartTop, khmerMoved = false; const onStart = (e) => { e.preventDefault(); e.stopPropagation(); khmerDragActive = true; khmerMoved = false; const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); khmerStartMouseX = clientX; khmerStartMouseY = clientY; khmerStartLeft = khmerX; khmerStartTop = khmerY; khmerElement.style.cursor = 'grabbing'; const onMove = (e2) => { if (!khmerDragActive) return; e2.preventDefault(); const cx = e2.clientX ?? (e2.touches ? e2.touches[0].clientX : 0); const cy = e2.clientY ?? (e2.touches ? e2.touches[0].clientY : 0); const dx = cx - khmerStartMouseX, dy = cy - khmerStartMouseY; if (!khmerMoved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) khmerMoved = true; const canvasRect = canvas.getBoundingClientRect(); let originalPxX = (khmerStartLeft / 100) * canvasRect.width; let originalPxY = (khmerStartTop / 100) * canvasRect.height; let newPxX = originalPxX + dx, newPxY = originalPxY + dy; khmerX = (newPxX / canvasRect.width) * 100; khmerY = (newPxY / canvasRect.height) * 100; khmerElement.style.left = khmerX + '%'; khmerElement.style.top = khmerY + '%'; }; const onEnd = () => { khmerDragActive = false; khmerElement.style.cursor = 'grab'; if (!khmerMoved) { speakKhmerFromMain(); } saveAllDragPositions(); window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onEnd); window.removeEventListener('touchmove', onMove); window.removeEventListener('touchend', onEnd); forceShrink(); }; window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); }; khmerElement.addEventListener('mousedown', onStart); khmerElement.addEventListener('touchstart', onStart, { passive: false }); khmerElement.addEventListener('mousedown', onKhmerPointerDown); khmerElement.addEventListener('touchstart', onKhmerPointerDown, { passive: false }); }
     
-    // ========== SIDEBAR UI & STYLES ==========
+    // ========== SIDEBAR UI & STYLES (simplified) ==========
     function saveAllData() { const settings = { mZhSize: userSetChineseFontSize, mKmSize: userSetKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: userSetBottomFontSize, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage, shadow: document.getElementById('shadowSlider').value }; localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList)); localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings)); }
+    
     function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings) { const s = JSON.parse(savedSettings); userSetChineseFontSize = s.mZhSize || 42; userSetKhmerFontSize = s.mKmSize || 42; document.getElementById('mZhSize').value = userSetChineseFontSize; document.getElementById('mKmSize').value = userSetKhmerFontSize; document.getElementById('mZhColor').value = s.mZhColor || "#000000"; document.getElementById('mKmColor').value = s.mKmColor || "#000000"; document.getElementById('zhReps').value = s.zhReps || 3; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor; document.getElementById('sVocabSpacing').value = s.vocabSpacing || 8; document.body.style.setProperty('--vocab-spacing', (s.vocabSpacing || 8) + 'px'); document.getElementById('vocabSpacingVal').innerText = (s.vocabSpacing || 8) + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.pinyinFont) document.getElementById('pinyinFont').value = s.pinyinFont; if(s.pinyinColor) document.getElementById('pinyinColor').value = s.pinyinColor; if(s.pinyinBold !== undefined) { const btn = document.getElementById('pinyinBold'); if(s.pinyinBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.pinyinSizePx) { document.getElementById('pinyinSizePx').value = s.pinyinSizePx; userSetPinyinFontSize = parseInt(s.pinyinSizePx); } if(s.pinyinSpacing) document.getElementById('pinyinSpacing').value = s.pinyinSpacing; if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont; if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor; if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomFontSize = parseInt(s.bottomSizePx); } if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible; if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible; if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; document.getElementById('modeNormalBtn').classList.add('active'); document.getElementById('modeRandomBtn').classList.remove('active'); } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; document.getElementById('modeRandomBtn').classList.add('active'); document.getElementById('modeNormalBtn').classList.remove('active'); } normalCurrentIdx = s.normalCurrentIdx || 0; normalCurrentPage = s.normalCurrentPage || 0; sidebarVisible = s.sidebarVisible !== undefined ? s.sidebarVisible : false; if(!sidebarVisible) { document.getElementById('rightSide').classList.add('hidden'); document.getElementById('dragResizer').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; } } else { document.getElementById('pinyinFont').value = "'Baguette Simplified'"; document.getElementById('pinyinColor').value = "#000000"; document.getElementById('pinyinSizePx').value = "55"; userSetPinyinFontSize = 55; document.getElementById('pinyinSpacing').value = "0"; document.getElementById('bottomSizePx').value = "55"; userSetBottomFontSize = 55; document.getElementById('mKmColor').value = "#000000"; document.getElementById('bottomCharColor').value = "#2563eb"; document.getElementById('shadowSlider').value = "3"; sidebarVisible = false; document.getElementById('rightSide').classList.add('hidden'); document.getElementById('dragResizer').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; applyPinyinStyles(); applyBottomStyles(); } const mZhFontSelect = document.getElementById('mZhFont'); if(mZhFontSelect && (!savedSettings || !savedSettings.mZhFont)) { mZhFontSelect.value = "'Baguette Simplified'"; } applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility(); setKhmerFontSize(userSetKhmerFontSize); applyShadow(); applyBottomAutoScale(); }
     
     function renderSidebarUI() { 
@@ -2025,15 +2162,15 @@
             const idx = sidebarIndices[sIdx]; 
             const div = document.createElement('div'); 
             div.className = `vocab-item ${sIdx === sidebarFocusIdx ? 'active' : ''}`; 
-            const sideNumber = idx + 2; 
+            const displayRow = getDisplayRow(idx);
             div.innerHTML = `
-                <div class="side-number">#${sideNumber}</div>
+                <div class="side-number">#${displayRow}</div>
                 <div class="word-wrapper" onclick="selectSidebarItem(${sIdx}); event.stopPropagation()">
                     <span class="side-zh">${escapeHtml(vocabList[idx].chinese)}</span>
                     <span class="side-km">${escapeHtml(vocabList[idx].khmer)}</span>
                 </div>
                 <div class="sidebar-action-icons">
-                    <button class="edit-side-icon" onclick="event.stopPropagation(); showInlineEditModalForCurrentByRow(${idx + 2}, '${escapeHtml(vocabList[idx].khmer)}', '${escapeHtml(vocabList[idx].chinese)}', ${idx})" title="Edit in Google Sheets">✏️</button>
+                    <button class="edit-side-icon" onclick="event.stopPropagation(); showInlineEditModalForCurrentByRow(${getSheetRow(idx)}, '${escapeHtml(vocabList[idx].khmer)}', '${escapeHtml(vocabList[idx].chinese)}', ${idx})" title="Edit in Google Sheets">✏️</button>
                     <button class="select-main-btn" onclick="loadWordByMode(${idx}); event.stopPropagation()">MAIN</button>
                 </div>
             `; 
@@ -2057,7 +2194,7 @@
     function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
     function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
     
-    // ========== SWIPE GESTURES (MOBILE) - Swipe Up = moveSidebarFocus(-1), Swipe Down = moveSidebarFocus(1) ==========
+    // ========== SWIPE GESTURES ==========
     let touchStartY = 0;
     let touchStartTime = 0;
     const SWIPE_THRESHOLD = 50;
@@ -2066,14 +2203,12 @@
         const displayArea = document.getElementById('displayArea');
         if (!displayArea) return;
         displayArea.addEventListener('touchstart', (e) => {
-            // Only detect if touch is not on draggable elements (Chinese or Khmer word)
             const target = e.target;
             if (target.closest('.chinese-word') || target.closest('.khmer-text')) return;
             touchStartY = e.touches[0].clientY;
             touchStartTime = Date.now();
         }, { passive: false });
         displayArea.addEventListener('touchmove', (e) => {
-            // Prevent default scrolling only if we are potentially swiping
             if (touchStartY !== null && !(e.target.closest('.chinese-word') || e.target.closest('.khmer-text'))) {
                 e.preventDefault();
             }
@@ -2084,15 +2219,12 @@
             const deltaY = touchEndY - touchStartY;
             const elapsed = Date.now() - touchStartTime;
             touchStartY = null;
-            // Skip if moved too little or too slow
             if (Math.abs(deltaY) < SWIPE_THRESHOLD || elapsed > SWIPE_MAX_TIME) return;
             e.preventDefault();
             if (deltaY < 0) {
-                // Swipe UP -> move sidebar focus UP (previous item in sidebar list)
                 moveSidebarFocus(-1);
                 showToast("⬆️ Previous word");
             } else if (deltaY > 0) {
-                // Swipe DOWN -> move sidebar focus DOWN (next item in sidebar list)
                 moveSidebarFocus(1);
                 showToast("⬇️ Next word");
             }
@@ -2189,6 +2321,7 @@
         addChinese.addEventListener('keydown', blockNavKeys);
         const confirmBtn = document.getElementById('confirmAddSheetBtn');
         const cancelBtn = document.getElementById('cancelAddSheetBtn');
+        
         confirmBtn.onclick = async () => {
             const khmer = addKhmer.value.trim();
             const chinese = addChinese.value.trim();
@@ -2196,10 +2329,13 @@
                 showToast("⚠️ Please enter Khmer or Chinese");
                 return;
             }
+            modalDiv.remove();
             await addVocabToSheet(khmer, chinese);
+        };
+        
+        cancelBtn.onclick = () => {
             modalDiv.remove();
         };
-        cancelBtn.onclick = () => modalDiv.remove();
     }
     
     function moveSidebarFocus(delta) { 
@@ -2220,7 +2356,7 @@
         const savedList = localStorage.getItem('vocabMaster_List'); 
         if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) { if (appMode === 'random') pickRandom(); else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } } }
         initNightMode(); applyStyles(); initGearDrag(); setupQRPopup(); setupBackgroundClick(); initChineseDrag(); initKhmerDrag(); loadAllDragPositions();
-        initSwipeDetection(); // Initialize mobile swipe gestures
+        initSwipeDetection();
         if (!sidebarVisible) document.getElementById('sidebarControlsContainer')?.classList.add('sidebar-controls-hidden');
         const topSection = document.getElementById('topPinyinSection');
         const topToggleBtn = document.getElementById('toggleTopPinyinSectionBtn');
