@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Vocab Master Pro | Full Gesture Navigation + Toast</title>
+    <title>Vocab Master Pro | Swipe + Wheel Navigation, Single‑Column Fallback</title>
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
     <style>
-        /* ========== CUSTOM WEB FONTS (same as original, truncated for brevity) ========== */
+        /* ========== CUSTOM WEB FONTS ========== */
         @font-face {
             font-family: 'BaguettePinyin';
             src: url('/static/Fonts/Chinese/pinyin-baguette.woff2') format('woff2');
@@ -713,7 +713,6 @@
         .vocab-item.active { border: 2px solid var(--accent); background: #eff6ff; }
         body.night-mode .vocab-item.active { background: #1e3a8a; }
         
-        /* New layout: side-number column with edit icon below */
         .side-number-col {
             display: flex;
             flex-direction: column;
@@ -1446,11 +1445,12 @@
             e.stopPropagation();
             if (pendingCopyText) {
                 navigator.clipboard.writeText(pendingCopyText).then(() => {
-                    // Success: close popup and show toast
+                    showToast("Copied ✔");
                     copyPopup.style.display = "none";
                     copyLocked = false;
                     pendingCopyText = "";
-                    showToast("Copied!");
+                    popupMessageSpan.innerText = "📋 Ready to copy";
+                    copyBtn.innerText = "Copy";
                 }).catch(() => {
                     const textarea = document.createElement('textarea');
                     textarea.value = pendingCopyText;
@@ -1458,10 +1458,12 @@
                     textarea.select();
                     document.execCommand('copy');
                     document.body.removeChild(textarea);
+                    showToast("Copied ✔");
                     copyPopup.style.display = "none";
                     copyLocked = false;
                     pendingCopyText = "";
-                    showToast("Copied!");
+                    popupMessageSpan.innerText = "📋 Ready to copy";
+                    copyBtn.innerText = "Copy";
                 });
             }
         });
@@ -1475,7 +1477,6 @@
         copyBtn.innerText = "Copy";
         copyPopup.style.display = "flex";
         if (copyTimer) clearTimeout(copyTimer);
-        // Auto‑close after 2 seconds (especially for iOS)
         copyTimer = setTimeout(() => {
             if (copyPopup && copyPopup.style.display === "flex") {
                 copyPopup.style.display = "none";
@@ -1484,7 +1485,7 @@
                 popupMessageSpan.innerText = "📋 Ready to copy";
                 copyBtn.innerText = "Copy";
             }
-        }, 2000);
+        }, 2000);  // 2 seconds for iOS popup
     }
     
     // ========== APP VARIABLES ==========
@@ -1640,25 +1641,6 @@
                 }
             });
         }
-    }
-    
-    // ========== WHEEL NAVIGATION (without Ctrl) ==========
-    function initWheelNavigation() {
-        const displayArea = document.getElementById('displayArea');
-        if (!displayArea) return;
-        displayArea.addEventListener('wheel', function(e) {
-            // Only navigate if Ctrl is NOT pressed (Ctrl is reserved for resize)
-            if (!e.ctrlKey) {
-                e.preventDefault();
-                if (e.deltaY < 0) {
-                    // Scroll up → forward (next)
-                    historyNext();
-                } else if (e.deltaY > 0) {
-                    // Scroll down → backward (previous)
-                    historyPrev();
-                }
-            }
-        }, { passive: false });
     }
     
     function setChineseFontSize(newSize) {
@@ -1924,7 +1906,7 @@
                 </h3>
                 <div style="margin-bottom:16px;">
                     <input id="editChineseInputInline" placeholder="Chinese word" value="${escapeHtml(currentChinese)}" class="big-edit-input">
-                    <input id="editKhmerInputInline" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input>
+                    <input id="editKhmerInputInline" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input">
                 </div>
                 <div class="edit-group-buttons">
                     <button id="confirmUpdateInlineBtn">💾 UPDATE SHEET</button>
@@ -2131,7 +2113,7 @@
     function toggleAppMode() { if (appMode === 'random') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; document.getElementById('modeRandomBtn').classList.remove('active'); document.getElementById('modeNormalBtn').classList.add('active'); const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; normalCurrentIdx = idx; normalCurrentPage = getNormalPageForIndex(idx); renderNormalSidebar(); } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; document.getElementById('modeNormalBtn').classList.remove('active'); document.getElementById('modeRandomBtn').classList.add('active'); const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; if (idx !== -1) { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); } else if (vocabList.length) pickRandom(); } saveAllData(); }
     function showSearchPopup() { const modalDiv = document.createElement('div'); modalDiv.className = 'modal-overlay'; modalDiv.innerHTML = `<div class="search-popup"><h3>🔍 Search Vocabulary</h3><input type="text" id="searchInput" placeholder="Type Chinese or Khmer..."><div id="searchResults" class="search-results"></div><button class="close-search close-modal">Cancel</button></div>`; document.body.appendChild(modalDiv); const input = modalDiv.querySelector('#searchInput'); const resultsDiv = modalDiv.querySelector('#searchResults'); const closeBtn = modalDiv.querySelector('.close-search'); const updateResults = () => { const term = input.value.trim().toLowerCase(); if (!term) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">Type to search...</div>'; return; } const filtered = vocabList.map((item, idx) => ({ idx, ...item })).filter(item => item.chinese.toLowerCase().includes(term) || item.khmer.toLowerCase().includes(term)); if (filtered.length === 0) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">No matches</div>'; return; } resultsDiv.innerHTML = filtered.map(item => `<div class="search-result-item" data-idx="${item.idx}"><strong>${item.chinese}</strong> — ${item.khmer}</div>`).join(''); resultsDiv.querySelectorAll('.search-result-item').forEach(el => { el.addEventListener('click', () => { const idx = parseInt(el.dataset.idx); if (appMode === 'normal') { normalCurrentIdx = idx; normalCurrentPage = getNormalPageForIndex(idx); renderNormalSidebar(); } else { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); } modalDiv.remove(); }); }); }; input.addEventListener('input', updateResults); closeBtn.onclick = () => modalDiv.remove(); modalDiv.onclick = (e) => { if (e.target === modalDiv) modalDiv.remove(); }; updateResults(); }
     
-    // ========== DRAG & LAYER (abbreviated for brevity, kept from original) ==========
+    // ========== DRAG & LAYER (preserved) ==========
     let chineseElement = null, khmerElement = null;
     let chineseX = 50, chineseY = 40, khmerX = 50, khmerY = 70;
     let topLayerX = 0, topLayerY = 0, bottomLayerX = 0, bottomLayerY = 0;
@@ -2297,18 +2279,10 @@
         const idx = sidebarIndices[sidebarFocusIdx]; 
         if (idx === undefined) return; 
         const item = vocabList[idx]; 
-        // Fallback: if Chinese is empty but Khmer exists, show Khmer in Chinese area
-        let displayChinese = item.chinese;
-        let displayKhmer = item.khmer;
-        if (!displayChinese && displayKhmer) {
-            displayChinese = displayKhmer;
-            displayKhmer = "";
-        } else if (!displayKhmer && displayChinese) {
-            displayKhmer = displayChinese;
-            displayChinese = displayChinese;
-        }
-        updateChineseDisplay(displayChinese);
-        document.getElementById('khmerWord').innerText = displayKhmer;
+        // Show Chinese in the chineseWord area if available; otherwise show Khmer (for single‑column fallback)
+        const displayChinese = item.chinese || item.khmer;
+        updateChineseDisplay(displayChinese); 
+        document.getElementById('khmerWord').innerText = item.khmer || ''; 
         document.querySelectorAll('.vocab-item').forEach((d, i) => d.classList.toggle('active', i === sidebarFocusIdx)); 
         applyStyles(); 
         forceShrink(); 
@@ -2325,11 +2299,10 @@
     function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
     function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
     
-    // ========== SWIPE GESTURES (horizontal for history) ==========
+    // ========== SWIPE GESTURES (navigate history) ==========
     let touchStartX = 0;
-    let touchStartTime = 0;
-    const SWIPE_THRESHOLD = 50;
-    const SWIPE_MAX_TIME = 300;
+    let touchStartTimeX = 0;
+    const SWIPE_THRESHOLD_X = 50;
     function initSwipeDetection() {
         const displayArea = document.getElementById('displayArea');
         if (!displayArea) return;
@@ -2337,7 +2310,7 @@
             const target = e.target;
             if (target.closest('.chinese-word') || target.closest('.khmer-text')) return;
             touchStartX = e.touches[0].clientX;
-            touchStartTime = Date.now();
+            touchStartTimeX = Date.now();
         }, { passive: false });
         displayArea.addEventListener('touchmove', (e) => {
             if (touchStartX !== null && !(e.target.closest('.chinese-word') || e.target.closest('.khmer-text'))) {
@@ -2348,18 +2321,36 @@
             if (touchStartX === null) return;
             const touchEndX = e.changedTouches[0].clientX;
             const deltaX = touchEndX - touchStartX;
-            const elapsed = Date.now() - touchStartTime;
+            const elapsed = Date.now() - touchStartTimeX;
             touchStartX = null;
-            if (Math.abs(deltaX) < SWIPE_THRESHOLD || elapsed > SWIPE_MAX_TIME) return;
+            if (Math.abs(deltaX) < SWIPE_THRESHOLD_X || elapsed > 300) return;
             e.preventDefault();
-            if (deltaX < 0) {
-                // Swipe left → next
-                historyNext();
-                showToast("➡️ Next word");
-            } else if (deltaX > 0) {
-                // Swipe right → previous
+            if (deltaX > 0) { // Swipe right → previous word
                 historyPrev();
                 showToast("⬅️ Previous word");
+            } else if (deltaX < 0) { // Swipe left → next word
+                historyNext();
+                showToast("➡️ Next word");
+            }
+        });
+    }
+    
+    // ========== MOUSE WHEEL NAVIGATION ==========
+    function initWheelNavigation() {
+        const displayArea = document.getElementById('displayArea');
+        if (!displayArea) return;
+        displayArea.addEventListener('wheel', (e) => {
+            // Ignore if Ctrl is pressed (resize) or if target is inside word areas (already handled)
+            if (e.ctrlKey) return;
+            const target = e.target;
+            if (target.closest('.chinese-word') || target.closest('.khmer-text')) return;
+            e.preventDefault();
+            if (e.deltaY > 0) { // Scroll down → next word
+                historyNext();
+                showToast("⬇️ Next word");
+            } else if (e.deltaY < 0) { // Scroll up → previous word
+                historyPrev();
+                showToast("⬆️ Previous word");
             }
         });
     }
