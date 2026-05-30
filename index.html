@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Vocab Master Pro | Fallback Display + Toast Copy</title>
+    <title>Vocab Master Pro | Swipe + Wheel Navigation</title>
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
     <style>
-        /* ========== CUSTOM WEB FONTS ========== */
+        /* ========== CUSTOM WEB FONTS (same as original - truncated for brevity) ========== */
         @font-face {
             font-family: 'BaguettePinyin';
             src: url('/static/Fonts/Chinese/pinyin-baguette.woff2') format('woff2');
@@ -1356,7 +1356,7 @@
     // ========== DETECT PLATFORM ==========
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     
-    // ========== TOAST SYSTEM (replaces copy popup) ==========
+    // ========== TOAST SYSTEM ==========
     function showToast(message, duration = 1500) {
         let toast = document.querySelector('.copy-toast');
         if (!toast) {
@@ -1388,12 +1388,7 @@
         }
     }
     
-    // For iOS long press – just show a toast (no popup)
-    function showCopyToast(text, label) {
-        showToast(`📋 Copied ${label}: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`, 2000);
-    }
-    
-    // ========== APP VARIABLES ==========
+    // ========== APP VARIABLES (same as previous final version) ==========
     let userSetChineseFontSize = 42;
     let userSetKhmerFontSize = 42;
     let userSetPinyinFontSize = 55;
@@ -1522,7 +1517,6 @@
     function initCtrlWheelResize() {
         const chineseWord = document.getElementById('chineseWord');
         const khmerWord = document.getElementById('khmerWord');
-        
         if (chineseWord) {
             chineseWord.addEventListener('wheel', function(e) {
                 if (e.ctrlKey) {
@@ -1534,7 +1528,6 @@
                 }
             });
         }
-        
         if (khmerWord) {
             khmerWord.addEventListener('wheel', function(e) {
                 if (e.ctrlKey) {
@@ -1551,8 +1544,7 @@
     function setChineseFontSize(newSize) {
         newSize = Math.max(2, Math.min(150, newSize));
         userSetChineseFontSize = newSize;
-        const chineseWord = document.getElementById('chineseWord');
-        if (chineseWord) chineseWord.style.fontSize = userSetChineseFontSize + 'vh';
+        document.getElementById('chineseWord').style.fontSize = userSetChineseFontSize + 'vh';
         document.getElementById('mZhSize').value = userSetChineseFontSize;
         document.getElementById('mZhSizeVal').innerText = userSetChineseFontSize + 'vh';
         saveAllData();
@@ -1562,8 +1554,7 @@
     function setKhmerFontSize(newSize) {
         newSize = Math.max(2, Math.min(150, newSize));
         userSetKhmerFontSize = newSize;
-        const khmerWord = document.getElementById('khmerWord');
-        if (khmerWord) khmerWord.style.fontSize = userSetKhmerFontSize + 'vh';
+        document.getElementById('khmerWord').style.fontSize = userSetKhmerFontSize + 'vh';
         document.getElementById('mKmSize').value = userSetKhmerFontSize;
         document.getElementById('mKmSizeVal').innerText = userSetKhmerFontSize + 'vh';
         applyShadow();
@@ -2019,7 +2010,7 @@
     function toggleAppMode() { if (appMode === 'random') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; document.getElementById('modeRandomBtn').classList.remove('active'); document.getElementById('modeNormalBtn').classList.add('active'); const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; normalCurrentIdx = idx; normalCurrentPage = getNormalPageForIndex(idx); renderNormalSidebar(); } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; document.getElementById('modeNormalBtn').classList.remove('active'); document.getElementById('modeRandomBtn').classList.add('active'); const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; if (idx !== -1) { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); } else if (vocabList.length) pickRandom(); } saveAllData(); }
     function showSearchPopup() { const modalDiv = document.createElement('div'); modalDiv.className = 'modal-overlay'; modalDiv.innerHTML = `<div class="search-popup"><h3>🔍 Search Vocabulary</h3><input type="text" id="searchInput" placeholder="Type Chinese or Khmer..."><div id="searchResults" class="search-results"></div><button class="close-search close-modal">Cancel</button></div>`; document.body.appendChild(modalDiv); const input = modalDiv.querySelector('#searchInput'); const resultsDiv = modalDiv.querySelector('#searchResults'); const closeBtn = modalDiv.querySelector('.close-search'); const updateResults = () => { const term = input.value.trim().toLowerCase(); if (!term) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">Type to search...</div>'; return; } const filtered = vocabList.map((item, idx) => ({ idx, ...item })).filter(item => item.chinese.toLowerCase().includes(term) || item.khmer.toLowerCase().includes(term)); if (filtered.length === 0) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">No matches</div>'; return; } resultsDiv.innerHTML = filtered.map(item => `<div class="search-result-item" data-idx="${item.idx}"><strong>${item.chinese}</strong> — ${item.khmer}</div>`).join(''); resultsDiv.querySelectorAll('.search-result-item').forEach(el => { el.addEventListener('click', () => { const idx = parseInt(el.dataset.idx); if (appMode === 'normal') { normalCurrentIdx = idx; normalCurrentPage = getNormalPageForIndex(idx); renderNormalSidebar(); } else { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); } modalDiv.remove(); }); }); }; input.addEventListener('input', updateResults); closeBtn.onclick = () => modalDiv.remove(); modalDiv.onclick = (e) => { if (e.target === modalDiv) modalDiv.remove(); }; updateResults(); }
     
-    // ========== DRAG & LAYER (preserved) ==========
+    // ========== DRAG & LAYER (same as previous) ==========
     let chineseElement = null, khmerElement = null;
     let chineseX = 50, chineseY = 40, khmerX = 50, khmerY = 70;
     let topLayerX = 0, topLayerY = 0, bottomLayerX = 0, bottomLayerY = 0;
@@ -2076,7 +2067,6 @@
             if (!hasMovedDuringPress && !dragActive) {
                 const plainText = chineseElement.getAttribute('data-plain') || '';
                 if (plainText) {
-                    // Use toast for both iOS and non-iOS
                     await copyTextDirectly(plainText, "Chinese");
                 }
                 const choice = await showLayerChoiceModal();
@@ -2112,7 +2102,7 @@
         window.addEventListener('touchend', onUp);
     }
     
-    let copyLocked = false; // for khmer pointer down
+    let copyLocked = false;
     
     function onPressMove(e) {
         const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
@@ -2180,7 +2170,6 @@
         const idx = sidebarIndices[sidebarFocusIdx]; 
         if (idx === undefined) return; 
         const item = vocabList[idx]; 
-        // Fallback: if Chinese is empty, use Khmer for the main Chinese display
         const displayChinese = item.chinese || item.khmer;
         updateChineseDisplay(displayChinese); 
         document.getElementById('khmerWord').innerText = item.khmer; 
@@ -2200,41 +2189,80 @@
     function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
     function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
     
-    // ========== SWIPE GESTURES ==========
-    let touchStartY = 0;
+    // ========== SWIPE GESTURES (vertical + horizontal) ==========
+    let touchStartX = 0, touchStartY = 0;
     let touchStartTime = 0;
     const SWIPE_THRESHOLD = 50;
     const SWIPE_MAX_TIME = 300;
+    
     function initSwipeDetection() {
         const displayArea = document.getElementById('displayArea');
         if (!displayArea) return;
         displayArea.addEventListener('touchstart', (e) => {
             const target = e.target;
             if (target.closest('.chinese-word') || target.closest('.khmer-text')) return;
+            touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
             touchStartTime = Date.now();
         }, { passive: false });
         displayArea.addEventListener('touchmove', (e) => {
-            if (touchStartY !== null && !(e.target.closest('.chinese-word') || e.target.closest('.khmer-text'))) {
+            if (touchStartX !== null && !(e.target.closest('.chinese-word') || e.target.closest('.khmer-text'))) {
                 e.preventDefault();
             }
         }, { passive: false });
         displayArea.addEventListener('touchend', (e) => {
-            if (touchStartY === null) return;
+            if (touchStartX === null) return;
+            const touchEndX = e.changedTouches[0].clientX;
             const touchEndY = e.changedTouches[0].clientY;
+            const deltaX = touchEndX - touchStartX;
             const deltaY = touchEndY - touchStartY;
             const elapsed = Date.now() - touchStartTime;
+            touchStartX = null;
             touchStartY = null;
-            if (Math.abs(deltaY) < SWIPE_THRESHOLD || elapsed > SWIPE_MAX_TIME) return;
-            e.preventDefault();
-            if (deltaY < 0) {
-                moveSidebarFocus(-1);
-                showToast("⬆️ Previous word");
-            } else if (deltaY > 0) {
-                moveSidebarFocus(1);
-                showToast("⬇️ Next word");
+            if (elapsed > SWIPE_MAX_TIME) return;
+            if (Math.abs(deltaX) > SWIPE_THRESHOLD && Math.abs(deltaX) > Math.abs(deltaY)) {
+                e.preventDefault();
+                if (deltaX > 0) {
+                    // swipe right → next word
+                    historyNext();
+                    showToast("➡️ Next word");
+                } else {
+                    // swipe left → previous word
+                    historyPrev();
+                    showToast("⬅️ Previous word");
+                }
+            } else if (Math.abs(deltaY) > SWIPE_THRESHOLD && Math.abs(deltaY) > Math.abs(deltaX)) {
+                e.preventDefault();
+                if (deltaY < 0) {
+                    moveSidebarFocus(-1);
+                    showToast("⬆️ Previous word");
+                } else if (deltaY > 0) {
+                    moveSidebarFocus(1);
+                    showToast("⬇️ Next word");
+                }
             }
         });
+    }
+    
+    // ========== MOUSE WHEEL NAVIGATION ==========
+    function initWheelNavigation() {
+        const displayArea = document.getElementById('displayArea');
+        if (!displayArea) return;
+        displayArea.addEventListener('wheel', (e) => {
+            // Only if not holding Ctrl (Ctrl+wheel is for resize)
+            if (!e.ctrlKey) {
+                e.preventDefault();
+                if (e.deltaY < 0) {
+                    // wheel up → next word
+                    historyNext();
+                    showToast("⬆️ Next word");
+                } else if (e.deltaY > 0) {
+                    // wheel down → previous word
+                    historyPrev();
+                    showToast("⬇️ Previous word");
+                }
+            }
+        }, { passive: false });
     }
     
     // ========== DRAGGABLE MENU ==========
@@ -2365,6 +2393,7 @@
         if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) { if (appMode === 'random') pickRandom(); else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } } }
         initNightMode(); applyStyles(); initGearDrag(); setupQRPopup(); setupBackgroundClick(); initChineseDrag(); initKhmerDrag(); loadAllDragPositions();
         initSwipeDetection();
+        initWheelNavigation();
         initCtrlWheelResize();
         
         const gearIcon = document.getElementById('minimizedTrigger');
