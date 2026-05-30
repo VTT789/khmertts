@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Vocab Master Pro | Swipe + Wheel Navigation, Single‑Column Fallback</title>
+    <title>Vocab Master Pro | Fixed Random History + Swipe/Wheel Navigation</title>
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
     <style>
-        /* ========== CUSTOM WEB FONTS ========== */
+        /* ========== CUSTOM WEB FONTS (same as original - kept for brevity) ========== */
         @font-face {
             font-family: 'BaguettePinyin';
             src: url('/static/Fonts/Chinese/pinyin-baguette.woff2') format('woff2');
@@ -1485,7 +1485,7 @@
                 popupMessageSpan.innerText = "📋 Ready to copy";
                 copyBtn.innerText = "Copy";
             }
-        }, 2000);  // 2 seconds for iOS popup
+        }, 2000);
     }
     
     // ========== APP VARIABLES ==========
@@ -1965,7 +1965,7 @@
                 </h3>
                 <div style="margin-bottom:16px;">
                     <input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(item.chinese)}" class="big-edit-input">
-                    <input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(item.khmer)}" class="big-edit-input">
+                    <input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(item.khmer)}" class="big-edit-input>
                 </div>
                 <div class="edit-group-buttons">
                     <button id="confirmUpdateSheetBtn">💾 UPDATE SHEET</button>
@@ -2104,14 +2104,136 @@
     }
     
     function renderRandomSidebar(idx) { const item = vocabList[idx]; const key = item.chinese.substring(0, 1); let related = vocabList.map((it, i) => ({...it, oIdx: i})).filter(it => it.oIdx !== idx && it.chinese.includes(key)).slice(0, 50); sidebarIndices = [idx, ...related.map(i => i.oIdx)]; sidebarFocusIdx = 0; renderSidebarUI(); updateDisplay(); speakAutoSequence(item.chinese, item.khmer); scrollToActiveSidebarItem(); }
-    function loadWordByMode(idx) { killAllSpeech(); if (!vocabList[idx]) return; if (appMode === 'random') { history = history.slice(0, historyIndex + 1); history.push(idx); historyIndex = history.length - 1; renderRandomSidebar(idx); } else { normalCurrentIdx = idx; const newPage = getNormalPageForIndex(idx); if (newPage !== normalCurrentPage) { normalCurrentPage = newPage; renderNormalSidebar(); } else { let focusPos = sidebarIndices.indexOf(idx); if (focusPos !== -1) { sidebarFocusIdx = focusPos; renderSidebarUI(); updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); } else { renderNormalSidebar(); } } } }
-    function goPrevNormal() { if (!vocabList.length) return; let newIdx = normalCurrentIdx - 1; if (newIdx < 0) newIdx = 0; loadWordByMode(newIdx); }
-    function goNextNormal() { if (!vocabList.length) return; let newIdx = normalCurrentIdx + 1; if (newIdx >= vocabList.length) newIdx = vocabList.length - 1; loadWordByMode(newIdx); }
-    function pickRandom() { if (appMode === 'normal') goNextNormal(); else if (vocabList.length) { const idx = Math.floor(Math.random() * vocabList.length); history = history.slice(0, historyIndex + 1); history.push(idx); historyIndex = history.length - 1; loadWordByMode(idx); } }
-    function historyPrev() { if (appMode === 'random') { if (historyIndex > 0) { historyIndex--; loadWordByMode(history[historyIndex]); } } else goPrevNormal(); }
-    function historyNext() { if (appMode === 'random') { if (historyIndex < history.length - 1) { historyIndex++; loadWordByMode(history[historyIndex]); } } else goNextNormal(); }
-    function toggleAppMode() { if (appMode === 'random') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; document.getElementById('modeRandomBtn').classList.remove('active'); document.getElementById('modeNormalBtn').classList.add('active'); const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; normalCurrentIdx = idx; normalCurrentPage = getNormalPageForIndex(idx); renderNormalSidebar(); } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; document.getElementById('modeNormalBtn').classList.remove('active'); document.getElementById('modeRandomBtn').classList.add('active'); const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; if (idx !== -1) { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); } else if (vocabList.length) pickRandom(); } saveAllData(); }
-    function showSearchPopup() { const modalDiv = document.createElement('div'); modalDiv.className = 'modal-overlay'; modalDiv.innerHTML = `<div class="search-popup"><h3>🔍 Search Vocabulary</h3><input type="text" id="searchInput" placeholder="Type Chinese or Khmer..."><div id="searchResults" class="search-results"></div><button class="close-search close-modal">Cancel</button></div>`; document.body.appendChild(modalDiv); const input = modalDiv.querySelector('#searchInput'); const resultsDiv = modalDiv.querySelector('#searchResults'); const closeBtn = modalDiv.querySelector('.close-search'); const updateResults = () => { const term = input.value.trim().toLowerCase(); if (!term) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">Type to search...</div>'; return; } const filtered = vocabList.map((item, idx) => ({ idx, ...item })).filter(item => item.chinese.toLowerCase().includes(term) || item.khmer.toLowerCase().includes(term)); if (filtered.length === 0) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">No matches</div>'; return; } resultsDiv.innerHTML = filtered.map(item => `<div class="search-result-item" data-idx="${item.idx}"><strong>${item.chinese}</strong> — ${item.khmer}</div>`).join(''); resultsDiv.querySelectorAll('.search-result-item').forEach(el => { el.addEventListener('click', () => { const idx = parseInt(el.dataset.idx); if (appMode === 'normal') { normalCurrentIdx = idx; normalCurrentPage = getNormalPageForIndex(idx); renderNormalSidebar(); } else { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); } modalDiv.remove(); }); }); }; input.addEventListener('input', updateResults); closeBtn.onclick = () => modalDiv.remove(); modalDiv.onclick = (e) => { if (e.target === modalDiv) modalDiv.remove(); }; updateResults(); }
+    
+    // Fixed loadWordByMode with addToHistory flag
+    function loadWordByMode(idx, addToHistory = true) { 
+        killAllSpeech(); 
+        if (!vocabList[idx]) return; 
+        if (appMode === 'random') { 
+            if (addToHistory) {
+                // Only add to history if it's a new word (not from prev/next)
+                if (history[historyIndex] !== idx) {
+                    history = history.slice(0, historyIndex + 1);
+                    history.push(idx);
+                    historyIndex = history.length - 1;
+                }
+            }
+            renderRandomSidebar(idx); 
+        } else { 
+            normalCurrentIdx = idx; 
+            const newPage = getNormalPageForIndex(idx); 
+            if (newPage !== normalCurrentPage) { 
+                normalCurrentPage = newPage; 
+                renderNormalSidebar(); 
+            } else { 
+                let focusPos = sidebarIndices.indexOf(idx); 
+                if (focusPos !== -1) { 
+                    sidebarFocusIdx = focusPos; 
+                    renderSidebarUI(); 
+                    updateDisplay(); 
+                    const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; 
+                    if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); 
+                    scrollToActiveSidebarItem(); 
+                } else { 
+                    renderNormalSidebar(); 
+                } 
+            } 
+        } 
+    }
+    
+    function goPrevNormal() { if (!vocabList.length) return; let newIdx = normalCurrentIdx - 1; if (newIdx < 0) newIdx = 0; loadWordByMode(newIdx, true); }
+    function goNextNormal() { if (!vocabList.length) return; let newIdx = normalCurrentIdx + 1; if (newIdx >= vocabList.length) newIdx = vocabList.length - 1; loadWordByMode(newIdx, true); }
+    
+    function pickRandom() { 
+        if (appMode === 'normal') goNextNormal(); 
+        else if (vocabList.length) { 
+            const idx = Math.floor(Math.random() * vocabList.length); 
+            loadWordByMode(idx, true); 
+        } 
+    }
+    
+    function historyPrev() { 
+        if (appMode === 'random') { 
+            if (historyIndex > 0) { 
+                historyIndex--; 
+                loadWordByMode(history[historyIndex], false);  // Do NOT add to history again
+            } 
+        } else goPrevNormal(); 
+    }
+    
+    function historyNext() { 
+        if (appMode === 'random') { 
+            if (historyIndex < history.length - 1) { 
+                historyIndex++; 
+                loadWordByMode(history[historyIndex], false);  // Do NOT add to history again
+            } 
+        } else goNextNormal(); 
+    }
+    
+    function toggleAppMode() { 
+        if (appMode === 'random') { 
+            appMode = 'normal'; 
+            document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; 
+            document.getElementById('modeRandomBtn').classList.remove('active'); 
+            document.getElementById('modeNormalBtn').classList.add('active'); 
+            const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; 
+            let idx = vocabList.findIndex(v => v.chinese === currentChinese); 
+            if (idx === -1 && vocabList.length) idx = 0; 
+            normalCurrentIdx = idx; 
+            normalCurrentPage = getNormalPageForIndex(idx); 
+            renderNormalSidebar(); 
+        } else { 
+            appMode = 'random'; 
+            document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; 
+            document.getElementById('modeNormalBtn').classList.remove('active'); 
+            document.getElementById('modeRandomBtn').classList.add('active'); 
+            const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; 
+            let idx = vocabList.findIndex(v => v.chinese === currentChinese); 
+            if (idx === -1 && vocabList.length) idx = 0; 
+            if (idx !== -1) { 
+                history = [idx]; 
+                historyIndex = 0; 
+                renderRandomSidebar(idx); 
+            } else if (vocabList.length) pickRandom(); 
+        } 
+        saveAllData(); 
+    }
+    
+    function showSearchPopup() { 
+        const modalDiv = document.createElement('div'); 
+        modalDiv.className = 'modal-overlay'; 
+        modalDiv.innerHTML = `<div class="search-popup"><h3>🔍 Search Vocabulary</h3><input type="text" id="searchInput" placeholder="Type Chinese or Khmer..."><div id="searchResults" class="search-results"></div><button class="close-search close-modal">Cancel</button></div>`; 
+        document.body.appendChild(modalDiv); 
+        const input = modalDiv.querySelector('#searchInput'); 
+        const resultsDiv = modalDiv.querySelector('#searchResults'); 
+        const closeBtn = modalDiv.querySelector('.close-search'); 
+        const updateResults = () => { 
+            const term = input.value.trim().toLowerCase(); 
+            if (!term) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">Type to search...</div>'; return; } 
+            const filtered = vocabList.map((item, idx) => ({ idx, ...item })).filter(item => item.chinese.toLowerCase().includes(term) || item.khmer.toLowerCase().includes(term)); 
+            if (filtered.length === 0) { resultsDiv.innerHTML = '<div style="padding:8px; text-align:center;">No matches</div>'; return; } 
+            resultsDiv.innerHTML = filtered.map(item => `<div class="search-result-item" data-idx="${item.idx}"><strong>${item.chinese}</strong> — ${item.khmer}</div>`).join(''); 
+            resultsDiv.querySelectorAll('.search-result-item').forEach(el => { 
+                el.addEventListener('click', () => { 
+                    const idx = parseInt(el.dataset.idx); 
+                    if (appMode === 'normal') { 
+                        normalCurrentIdx = idx; 
+                        normalCurrentPage = getNormalPageForIndex(idx); 
+                        renderNormalSidebar(); 
+                    } else { 
+                        history = [idx]; 
+                        historyIndex = 0; 
+                        renderRandomSidebar(idx); 
+                    } 
+                    modalDiv.remove(); 
+                }); 
+            }); 
+        }; 
+        input.addEventListener('input', updateResults); 
+        closeBtn.onclick = () => modalDiv.remove(); 
+        modalDiv.onclick = (e) => { if (e.target === modalDiv) modalDiv.remove(); }; 
+        updateResults(); 
+    }
     
     // ========== DRAG & LAYER (preserved) ==========
     let chineseElement = null, khmerElement = null;
@@ -2262,7 +2384,7 @@
                     <span class="side-zh">${escapeHtml(vocabList[idx].chinese)}</span>
                     <span class="side-km">${escapeHtml(vocabList[idx].khmer)}</span>
                 </div>
-                <button class="select-main-btn" onclick="loadWordByMode(${idx}); event.stopPropagation()">MAIN</button>
+                <button class="select-main-btn" onclick="loadWordByMode(${idx}, true); event.stopPropagation()">MAIN</button>
             `; 
             list.appendChild(div); 
         } 
@@ -2279,7 +2401,6 @@
         const idx = sidebarIndices[sidebarFocusIdx]; 
         if (idx === undefined) return; 
         const item = vocabList[idx]; 
-        // Show Chinese in the chineseWord area if available; otherwise show Khmer (for single‑column fallback)
         const displayChinese = item.chinese || item.khmer;
         updateChineseDisplay(displayChinese); 
         document.getElementById('khmerWord').innerText = item.khmer || ''; 
@@ -2340,7 +2461,6 @@
         const displayArea = document.getElementById('displayArea');
         if (!displayArea) return;
         displayArea.addEventListener('wheel', (e) => {
-            // Ignore if Ctrl is pressed (resize) or if target is inside word areas (already handled)
             if (e.ctrlKey) return;
             const target = e.target;
             if (target.closest('.chinese-word') || target.closest('.khmer-text')) return;
