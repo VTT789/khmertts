@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Vocab Master Pro | Fixed Random History + Swipe/Wheel Navigation</title>
+    <title>Vocab Master Pro | Updated Swipe Gestures</title>
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
     <style>
-        /* ========== CUSTOM WEB FONTS (same as original - kept for brevity) ========== */
+        /* ========== CUSTOM WEB FONTS ========== */
         @font-face {
             font-family: 'BaguettePinyin';
             src: url('/static/Fonts/Chinese/pinyin-baguette.woff2') format('woff2');
@@ -1965,7 +1965,7 @@
                 </h3>
                 <div style="margin-bottom:16px;">
                     <input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(item.chinese)}" class="big-edit-input">
-                    <input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(item.khmer)}" class="big-edit-input>
+                    <input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(item.khmer)}" class="big-edit-input">
                 </div>
                 <div class="edit-group-buttons">
                     <button id="confirmUpdateSheetBtn">💾 UPDATE SHEET</button>
@@ -2105,13 +2105,11 @@
     
     function renderRandomSidebar(idx) { const item = vocabList[idx]; const key = item.chinese.substring(0, 1); let related = vocabList.map((it, i) => ({...it, oIdx: i})).filter(it => it.oIdx !== idx && it.chinese.includes(key)).slice(0, 50); sidebarIndices = [idx, ...related.map(i => i.oIdx)]; sidebarFocusIdx = 0; renderSidebarUI(); updateDisplay(); speakAutoSequence(item.chinese, item.khmer); scrollToActiveSidebarItem(); }
     
-    // Fixed loadWordByMode with addToHistory flag
     function loadWordByMode(idx, addToHistory = true) { 
         killAllSpeech(); 
         if (!vocabList[idx]) return; 
         if (appMode === 'random') { 
             if (addToHistory) {
-                // Only add to history if it's a new word (not from prev/next)
                 if (history[historyIndex] !== idx) {
                     history = history.slice(0, historyIndex + 1);
                     history.push(idx);
@@ -2156,7 +2154,7 @@
         if (appMode === 'random') { 
             if (historyIndex > 0) { 
                 historyIndex--; 
-                loadWordByMode(history[historyIndex], false);  // Do NOT add to history again
+                loadWordByMode(history[historyIndex], false);
             } 
         } else goPrevNormal(); 
     }
@@ -2165,7 +2163,7 @@
         if (appMode === 'random') { 
             if (historyIndex < history.length - 1) { 
                 historyIndex++; 
-                loadWordByMode(history[historyIndex], false);  // Do NOT add to history again
+                loadWordByMode(history[historyIndex], false);
             } 
         } else goNextNormal(); 
     }
@@ -2235,7 +2233,7 @@
         updateResults(); 
     }
     
-    // ========== DRAG & LAYER (preserved) ==========
+    // ========== DRAG & LAYER ==========
     let chineseElement = null, khmerElement = null;
     let chineseX = 50, chineseY = 40, khmerX = 50, khmerY = 70;
     let topLayerX = 0, topLayerY = 0, bottomLayerX = 0, bottomLayerY = 0;
@@ -2420,38 +2418,67 @@
     function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
     function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
     
-    // ========== SWIPE GESTURES (navigate history) ==========
-    let touchStartX = 0;
-    let touchStartTimeX = 0;
-    const SWIPE_THRESHOLD_X = 50;
+    // ========== UPDATED SWIPE GESTURES ==========
+    let touchStartX = 0, touchStartY = 0;
+    let touchStartTime = 0;
+    const SWIPE_THRESHOLD = 50;
+    const SWIPE_MAX_TIME = 300;
+    
     function initSwipeDetection() {
         const displayArea = document.getElementById('displayArea');
         if (!displayArea) return;
+        
         displayArea.addEventListener('touchstart', (e) => {
             const target = e.target;
             if (target.closest('.chinese-word') || target.closest('.khmer-text')) return;
             touchStartX = e.touches[0].clientX;
-            touchStartTimeX = Date.now();
+            touchStartY = e.touches[0].clientY;
+            touchStartTime = Date.now();
         }, { passive: false });
+        
         displayArea.addEventListener('touchmove', (e) => {
-            if (touchStartX !== null && !(e.target.closest('.chinese-word') || e.target.closest('.khmer-text'))) {
+            if (touchStartX !== 0 && !(e.target.closest('.chinese-word') || e.target.closest('.khmer-text'))) {
                 e.preventDefault();
             }
         }, { passive: false });
+        
         displayArea.addEventListener('touchend', (e) => {
-            if (touchStartX === null) return;
+            if (touchStartX === 0 && touchStartY === 0) return;
             const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
             const deltaX = touchEndX - touchStartX;
-            const elapsed = Date.now() - touchStartTimeX;
-            touchStartX = null;
-            if (Math.abs(deltaX) < SWIPE_THRESHOLD_X || elapsed > 300) return;
+            const deltaY = touchEndY - touchStartY;
+            const elapsed = Date.now() - touchStartTime;
+            touchStartX = 0; touchStartY = 0;
+            
+            if (Math.abs(deltaX) < SWIPE_THRESHOLD && Math.abs(deltaY) < SWIPE_THRESHOLD) return;
+            if (elapsed > SWIPE_MAX_TIME) return;
+            
             e.preventDefault();
-            if (deltaX > 0) { // Swipe right → previous word
-                historyPrev();
-                showToast("⬅️ Previous word");
-            } else if (deltaX < 0) { // Swipe left → next word
-                historyNext();
-                showToast("➡️ Next word");
+            
+            // Determine primary swipe direction
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // Horizontal swipe
+                if (deltaX > 0) {
+                    // Swipe Right → Sidebar Focus Down
+                    moveSidebarFocus(1);
+                    showToast("➡️ Sidebar Down");
+                } else {
+                    // Swipe Left → Sidebar Focus Up
+                    moveSidebarFocus(-1);
+                    showToast("⬅️ Sidebar Up");
+                }
+            } else {
+                // Vertical swipe
+                if (deltaY > 0) {
+                    // Swipe Down → History Next
+                    historyNext();
+                    showToast("⬇️ Next word");
+                } else {
+                    // Swipe Up → History Previous
+                    historyPrev();
+                    showToast("⬆️ Previous word");
+                }
             }
         });
     }
@@ -2465,10 +2492,10 @@
             const target = e.target;
             if (target.closest('.chinese-word') || target.closest('.khmer-text')) return;
             e.preventDefault();
-            if (e.deltaY > 0) { // Scroll down → next word
+            if (e.deltaY > 0) {
                 historyNext();
                 showToast("⬇️ Next word");
-            } else if (e.deltaY < 0) { // Scroll up → previous word
+            } else if (e.deltaY < 0) {
                 historyPrev();
                 showToast("⬆️ Previous word");
             }
