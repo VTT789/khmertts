@@ -341,6 +341,14 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .drag-title-text .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 6px;
+            border-radius: 20px;
+            font-size: 10px;
         }
         .aba-icon-inline {
             width: 24px;
@@ -352,10 +360,10 @@
             background: rgba(255,255,255,0.15);
             padding: 2px;
             box-sizing: border-box;
+            pointer-events: auto;
         }
-        .aba-icon-inline:hover {
-            transform: scale(1.05);
-            opacity: 0.9;
+        .aba-icon-inline:active {
+            transform: scale(0.95);
         }
         
         .drag-dark-toggle {
@@ -365,6 +373,10 @@
             font-size: 18px;
             cursor: pointer;
             flex-shrink: 0;
+            pointer-events: auto;
+        }
+        .drag-dark-toggle:active {
+            transform: scale(0.95);
         }
 
         #minimizedTrigger {
@@ -403,7 +415,24 @@
         .style-grid { display: grid; grid-template-columns: 25px 1fr 40px 35px 40px; gap: 6px; align-items: center; margin-bottom: 6px; }
         .side-style-grid { display: grid; grid-template-columns: 35px 1fr 40px; gap: 6px; align-items: center; margin-bottom: 6px; }
         .pinyin-style-grid { display: grid; grid-template-columns: 35px 1fr 40px 40px; gap: 6px; align-items: center; margin-bottom: 6px; }
-        .shadow-style-grid { display: grid; grid-template-columns: 50px 1fr 40px; gap: 6px; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+        .shadow-style-grid { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            margin-top: 8px; 
+            padding-top: 8px; 
+            border-top: 1px solid var(--border);
+        }
+        .shadow-style-grid label {
+            font-size: 0.65rem;
+            font-weight: bold;
+            width: 50px;
+            color: var(--text-secondary);
+        }
+        .shadow-style-grid .size-slider {
+            flex: 1;
+            max-width: 150px;
+        }
 
         .voice-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px solid var(--border); transition: all 0.2s; }
         .size-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding: 0 5px; }
@@ -708,6 +737,30 @@
         .resizer.hidden { width: 0 !important; opacity: 0; pointer-events: none; }
 
         .vocab-list { flex-grow: 1; overflow-y: auto; padding: 10px; scroll-behavior: smooth; }
+        .vocab-header {
+            display: grid;
+            grid-template-columns: 60px 1fr;
+            gap: 12px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            background: var(--accent);
+            color: white;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+        .vocab-header span:first-child {
+            text-align: center;
+        }
+        .vocab-header span:last-child {
+            padding-left: 8px;
+        }
+        body.night-mode .vocab-header {
+            background: #1e40af;
+        }
         .vocab-item { 
             padding: 10px 12px; 
             margin-bottom: var(--vocab-spacing, 8px); 
@@ -749,12 +802,17 @@
             opacity: 0.7;
             line-height: 1;
         }
-        .edit-side-icon:hover, .sheet-row-icon:hover {
+        .edit-side-icon.disabled, .sheet-row-icon.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: auto;
+        }
+        .edit-side-icon:hover:not(.disabled), .sheet-row-icon:hover:not(.disabled) {
             opacity: 1;
             background: rgba(0,0,0,0.1);
             transform: scale(1.05);
         }
-        body.night-mode .edit-side-icon:hover, body.night-mode .sheet-row-icon:hover {
+        body.night-mode .edit-side-icon:hover:not(.disabled), body.night-mode .sheet-row-icon:hover:not(.disabled) {
             background: rgba(255,255,255,0.15);
         }
         .side-icons-row {
@@ -799,6 +857,24 @@
             text-align: center;
             box-shadow: 0 25px 50px rgba(0,0,0,0.3);
             animation: fadeInUp 0.2s ease;
+        }
+        .password-modal {
+            background: white;
+            border-radius: 24px;
+            padding: 24px 28px;
+            width: 320px;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        }
+        .password-modal input {
+            width: 100%;
+            padding: 12px;
+            margin: 16px 0;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+            font-size: 1rem;
+            text-align: center;
         }
         .search-popup {
             background: var(--card-bg);
@@ -1241,15 +1317,15 @@
         <div id="floatingMenu" onclick="event.stopPropagation()">
             <div class="drag-handle" id="dragHandle">
                 <div class="drag-title-wrapper">
-                    <span class="drag-title-text">⠿ EDGE TTS STUDIO</span>
+                    <span class="drag-title-text"><span class="badge">⠿</span> ភាសាខ្មែរ | 中文 STUDIO</span>
                     <img src="/static/ABAicon.png" id="abaIconInline" class="aba-icon-inline" alt="ABA" title="Show QR Code & Load Vocabulary">
                 </div>
                 <button id="dragDarkModeBtn" class="drag-dark-toggle">🌙</button>
-                <button onclick="toggleMenu(true)" style="background: none; border: none; color: inherit; font-size: 18px; cursor: pointer;">✕</button>
+                <button onclick="toggleMenu(true)" style="background: none; border: none; color: inherit; font-size: 18px; cursor: pointer; pointer-events: auto;">✕</button>
             </div>
             
             <div id="panelContent">
-                <button id="insertDataBtn" class="btn-main btn-accent" style="background: linear-gradient(135deg, #2563eb, #1e40af); margin-bottom: 12px; width: 100%; font-size: 0.85rem; padding: 10px;">➕ INSERT VOCAB</button>
+                <button id="insertDataBtn" class="btn-main btn-accent" style="background: linear-gradient(135deg, #2563eb, #1e40af); margin-bottom: 12px; width: 100%; font-size: 0.85rem; padding: 10px; cursor: pointer;">➕ INSERT VOCAB</button>
                 
                 <div class="nav-row">
                     <button class="btn-main" onclick="historyPrev()">← (Left)</button>
@@ -1405,12 +1481,14 @@
 </div>
 
 <div id="qrPopupOverlay" class="qr-overlay"><div class="qr-card"><button class="qr-close-btn" id="qrCloseBtn">✕</button><img src="/static/QR.png" alt="QR Code"></div></div>
-<div id="fileSourceModal" class="file-source-modal"><div class="file-source-card"><h3>📥 Load Vocabulary</h3><div class="source-buttons"><button id="chooseLocalBtn">📁 Local File</button><button id="chooseUrlBtn">🌐 Google Sheets URL</button></div><div id="urlInputArea" style="display:none;"><input type="text" id="sheetUrlInputModal" placeholder="Sheet URL or ID"><button id="confirmUrlLoad">Load</button></div><button class="close-modal" id="closeModalBtn">Cancel</button></div></div>
 
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script>
     // ========== DETECT PLATFORM ==========
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    let dynamicPassword = "012891556";
+    let editUnlocked = false;
+    let activePasswordModal = null;
     
     // ========== GLOBAL COPY SYSTEM ==========
     let copyLocked = false;
@@ -1504,6 +1582,87 @@
         }, 2000);
     }
     
+    // ========== PASSWORD PROTECTION ==========
+    function showPasswordModal(callback) {
+        if (activePasswordModal) return;
+        
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal-overlay';
+        modalDiv.innerHTML = `
+            <div class="password-modal">
+                <h3>🔐 Enter Password</h3>
+                <input type="password" id="passwordInput" placeholder="Enter password to unlock edit" autocomplete="off">
+                <div class="edit-group-buttons" style="margin-top: 10px;">
+                    <button id="unlockBtn" style="background:#10b981;">UNLOCK</button>
+                    <button id="cancelPasswordBtn" style="background:#475569;">CANCEL</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+        activePasswordModal = modalDiv;
+        
+        const input = modalDiv.querySelector('#passwordInput');
+        const unlockBtn = modalDiv.querySelector('#unlockBtn');
+        const cancelBtn = modalDiv.querySelector('#cancelPasswordBtn');
+        
+        const closeModal = () => {
+            if (activePasswordModal) {
+                activePasswordModal.remove();
+                activePasswordModal = null;
+            }
+        };
+        
+        unlockBtn.onclick = () => {
+            if (input.value === dynamicPassword) {
+                editUnlocked = true;
+                showToast("✅ Edit mode unlocked!");
+                closeModal();
+                if (callback) callback(true);
+                renderSidebarUI();
+            } else {
+                showToast("❌ Wrong password!");
+                input.value = "";
+                input.focus();
+            }
+        };
+        
+        cancelBtn.onclick = () => {
+            closeModal();
+            if (callback) callback(false);
+        };
+        
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') unlockBtn.click();
+        });
+        
+        input.focus();
+        
+        modalDiv.addEventListener('click', (e) => {
+            if (e.target === modalDiv) {
+                closeModal();
+                if (callback) callback(false);
+            }
+        });
+    }
+    
+    function isEditEnabled() {
+        return editUnlocked;
+    }
+    
+    function updateEditButtonsState() {
+        const editIcons = document.querySelectorAll('.edit-side-icon');
+        const sheetIcons = document.querySelectorAll('.sheet-row-icon');
+        const disabledClass = 'disabled';
+        
+        if (editUnlocked) {
+            editIcons.forEach(btn => btn.classList.remove(disabledClass));
+            sheetIcons.forEach(btn => btn.classList.remove(disabledClass));
+        } else {
+            editIcons.forEach(btn => btn.classList.add(disabledClass));
+            sheetIcons.forEach(btn => btn.classList.add(disabledClass));
+        }
+    }
+    
     // ========== APP VARIABLES ==========
     let userSetChineseFontSize = 42;
     let userSetKhmerFontSize = 42;
@@ -1542,6 +1701,12 @@
     }
     
     function openSheetAndActivateCell(rowNum) {
+        if (!editUnlocked) {
+            showPasswordModal((unlocked) => {
+                if (unlocked) openSheetAndActivateCell(rowNum);
+            });
+            return;
+        }
         if (!currentSheetId) {
             showToast("❌ No sheet loaded");
             return;
@@ -1611,18 +1776,15 @@
                 
                 if (i === 1 && apiColIndex !== -1 && rowValues.length > apiColIndex) {
                     const apiValue = rowValues[apiColIndex];
-                    if (apiValue && apiValue.toString().startsWith('http')) {
+                    if (apiValue && apiValue.toString().trim()) {
                         apiUrlFound = apiValue.toString().trim();
                     }
                 }
-            }
-            
-            if (!apiUrlFound && data[0] && apiColIndex !== -1) {
-                const headerValues = Object.values(data[0]);
-                if (headerValues.length > apiColIndex) {
-                    const apiValue = headerValues[apiColIndex];
-                    if (apiValue && apiValue.toString().startsWith('http')) {
-                        apiUrlFound = apiValue.toString().trim();
+                
+                if (i === 2 && apiColIndex !== -1 && rowValues.length > apiColIndex) {
+                    const passwordValue = rowValues[apiColIndex];
+                    if (passwordValue && passwordValue.toString().trim()) {
+                        dynamicPassword = passwordValue.toString().trim();
                     }
                 }
             }
@@ -1631,10 +1793,13 @@
             detectedApiUrl = apiUrlFound;
             vocabularyData = vocabList;
             
+            editUnlocked = false;
+            updateEditButtonsState();
+            
             if (detectedApiUrl) {
-                showToast(`✅ Loaded ${vocabList.length} words. API URL found!`);
+                showToast(`✅ Loaded ${vocabList.length} words. API URL from Col H Row 1! Password from Col H Row 2`);
             } else {
-                showToast(`✅ Loaded ${vocabList.length} words. ⚠️ No API URL in Column 8`);
+                showToast(`✅ Loaded ${vocabList.length} words. ⚠️ No API URL in Column H Row 1`);
             }
             
             saveAllData();
@@ -1663,8 +1828,15 @@
     
     // ========== API CALLS ==========
     async function callApi(payload, op) {
+        if (!editUnlocked) {
+            showPasswordModal(async (unlocked) => {
+                if (unlocked) await callApi(payload, op);
+            });
+            return false;
+        }
+        
         if (!detectedApiUrl || !detectedApiUrl.startsWith('http')) {
-            showToast("❌ No valid API URL found. Add API URL to Column 8 (H)");
+            showToast("❌ No valid API URL found. Add API URL to Column H Row 1");
             return false;
         }
         
@@ -1699,6 +1871,13 @@
     }
     
     async function addVocabToSheet(khmer, chinese) {
+        if (!editUnlocked) {
+            showPasswordModal(async (unlocked) => {
+                if (unlocked) await addVocabToSheet(khmer, chinese);
+            });
+            return false;
+        }
+        
         if (!khmer && !chinese) {
             showToast("⚠️ Please enter Khmer or Chinese");
             return false;
@@ -1707,6 +1886,13 @@
     }
     
     async function updateVocabByRow(sheetRow, khmer, chinese) {
+        if (!editUnlocked) {
+            showPasswordModal(async (unlocked) => {
+                if (unlocked) await updateVocabByRow(sheetRow, khmer, chinese);
+            });
+            return false;
+        }
+        
         if (!sheetRow || sheetRow < 2) {
             showToast("❌ Invalid row number");
             return false;
@@ -1715,6 +1901,13 @@
     }
     
     async function deleteVocabByRow(sheetRow) {
+        if (!editUnlocked) {
+            showPasswordModal(async (unlocked) => {
+                if (unlocked) await deleteVocabByRow(sheetRow);
+            });
+            return false;
+        }
+        
         if (!sheetRow || sheetRow < 2) {
             showToast("❌ Invalid row number");
             return false;
@@ -1731,11 +1924,72 @@
         }, 100);
     }
     
+    // ========== LOAD VOCABULARY MODAL ==========
+    function showLoadVocabularyModal() {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal-overlay';
+        modalDiv.innerHTML = `
+            <div class="file-source-card">
+                <h3>📥 Load Vocabulary</h3>
+                <div class="url-input-area">
+                    <input type="text" id="sheetUrlInputModal" placeholder="Google Sheet URL or ID" value="">
+                    <button id="confirmUrlLoad" class="confirm-url-btn">Load Sheet</button>
+                </div>
+                <button class="close-modal" id="closeModalBtn">Cancel</button>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+        
+        const urlInput = modalDiv.querySelector('#sheetUrlInputModal');
+        const loadBtn = modalDiv.querySelector('#confirmUrlLoad');
+        const closeBtn = modalDiv.querySelector('#closeModalBtn');
+        
+        loadBtn.onclick = async () => {
+            const url = urlInput.value.trim();
+            if (!url) {
+                showToast("❌ Please enter a Google Sheet URL or ID", true);
+                return;
+            }
+            
+            const extractedId = extractSheetIdFromUrl(url);
+            if (!extractedId) {
+                showToast("❌ Invalid Google Sheet URL. Could not extract Sheet ID.", true);
+                return;
+            }
+            
+            currentSheetId = extractedId;
+            currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`;
+            
+            showToast(`📥 Loading sheet: ${currentSheetId}`);
+            await loadSheetData();
+            modalDiv.remove();
+        };
+        
+        closeBtn.onclick = () => modalDiv.remove();
+        modalDiv.onclick = (e) => { if (e.target === modalDiv) modalDiv.remove(); };
+    }
+    
     // ========== UI & APP FUNCTIONS ==========
     function getNormalPageForIndex(idx) { return Math.floor(idx / ITEMS_PER_PAGE); }
     function scrollToActiveSidebarItem() { setTimeout(() => { const activeItem = document.querySelector('.vocab-item.active'); if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50); }
     
-    function renderNormalSidebar() { if (!vocabList.length) return; const start = normalCurrentPage * ITEMS_PER_PAGE; const end = Math.min(start + ITEMS_PER_PAGE, vocabList.length); const indices = []; for (let i = start; i < end; i++) indices.push(i); sidebarIndices = indices; let focusPos = indices.indexOf(normalCurrentIdx); if (focusPos === -1 && indices.length) { normalCurrentIdx = indices[0]; focusPos = 0; } sidebarFocusIdx = focusPos >= 0 ? focusPos : 0; renderSidebarUI(); updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); updatePaginationControls(); scrollToActiveSidebarItem(); }
+    function renderNormalSidebar() { 
+        if (!vocabList.length) return; 
+        const start = normalCurrentPage * ITEMS_PER_PAGE; 
+        const end = Math.min(start + ITEMS_PER_PAGE, vocabList.length); 
+        const indices = []; 
+        for (let i = start; i < end; i++) indices.push(i); 
+        sidebarIndices = indices; 
+        let focusPos = indices.indexOf(normalCurrentIdx); 
+        if (focusPos === -1 && indices.length) { normalCurrentIdx = indices[0]; focusPos = 0; } 
+        sidebarFocusIdx = focusPos >= 0 ? focusPos : 0; 
+        renderSidebarUI(); 
+        updateDisplay(); 
+        const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; 
+        if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); 
+        updatePaginationControls(); 
+        scrollToActiveSidebarItem(); 
+    }
     
     function updatePaginationControls() { 
         const container = document.getElementById('paginationContainer'); 
@@ -1893,18 +2147,26 @@
     function renderSidebarUI() { 
         const list = document.getElementById('sidebarList'); 
         list.innerHTML = ''; 
+        
+        // Add header
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'vocab-header';
+        headerDiv.innerHTML = `<span>#</span><span>WORD (ខ្មែរ / 中文)</span>`;
+        list.appendChild(headerDiv);
+        
         for (let sIdx = 0; sIdx < sidebarIndices.length; sIdx++) { 
             const idx = sidebarIndices[sIdx]; 
             const div = document.createElement('div'); 
             div.className = `vocab-item ${sIdx === sidebarFocusIdx ? 'active' : ''}`; 
             const displayRow = getDisplayRow(idx);
             const sheetRow = getSheetRow(idx);
+            const disabledClass = !editUnlocked ? 'disabled' : '';
             div.innerHTML = `
                 <div class="side-number-col">
                     <div class="side-number">#${displayRow}</div>
                     <div class="side-icons-row">
-                        <button class="edit-side-icon" onclick="event.stopPropagation(); showEditModal(${idx}, ${sheetRow}, '${escapeHtml(vocabList[idx].khmer)}', '${escapeHtml(vocabList[idx].chinese)}')" title="Edit in Google Sheets">✏️</button>
-                        <button class="sheet-row-icon" onclick="event.stopPropagation(); openSheetAndActivateCell(${sheetRow})" title="Open Google Sheets at Row ${sheetRow}">📊</button>
+                        <button class="edit-side-icon ${disabledClass}" onclick="event.stopPropagation(); ${editUnlocked ? `showEditModal(${idx}, ${sheetRow}, '${escapeHtml(vocabList[idx].khmer)}', '${escapeHtml(vocabList[idx].chinese)}')` : `showPasswordModal(()=>{renderSidebarUI();})`}" title="Edit in Google Sheets">✏️</button>
+                        <button class="sheet-row-icon ${disabledClass}" onclick="event.stopPropagation(); ${editUnlocked ? `openSheetAndActivateCell(${sheetRow})` : `showPasswordModal(()=>{})`}" title="Open Google Sheets at Row ${sheetRow}">📊</button>
                     </div>
                 </div>
                 <div class="word-wrapper" onclick="loadWordByMode(${idx}, true); event.stopPropagation()">
@@ -1922,6 +2184,11 @@
     function selectSidebarItem(sideIdx) { sidebarFocusIdx = sideIdx; const idx = sidebarIndices[sideIdx]; if (appMode === 'normal') normalCurrentIdx = idx; updateDisplay(); const item = vocabList[idx]; if (item) speakAutoSequence(item.chinese, item.khmer); saveAllData(); scrollToActiveSidebarItem(); }
     
     window.showEditModal = function(idx, sheetRow, currentKhmer, currentChinese) {
+        if (!editUnlocked) {
+            showPasswordModal(() => { showEditModal(idx, sheetRow, currentKhmer, currentChinese); });
+            return;
+        }
+        
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
         modalDiv.innerHTML = `
@@ -1973,12 +2240,10 @@
             if (confirm(`⚠️ Delete row ${sheetRow}?`)) {
                 const success = await deleteVocabByRow(sheetRow);
                 if (success) {
-                    // Remove from local list and update without full reload
                     const deletedIdx = idx;
                     vocabList.splice(deletedIdx, 1);
                     saveAllData();
                     
-                    // Update indices
                     if (vocabList.length === 0) {
                         sidebarIndices = [];
                         renderSidebarUI();
@@ -1986,7 +2251,6 @@
                         document.getElementById('khmerWord').innerText = "";
                         showToast("All vocabulary deleted");
                     } else {
-                        // Adjust normalCurrentIdx if needed
                         if (appMode === 'normal') {
                             if (normalCurrentIdx >= vocabList.length) {
                                 normalCurrentIdx = vocabList.length - 1;
@@ -1994,7 +2258,6 @@
                             normalCurrentPage = getNormalPageForIndex(normalCurrentIdx);
                             renderNormalSidebar();
                         } else {
-                            // Random mode: find a new word to display
                             let newIdx = deletedIdx;
                             if (newIdx >= vocabList.length) newIdx = vocabList.length - 1;
                             if (newIdx < 0 && vocabList.length > 0) newIdx = 0;
@@ -2019,6 +2282,11 @@
     };
     
     function showAddNewModal() {
+        if (!editUnlocked) {
+            showPasswordModal(() => { showAddNewModal(); });
+            return;
+        }
+        
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
         modalDiv.innerHTML = `
@@ -2069,15 +2337,12 @@
     }
     
     // ========== PINYIN FIX ==========
-    // Custom pinyin function that works with pinyin-pro library
     function getPinyinForText(text) {
         if (!text || typeof window.pinyinPro === 'undefined') {
-            console.warn("pinyinPro not loaded yet");
             return text.split('').map(char => ({ char: char, pinyin: '' }));
         }
         
         try {
-            // Get pinyin array for each character
             const pinyinArray = window.pinyinPro.pinyin(text, { 
                 toneType: "symbol", 
                 type: "array", 
@@ -2085,14 +2350,11 @@
                 pattern: "pinyin"
             });
             
-            // Create result array
             const result = [];
             for (let i = 0; i < text.length; i++) {
                 const char = text[i];
                 let pinyin = (pinyinArray[i] && pinyinArray[i] !== char) ? pinyinArray[i] : '';
-                // Remove tone numbers if present (convert from numeric to symbol format)
                 if (pinyin && !pinyin.match(/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/)) {
-                    // Try to convert numeric tone to symbol
                     const withSymbols = window.pinyinPro.pinyin(char, { toneType: "symbol", pattern: "pinyin" });
                     if (withSymbols && withSymbols !== char) {
                         pinyin = withSymbols;
@@ -2107,6 +2369,7 @@
         }
     }
     
+    const tripleHtmlCache = new Map();
     function getTripleHTML(chineseText) {
         if (!chineseText) return '';
         if (tripleHtmlCache.has(chineseText)) return tripleHtmlCache.get(chineseText);
@@ -2127,7 +2390,6 @@
             return html;
         } catch(e) { 
             console.warn("pinyin error", e); 
-            // Fallback: just show characters without pinyin
             let html = '';
             for (let i = 0; i < chineseText.length; i++) {
                 const char = chineseText[i];
@@ -2272,9 +2534,6 @@
     }
     
     function forceShrink() { setTimeout(() => { shrinkChineseToFit(); shrinkKhmerToFit(); }, 50); }
-    
-    const tripleHtmlCache = new Map();
-    // Note: getTripleHTML is now defined above with the pinyin fix
     
     let topPinyinVisible = true;
     let bottomCharVisible = true;
@@ -2502,7 +2761,17 @@
         }
     }
     
-    function switchTab(tab) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active'); document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab))); }
+    function switchTab(tab) { 
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); 
+        document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active'); 
+        document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab)));
+        
+        // When switching to SIDEBAR tab, automatically show sidebar
+        if (tab === 'side' && !sidebarVisible) {
+            toggleSidebar();
+        }
+    }
+    
     function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
     function toggleMenu(hide) { document.getElementById("floatingMenu").style.display = hide ? "none" : "block"; document.getElementById("minimizedTrigger").style.display = hide ? "flex" : "none"; if (hide) applyStoredGearPosition(); }
     
@@ -2545,8 +2814,22 @@
             const cleanup = (result) => { modalDiv.remove(); resolve(result); };
             topBtn.onclick = () => cleanup('top');
             bottomBtn.onclick = () => cleanup('bottom');
-            editBtn.onclick = () => { showEditModal(sidebarIndices[sidebarFocusIdx], getSheetRow(sidebarIndices[sidebarFocusIdx]), vocabList[sidebarIndices[sidebarFocusIdx]]?.khmer, vocabList[sidebarIndices[sidebarFocusIdx]]?.chinese); cleanup(null); };
-            addBtn.onclick = () => { showAddNewModal(); cleanup(null); };
+            editBtn.onclick = () => { 
+                if (!editUnlocked) {
+                    showPasswordModal(() => { showEditModal(sidebarIndices[sidebarFocusIdx], getSheetRow(sidebarIndices[sidebarFocusIdx]), vocabList[sidebarIndices[sidebarFocusIdx]]?.khmer, vocabList[sidebarIndices[sidebarFocusIdx]]?.chinese); cleanup(null); });
+                } else {
+                    showEditModal(sidebarIndices[sidebarFocusIdx], getSheetRow(sidebarIndices[sidebarFocusIdx]), vocabList[sidebarIndices[sidebarFocusIdx]]?.khmer, vocabList[sidebarIndices[sidebarFocusIdx]]?.chinese); 
+                    cleanup(null);
+                }
+            };
+            addBtn.onclick = () => { 
+                if (!editUnlocked) {
+                    showPasswordModal(() => { showAddNewModal(); cleanup(null); });
+                } else {
+                    showAddNewModal(); 
+                    cleanup(null);
+                }
+            };
             resetChineseBtn.onclick = () => { resetChinesePosition(); cleanup(null); };
             resetKhmerBtn.onclick = () => { resetKhmerPosition(); cleanup(null); };
             resetLayersBtn.onclick = () => { resetLayerOffsets(); cleanup(null); };
@@ -2951,7 +3234,7 @@
         setTimeout(() => { loadAllDragPositions(); forceShrink(); applyBottomAutoScale(); }, 100);
         
         document.getElementById('insertDataBtn').onclick = () => {
-            showAddNewModal();
+            showLoadVocabularyModal();
         };
     };
     
@@ -3104,6 +3387,7 @@
     window.loadWordByMode = loadWordByMode;
     window.toggleBold = toggleBold;
     window.openSheetAndActivateCell = openSheetAndActivateCell;
+    window.showPasswordModal = showPasswordModal;
 </script>
 </body>
 </html>
