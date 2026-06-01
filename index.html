@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>📖 Vocab Master – Final (Sidebar cleaned, resizer variable)</title>
+    <title>📖 Vocab Master – Final (Fast Search + Hold to Resize)</title>
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
     <style>
         /* ========== CUSTOM WEB FONTS ========== */
@@ -613,28 +613,32 @@
         }
         .sidebar.hidden { width: 0 !important; min-width: 0 !important; border: none; overflow: hidden; }
         
-        /* Resizer styling with integrated close button - uses variable */
+        /* Resizer styling - thinner, and hidden when sidebar hidden */
         .resizer {
-            width: 16px;
+            width: 6px;
             cursor: col-resize;
             background: var(--border);
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.2s;
+            transition: background 0.2s, width 0.2s ease;
             touch-action: none;
             flex-shrink: 0;
+        }
+        .resizer.hidden {
+            display: none !important;
         }
         .resizer:hover {
             background: var(--accent);
         }
+        /* Close button on resizer - no background, centered */
         .resizer-btn {
             position: absolute;
             width: 28px;
             height: 28px;
-            background: var(--accent);
-            color: white;
+            background: transparent;
+            color: var(--text-primary);
             border: none;
             border-radius: 50%;
             cursor: pointer;
@@ -644,21 +648,22 @@
             align-items: center;
             justify-content: center;
             z-index: 100;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             transition: all 0.2s ease;
             left: 50%;
             transform: translate(-50%, -50%);
             top: 50%;
             padding: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
         .resizer-btn:hover {
-            background: var(--danger);
-            transform: translate(-50%, -50%) scale(1.05);
+            background: rgba(0,0,0,0.1);
+            transform: translate(-50%, -50%) scale(1.1);
         }
-        .resizer-btn.draggable-mode {
-            background: #10b981;
-            cursor: move;
-            transform: translate(-50%, -50%) scale(1.05);
+        body.night-mode .resizer-btn {
+            color: white;
+        }
+        .resizer-btn:active {
+            transform: translate(-50%, -50%) scale(0.95);
         }
         
         .pagination-bar {
@@ -668,8 +673,8 @@
             padding: 8px 12px;
             border-top: 1px solid var(--border);
             border-bottom: 1px solid var(--border);
-            margin-top: 4px;
             gap: 8px;
+            background: var(--sidebar-bg);
         }
         .pagination-btn {
             background: var(--tab-bg);
@@ -695,35 +700,66 @@
         .vocab-list { flex-grow: 1; overflow-y: auto; padding: 10px; scroll-behavior: smooth; }
         .vocab-header {
             display: flex;
+            flex-direction: column;
             gap: 8px;
             padding: 8px 12px;
             margin-bottom: 8px;
-            background: var(--accent);
-            color: white;
+            background: transparent;
+            color: var(--text-primary);
             border-radius: 10px;
             font-size: 0.75rem;
             font-weight: bold;
             position: sticky;
             top: 0;
             z-index: 5;
+        }
+        .choice-search-area {
+            background: rgba(0,0,0,0.1);
+            border-radius: 40px;
+            padding: 4px 12px;
+            display: flex;
             align-items: center;
+            gap: 8px;
         }
-        .vocab-header .header-search-input {
-            flex: 1;
-            padding: 4px 8px;
-            border-radius: 20px;
+        body.night-mode .choice-search-area {
+            background: rgba(255,255,255,0.1);
+        }
+        .choice-search-area input {
+            width: 100%;
+            padding: 6px 8px;
+            border-radius: 40px;
             border: none;
-            font-size: 0.7rem;
-            background: rgba(255,255,255,0.2);
+            font-size: 0.8rem;
+            background: rgba(255,255,255,0.9);
+            color: #0f172a;
+            outline: none;
+        }
+        body.night-mode .choice-search-area input {
+            background: #334155;
             color: white;
-            outline: none;
         }
-        .vocab-header .header-search-input:focus {
-            background: rgba(255,255,255,0.3);
-            outline: none;
+        .mode-icons-container {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 4px;
         }
-        body.night-mode .vocab-header {
-            background: #1e40af;
+        .mode-icon-small {
+            background: var(--tab-bg);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 6px 12px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mode-icon-small.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
         }
         .vocab-item { 
             padding: 10px 12px; 
@@ -1182,7 +1218,6 @@
             .choice-modal { min-width: 85vw; padding: 20px; }
             #floatingMenu { width: 320px; }
             .side-number-col { min-width: 50px; }
-            .vocab-header .header-search-input { flex: 0 0 90px; }
         }
         
         .copy-popup {
@@ -1446,10 +1481,9 @@
     </div>
 
     <div class="resizer" id="dragResizer">
-        <button class="resizer-btn" id="sidebarCloseBtn">✕</button>
+        <button class="resizer-btn" id="sidebarCloseBtn">☰</button>
     </div>
     <div class="sidebar hidden" id="rightSide">
-        <div id="paginationContainer" style="display: none;"></div>
         <div class="vocab-list" id="sidebarList"></div>
     </div>
 </div>
@@ -1827,7 +1861,7 @@
     function renderNormalSidebar() { 
         if (!vocabList.length) return; 
         const filteredList = filterVocabBySearch(vocabList);
-        if (filteredList.length === 0) { sidebarIndices = []; renderSidebarUI(); updateDisplay(); updatePaginationControls(); return; }
+        if (filteredList.length === 0) { sidebarIndices = []; renderSidebarUI(); updateDisplay(); return; }
         const start = normalCurrentPage * ITEMS_PER_PAGE; 
         const end = Math.min(start + ITEMS_PER_PAGE, filteredList.length); 
         const indices = []; 
@@ -1840,31 +1874,7 @@
         updateDisplay(); 
         const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; 
         if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); 
-        updatePaginationControls(); 
         scrollToActiveSidebarItem(); 
-    }
-    
-    function updatePaginationControls() { 
-        const container = document.getElementById('paginationContainer'); 
-        if (!container) return; 
-        const filteredList = filterVocabBySearch(vocabList);
-        if (appMode === 'normal' && filteredList.length > ITEMS_PER_PAGE) { 
-            const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE); 
-            container.style.display = 'flex'; 
-            container.innerHTML = `<div class="pagination-bar"><button id="prevPageBtn" class="pagination-btn">◀ Prev</button><span class="pagination-info">Page ${normalCurrentPage+1} / ${totalPages}</span><button id="nextPageBtn" class="pagination-btn">Next ▶</button><div id="modeIconsSide" style="display:flex; gap:4px; margin-left:8px;"></div></div>`; 
-            const modeIconsSide = document.getElementById('modeIconsSide');
-            if (modeIconsSide) {
-                modeIconsSide.innerHTML = `<button id="modeRandomIconBtn" class="mode-icon-btn ${appMode === 'random' ? 'active' : ''}" style="font-size:1rem; padding:4px 8px;">🎲</button><button id="modeNormalIconBtn" class="mode-icon-btn ${appMode === 'normal' ? 'active' : ''}" style="font-size:1rem; padding:4px 8px;">📋</button>`;
-                document.getElementById('modeRandomIconBtn')?.addEventListener('click', () => { if(appMode !== 'random') toggleAppMode(); });
-                document.getElementById('modeNormalIconBtn')?.addEventListener('click', () => { if(appMode !== 'normal') toggleAppMode(); });
-            }
-            const prevBtn = document.getElementById('prevPageBtn'), nextBtn = document.getElementById('nextPageBtn');
-            let prevHoldTimer = null, nextHoldTimer = null;
-            const goToFirstPage = () => { if (normalCurrentPage !== 0) { normalCurrentPage = 0; const filtered = filterVocabBySearch(vocabList); if (filtered.length) normalCurrentIdx = vocabList.findIndex(v => v === filtered[0]); renderNormalSidebar(); showToast("📖 Jumped to FIRST page"); } };
-            const goToLastPage = () => { const filtered = filterVocabBySearch(vocabList); const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE); if (normalCurrentPage !== totalPages - 1) { normalCurrentPage = totalPages - 1; const lastIdx = (totalPages - 1) * ITEMS_PER_PAGE; if (filtered[lastIdx]) normalCurrentIdx = vocabList.findIndex(v => v === filtered[lastIdx]); renderNormalSidebar(); showToast("📖 Jumped to LAST page"); } };
-            if (prevBtn) { prevBtn.onclick = () => { if (normalCurrentPage > 0) { normalCurrentPage--; renderNormalSidebar(); } }; prevBtn.addEventListener('mousedown', () => { prevHoldTimer = setTimeout(goToFirstPage, 1000); }); prevBtn.addEventListener('mouseup', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; }); prevBtn.addEventListener('mouseleave', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; }); prevBtn.addEventListener('touchstart', (e) => { e.preventDefault(); prevHoldTimer = setTimeout(goToFirstPage, 1000); }); prevBtn.addEventListener('touchend', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; }); }
-            if (nextBtn) { nextBtn.onclick = () => { const filtered = filterVocabBySearch(vocabList); const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE); if (normalCurrentPage + 1 < totalPages) { normalCurrentPage++; renderNormalSidebar(); } }; nextBtn.addEventListener('mousedown', () => { nextHoldTimer = setTimeout(goToLastPage, 1000); }); nextBtn.addEventListener('mouseup', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; }); nextBtn.addEventListener('mouseleave', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; }); nextBtn.addEventListener('touchstart', (e) => { e.preventDefault(); nextHoldTimer = setTimeout(goToLastPage, 1000); }); nextBtn.addEventListener('touchend', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; }); }
-        } else { container.style.display = 'none'; container.innerHTML = ''; } 
     }
     
     function renderRandomSidebar(idx) { 
@@ -1906,12 +1916,33 @@
             appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; 
             const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; if (idx !== -1) { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); } else if (vocabList.length) pickRandom(); 
         } 
-        saveAllData(); updatePaginationControls(); 
+        saveAllData(); 
+        // Update mode icons in header
+        const randomIcon = document.getElementById('modeRandomIconHeader');
+        const normalIcon = document.getElementById('modeNormalIconHeader');
+        if (randomIcon && normalIcon) {
+            if (appMode === 'random') { randomIcon.classList.add('active'); normalIcon.classList.remove('active'); }
+            else { normalIcon.classList.add('active'); randomIcon.classList.remove('active'); }
+        }
     }
     
     function toggleAuto() { autoActive = !autoActive; const btn = document.getElementById('autoBtn'); btn.classList.toggle('active', autoActive); btn.classList.toggle('off', !autoActive); btn.innerText = autoActive ? "AUTO: ON" : "AUTO: OFF"; if(autoActive) pickRandom(); else { clearTimeout(autoTimer); killAllSpeech(); } }
     function startAutoCycle() { clearTimeout(autoTimer); autoTimer = setTimeout(() => { if(autoActive) pickRandom(); }, parseInt(document.getElementById('autoDelay').value)*1000); }
-    function toggleSidebar() { sidebarVisible = !sidebarVisible; document.getElementById('rightSide').classList.toggle('hidden', !sidebarVisible); if(sidebarVisible){ document.getElementById('sidebarToggleBtn').innerText = "HIDE SIDEBAR"; } else { document.getElementById('sidebarToggleBtn').innerText = "SHOW SIDEBAR"; } saveAllData(); }
+    function toggleSidebar() { 
+        sidebarVisible = !sidebarVisible; 
+        const sidebar = document.getElementById('rightSide');
+        const resizer = document.getElementById('dragResizer');
+        if (sidebarVisible) {
+            sidebar.classList.remove('hidden');
+            resizer.classList.remove('hidden');
+            document.getElementById('sidebarToggleBtn').innerText = "HIDE SIDEBAR";
+        } else {
+            sidebar.classList.add('hidden');
+            resizer.classList.add('hidden');
+            document.getElementById('sidebarToggleBtn').innerText = "SHOW SIDEBAR";
+        }
+        saveAllData(); 
+    }
     
     function escapeHtml(str) { if(!str) return ""; return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
     
@@ -1922,12 +1953,19 @@
         const list = document.getElementById('sidebarList'); list.innerHTML = ''; 
         const headerDiv = document.createElement('div');
         headerDiv.className = 'vocab-header';
-        // Removed the "#" span entirely (only the search input remains)
-        headerDiv.innerHTML = `<input type="text" id="headerSearchInput" class="header-search-input" placeholder="🔍 Search vocabulary..." value="${escapeHtml(headerSearchTerm)}">`;
+        headerDiv.innerHTML = `
+            <div class="choice-search-area">
+                <input type="text" id="headerSearchInput" placeholder="🔍 Search vocabulary..." value="${escapeHtml(headerSearchTerm)}">
+            </div>
+            <div class="mode-icons-container" id="modeIconsContainer"></div>
+            <div id="paginationContainer"></div>
+        `;
         list.appendChild(headerDiv);
+        
         const searchInput = headerDiv.querySelector('#headerSearchInput');
         const handleSearch = (e) => {
             if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+            // FASTER: debounce reduced to 150ms for near-instant filtering
             searchDebounceTimer = setTimeout(() => { 
                 headerSearchTerm = e.target.value; 
                 if (appMode === 'normal') { 
@@ -1938,10 +1976,24 @@
                     renderSidebarUI(); 
                 } 
                 searchDebounceTimer = null; 
-            }, 300);
+            }, 150);
         };
         searchInput.addEventListener('input', handleSearch);
-        searchInput.focus();
+        // Do NOT auto-focus the search input on mobile to avoid keyboard popping up unintentionally
+        
+        // Add mode icons inside the header
+        const modeIconsContainer = headerDiv.querySelector('#modeIconsContainer');
+        modeIconsContainer.innerHTML = `
+            <button id="modeRandomIconHeader" class="mode-icon-small ${appMode === 'random' ? 'active' : ''}">🎲</button>
+            <button id="modeNormalIconHeader" class="mode-icon-small ${appMode === 'normal' ? 'active' : ''}">📋</button>
+        `;
+        document.getElementById('modeRandomIconHeader')?.addEventListener('click', () => { if(appMode !== 'random') toggleAppMode(); });
+        document.getElementById('modeNormalIconHeader')?.addEventListener('click', () => { if(appMode !== 'normal') toggleAppMode(); });
+        
+        // Build pagination container inside header
+        const paginationDiv = headerDiv.querySelector('#paginationContainer');
+        updatePaginationControlsInside(paginationDiv);
+        
         let itemsToShow = sidebarIndices;
         if (appMode === 'normal' && headerSearchTerm) { const filtered = filterVocabBySearch(vocabList); itemsToShow = filtered.map(item => vocabList.findIndex(v => v === item)); }
         for (let sIdx = 0; sIdx < itemsToShow.length; sIdx++) { 
@@ -1956,8 +2008,24 @@
             list.appendChild(div); 
         } 
         applySidebarStyles(); 
-        if (appMode === 'normal') updatePaginationControls(); 
         scrollToActiveSidebarItem(); 
+    }
+    
+    function updatePaginationControlsInside(container) {
+        if (!container) return;
+        const filteredList = filterVocabBySearch(vocabList);
+        if (appMode === 'normal' && filteredList.length > ITEMS_PER_PAGE) { 
+            const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE); 
+            container.style.display = 'block';
+            container.innerHTML = `<div class="pagination-bar"><button id="prevPageBtnSide" class="pagination-btn">◀ Prev</button><span class="pagination-info">Page ${normalCurrentPage+1} / ${totalPages}</span><button id="nextPageBtnSide" class="pagination-btn">Next ▶</button></div>`; 
+            const prevBtn = document.getElementById('prevPageBtnSide');
+            const nextBtn = document.getElementById('nextPageBtnSide');
+            let prevHoldTimer = null, nextHoldTimer = null;
+            const goToFirstPage = () => { if (normalCurrentPage !== 0) { normalCurrentPage = 0; const filtered = filterVocabBySearch(vocabList); if (filtered.length) normalCurrentIdx = vocabList.findIndex(v => v === filtered[0]); renderNormalSidebar(); showToast("📖 Jumped to FIRST page"); } };
+            const goToLastPage = () => { const filtered = filterVocabBySearch(vocabList); const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE); if (normalCurrentPage !== totalPages - 1) { normalCurrentPage = totalPages - 1; const lastIdx = (totalPages - 1) * ITEMS_PER_PAGE; if (filtered[lastIdx]) normalCurrentIdx = vocabList.findIndex(v => v === filtered[lastIdx]); renderNormalSidebar(); showToast("📖 Jumped to LAST page"); } };
+            if (prevBtn) { prevBtn.onclick = () => { if (normalCurrentPage > 0) { normalCurrentPage--; renderNormalSidebar(); } }; prevBtn.addEventListener('mousedown', () => { prevHoldTimer = setTimeout(goToFirstPage, 1000); }); prevBtn.addEventListener('mouseup', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; }); prevBtn.addEventListener('mouseleave', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; }); prevBtn.addEventListener('touchstart', (e) => { e.preventDefault(); prevHoldTimer = setTimeout(goToFirstPage, 1000); }); prevBtn.addEventListener('touchend', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; }); }
+            if (nextBtn) { nextBtn.onclick = () => { const filtered = filterVocabBySearch(vocabList); const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE); if (normalCurrentPage + 1 < totalPages) { normalCurrentPage++; renderNormalSidebar(); } }; nextBtn.addEventListener('mousedown', () => { nextHoldTimer = setTimeout(goToLastPage, 1000); }); nextBtn.addEventListener('mouseup', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; }); nextBtn.addEventListener('mouseleave', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; }); nextBtn.addEventListener('touchstart', (e) => { e.preventDefault(); nextHoldTimer = setTimeout(goToLastPage, 1000); }); nextBtn.addEventListener('touchend', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; }); }
+        } else { container.style.display = 'none'; container.innerHTML = ''; } 
     }
     
     window.showEditModal = function(displayRowIdx, sheetRowNumber, currentKhmer, currentChinese) {
@@ -2104,7 +2172,28 @@
     function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings){ const s = JSON.parse(savedSettings); userSetChineseFontSize = s.mZhSize || 42; userSetKhmerFontSize = s.mKmSize || 42; document.getElementById('mZhSize').value = userSetChineseFontSize; document.getElementById('mKmSize').value = userSetKhmerFontSize; document.getElementById('mZhColor').value = s.mZhColor || "#000000"; document.getElementById('mKmColor').value = s.mKmColor || "#000000"; document.getElementById('zhReps').value = s.zhReps || 1; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor; document.getElementById('sVocabSpacing').value = s.vocabSpacing || 8; document.body.style.setProperty('--vocab-spacing', (s.vocabSpacing || 8) + 'px'); document.getElementById('vocabSpacingVal').innerText = (s.vocabSpacing || 8) + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.pinyinFont) document.getElementById('pinyinFont').value = s.pinyinFont; if(s.pinyinColor) document.getElementById('pinyinColor').value = s.pinyinColor; if(s.pinyinBold !== undefined) { const btn = document.getElementById('pinyinBold'); if(s.pinyinBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.pinyinSizePx) { document.getElementById('pinyinSizePx').value = s.pinyinSizePx; userSetPinyinFontSize = parseInt(s.pinyinSizePx); } if(s.pinyinSpacing) document.getElementById('pinyinSpacing').value = s.pinyinSpacing; if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont; if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor; if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomFontSize = parseInt(s.bottomSizePx); } if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible; if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible; if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; } normalCurrentIdx = s.normalCurrentIdx || 0; normalCurrentPage = s.normalCurrentPage || 0; sidebarVisible = s.sidebarVisible !== undefined ? s.sidebarVisible : false; if(!sidebarVisible) { document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; } } else { document.getElementById('pinyinFont').value = "'Baguette Simplified'"; document.getElementById('pinyinColor').value = "#000000"; document.getElementById('pinyinSizePx').value = "55"; userSetPinyinFontSize = 55; document.getElementById('pinyinSpacing').value = "0"; document.getElementById('bottomSizePx').value = "55"; userSetBottomFontSize = 55; document.getElementById('mKmColor').value = "#000000"; document.getElementById('bottomCharColor').value = "#2563eb"; document.getElementById('shadowSlider').value = "3"; sidebarVisible = false; document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; applyPinyinStyles(); applyBottomStyles(); } applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility(); setKhmerFontSize(userSetKhmerFontSize); applyShadow(); applyBottomAutoScale(); }
     function toggleBold(btnId, applyCallback) { const btn = document.getElementById(btnId); if (btn) { btn.classList.toggle('active'); if (applyCallback && typeof applyCallback === 'function') { applyCallback(); } else { applyStyles(); } } }
     function switchTab(tab) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active'); document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab))); if (tab === 'side' && !sidebarVisible) { toggleSidebar(); } }
-    function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
+    function setupBackgroundClick() { 
+        const bgArea = document.getElementById('bgClickArea');
+        bgArea.addEventListener('click', function(e) { 
+            if (e.target.closest('#floatingMenu')) return; 
+            if (e.target.closest('.chinese-word')) return; 
+            if (e.target.closest('.khmer-text')) return; 
+            // Force blur any active input to prevent keyboard on mobile
+            if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                document.activeElement.blur();
+            }
+            pickRandom(); 
+        }); 
+        // Also on touchstart, prevent any potential focus stealing
+        bgArea.addEventListener('touchstart', function(e) {
+            if (e.target.closest('#floatingMenu')) return;
+            if (e.target.closest('.chinese-word')) return;
+            if (e.target.closest('.khmer-text')) return;
+            if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                document.activeElement.blur();
+            }
+        }, { passive: false });
+    }
     function toggleMenu(hide) { if (hide) { document.getElementById("floatingMenu").style.display = "none"; document.getElementById("minimizedTrigger").style.display = "flex"; } else { document.getElementById("floatingMenu").style.display = "block"; document.getElementById("minimizedTrigger").style.display = "none"; } if (hide) applyStoredGearPosition(); }
     
     // ========== DRAG & LAYER (fully functional) ==========
@@ -2142,42 +2231,98 @@
     // ========== FLOATING MENU DRAG ==========
     function initFloatingMenuDrag() { const dragHandle = document.getElementById('dragHandle'); const floatingMenu = document.getElementById('floatingMenu'); if (!dragHandle || !floatingMenu) return; let isDraggingMenu = false; let startX = 0, startY = 0; let startLeft = 0, startTop = 0; const onStart = (e) => { e.preventDefault(); e.stopPropagation(); isDraggingMenu = true; const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); startX = clientX; startY = clientY; const rect = floatingMenu.getBoundingClientRect(); startLeft = rect.left; startTop = rect.top; floatingMenu.style.transition = 'none'; }; const onMove = (e) => { if (!isDraggingMenu) return; e.preventDefault(); const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); let newLeft = startLeft + (clientX - startX); let newTop = startTop + (clientY - startY); newLeft = Math.max(0, Math.min(window.innerWidth - floatingMenu.offsetWidth, newLeft)); newTop = Math.max(0, Math.min(window.innerHeight - floatingMenu.offsetHeight, newTop)); floatingMenu.style.left = newLeft + 'px'; floatingMenu.style.top = newTop + 'px'; floatingMenu.style.right = 'auto'; floatingMenu.style.bottom = 'auto'; }; const onEnd = () => { if (!isDraggingMenu) return; isDraggingMenu = false; floatingMenu.style.transition = ''; const left = parseFloat(floatingMenu.style.left); const top = parseFloat(floatingMenu.style.top); if (!isNaN(left) && !isNaN(top)) { localStorage.setItem('floatingMenuLeft', left); localStorage.setItem('floatingMenuTop', top); } }; const applyStoredPosition = () => { const savedLeft = localStorage.getItem('floatingMenuLeft'); const savedTop = localStorage.getItem('floatingMenuTop'); if (savedLeft !== null && savedTop !== null) { const left = Math.max(0, Math.min(window.innerWidth - floatingMenu.offsetWidth, parseFloat(savedLeft))); const top = Math.max(0, Math.min(window.innerHeight - floatingMenu.offsetHeight, parseFloat(savedTop))); floatingMenu.style.left = left + 'px'; floatingMenu.style.top = top + 'px'; floatingMenu.style.right = 'auto'; floatingMenu.style.bottom = 'auto'; } else { floatingMenu.style.left = '20px'; floatingMenu.style.top = '20px'; } }; dragHandle.addEventListener('mousedown', onStart); dragHandle.addEventListener('touchstart', onStart, { passive: false }); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); applyStoredPosition(); window.addEventListener('resize', () => applyStoredPosition()); }
     
-    // ========== SIDEBAR RESIZER DRAG & INTEGRATED CLOSE BUTTON (with CSS variable) ==========
+    // ========== SIDEBAR RESIZER DRAG & INTEGRATED CLOSE BUTTON (resize on hold) ==========
     function initSidebarResizer() {
         const resizer = document.getElementById('dragResizer');
         const sidebar = document.getElementById('rightSide');
         const closeBtn = document.getElementById('sidebarCloseBtn');
         let startX = 0, startWidth = 0, isResizing = false;
+        let longPressTimer = null;
         const updateSidebarWidth = (newWidth) => {
             const finalWidth = Math.min(window.innerWidth * 0.7, Math.max(200, newWidth));
             document.documentElement.style.setProperty('--sidebar-width', finalWidth + 'px');
             sidebar.style.width = 'var(--sidebar-width)';
             localStorage.setItem('sidebarWidth', finalWidth);
         };
-        const onResizeStart = (e) => { e.preventDefault(); isResizing = true; startX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); startWidth = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width')); window.addEventListener('mousemove', onResizeMove); window.addEventListener('mouseup', onResizeEnd); window.addEventListener('touchmove', onResizeMove, { passive: false }); window.addEventListener('touchend', onResizeEnd); };
-        const onResizeMove = (e) => { if (!isResizing) return; e.preventDefault(); const currentX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const delta = startX - currentX; let newWidth = startWidth + delta; updateSidebarWidth(newWidth); };
-        const onResizeEnd = () => { isResizing = false; window.removeEventListener('mousemove', onResizeMove); window.removeEventListener('mouseup', onResizeEnd); window.removeEventListener('touchmove', onResizeMove); window.removeEventListener('touchend', onResizeEnd); };
-        resizer.addEventListener('mousedown', onResizeStart); resizer.addEventListener('touchstart', onResizeStart, { passive: false });
+        const startResize = (clientX) => {
+            isResizing = true;
+            startX = clientX;
+            startWidth = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width'));
+            window.addEventListener('mousemove', onResizeMove);
+            window.addEventListener('mouseup', onResizeEnd);
+            window.addEventListener('touchmove', onResizeMove, { passive: false });
+            window.addEventListener('touchend', onResizeEnd);
+        };
+        const onResizeMove = (e) => {
+            if (!isResizing) return;
+            e.preventDefault();
+            const currentX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+            const delta = startX - currentX;
+            let newWidth = startWidth + delta;
+            updateSidebarWidth(newWidth);
+        };
+        const onResizeEnd = () => {
+            isResizing = false;
+            window.removeEventListener('mousemove', onResizeMove);
+            window.removeEventListener('mouseup', onResizeEnd);
+            window.removeEventListener('touchmove', onResizeMove);
+            window.removeEventListener('touchend', onResizeEnd);
+        };
+        // Resizer itself: start resize on mouse/touch down
+        resizer.addEventListener('mousedown', (e) => { e.preventDefault(); startResize(e.clientX); });
+        resizer.addEventListener('touchstart', (e) => { e.preventDefault(); startResize(e.touches[0].clientX); }, { passive: false });
+        
         const savedWidth = localStorage.getItem('sidebarWidth');
         if (savedWidth && !sidebar.classList.contains('hidden')) updateSidebarWidth(parseFloat(savedWidth));
         else updateSidebarWidth(400);
-        // Close button functionality (toggle sidebar)
+        
+        // Close button functionality: short press toggles sidebar, long press (hold) starts resizing
         if (closeBtn) {
-            let longPressTimer = null, isDragMode = false, isDraggingBtn = false, btnStartX = 0, btnStartY = 0, btnStartLeft = 0, btnStartTop = 0;
-            const activateDragMode = () => { isDragMode = true; closeBtn.classList.add('draggable-mode'); closeBtn.innerHTML = '⤨'; showToast("Drag mode enabled — move the button"); };
-            const deactivateDragMode = () => { isDragMode = false; isDraggingBtn = false; closeBtn.classList.remove('draggable-mode'); closeBtn.innerHTML = '✕'; if (closeBtn.style.left && closeBtn.style.top) { localStorage.setItem('resizerBtnLeft', closeBtn.style.left); localStorage.setItem('resizerBtnTop', closeBtn.style.top); } };
+            let pressTimer = null;
+            let hasMoved = false;
             const onBtnStart = (e) => {
-                if (isDragMode) { e.preventDefault(); e.stopPropagation(); isDraggingBtn = true; const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); btnStartX = clientX; btnStartY = clientY; const rect = closeBtn.getBoundingClientRect(); btnStartLeft = rect.left; btnStartTop = rect.top; closeBtn.style.transition = 'none'; return; }
-                longPressTimer = setTimeout(() => { activateDragMode(); longPressTimer = null; }, 800);
+                e.preventDefault();
+                e.stopPropagation();
+                const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+                pressTimer = setTimeout(() => {
+                    // Long press detected -> start resizing
+                    startResize(clientX);
+                    pressTimer = null;
+                    // Visual feedback
+                    closeBtn.style.transform = 'translate(-50%, -50%) scale(0.9)';
+                    setTimeout(() => { closeBtn.style.transform = ''; }, 150);
+                }, 500);
+                // Also track move to cancel if moved significantly
+                const onMove = (moveEvent) => {
+                    const moveX = moveEvent.clientX ?? (moveEvent.touches ? moveEvent.touches[0].clientX : 0);
+                    if (Math.abs(moveX - clientX) > 10) {
+                        if (pressTimer) clearTimeout(pressTimer);
+                        pressTimer = null;
+                        window.removeEventListener('mousemove', onMove);
+                        window.removeEventListener('touchmove', onMove);
+                    }
+                };
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('touchmove', onMove, { passive: false });
+                const cleanup = () => {
+                    if (pressTimer) clearTimeout(pressTimer);
+                    pressTimer = null;
+                    window.removeEventListener('mousemove', onMove);
+                    window.removeEventListener('touchmove', onMove);
+                    window.removeEventListener('mouseup', cleanup);
+                    window.removeEventListener('touchend', cleanup);
+                };
+                window.addEventListener('mouseup', cleanup);
+                window.addEventListener('touchend', cleanup);
             };
-            const onBtnMove = (e) => {
-                if (isDragMode && isDraggingBtn) { e.preventDefault(); const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); let newLeft = btnStartLeft + (clientX - btnStartX); let newTop = btnStartTop + (clientY - btnStartY); newLeft = Math.max(5, Math.min(window.innerWidth - 40, newLeft)); newTop = Math.max(5, Math.min(window.innerHeight - 40, newTop)); closeBtn.style.position = 'fixed'; closeBtn.style.left = newLeft + 'px'; closeBtn.style.top = newTop + 'px'; closeBtn.style.right = 'auto'; closeBtn.style.bottom = 'auto'; return; }
-                if (longPressTimer) { const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); if (Math.abs(clientX - btnStartX) > 5 || Math.abs(clientY - btnStartY) > 5) { if (longPressTimer) clearTimeout(longPressTimer); longPressTimer = null; } }
-            };
-            const onBtnEnd = (e) => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; if (!isDragMode) toggleSidebar(); } if (isDragMode && isDraggingBtn) { isDraggingBtn = false; closeBtn.style.transition = ''; deactivateDragMode(); e.preventDefault(); e.stopPropagation(); } };
-            closeBtn.addEventListener('mousedown', onBtnStart); closeBtn.addEventListener('touchstart', onBtnStart, { passive: false }); window.addEventListener('mousemove', onBtnMove); window.addEventListener('mouseup', onBtnEnd); window.addEventListener('touchmove', onBtnMove, { passive: false }); window.addEventListener('touchend', onBtnEnd);
-            const savedLeft = localStorage.getItem('resizerBtnLeft'), savedTop = localStorage.getItem('resizerBtnTop');
-            if (savedLeft && savedTop) { closeBtn.style.position = 'fixed'; closeBtn.style.left = savedLeft; closeBtn.style.top = savedTop; closeBtn.style.right = 'auto'; closeBtn.style.bottom = 'auto'; }
+            closeBtn.addEventListener('mousedown', onBtnStart);
+            closeBtn.addEventListener('touchstart', onBtnStart, { passive: false });
+            // Short press (click) toggles sidebar
+            closeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleSidebar();
+            });
         }
     }
     
