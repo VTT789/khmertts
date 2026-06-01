@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>📖 Vocab Master – Complete System (Fully Fixed)</title>
+    <title>📖 Vocab Master – Final (Sidebar cleaned, resizer variable)</title>
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
     <style>
         /* ========== CUSTOM WEB FONTS ========== */
@@ -113,6 +113,7 @@
             --input-bg: #ffffff;
             --tab-bg: #f1f5f9;
             --slider-track: #cbd5e1;
+            --sidebar-width: 400px;
         }
 
         body, html {
@@ -601,29 +602,43 @@
         .khmer-text:active { cursor: grabbing; }
 
         .sidebar { 
-            width: 400px; 
+            width: var(--sidebar-width);
             min-width: 280px; 
             background: var(--sidebar-bg); 
             display: flex; 
             flex-direction: column; 
             border-left: 1px solid var(--border); 
-            transition: transform 0.3s ease, width 0.3s ease, background 0.2s;
+            transition: width 0.2s ease, background 0.2s;
             position: relative;
         }
-        .sidebar.hidden { width: 0 !important; min-width: 0 !important; border: none; transform: translateX(100%); overflow: hidden; }
-        .sidebar .sidebar-close-btn {
+        .sidebar.hidden { width: 0 !important; min-width: 0 !important; border: none; overflow: hidden; }
+        
+        /* Resizer styling with integrated close button - uses variable */
+        .resizer {
+            width: 16px;
+            cursor: col-resize;
+            background: var(--border);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            touch-action: none;
+            flex-shrink: 0;
+        }
+        .resizer:hover {
+            background: var(--accent);
+        }
+        .resizer-btn {
             position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            left: -22px;
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
             background: var(--accent);
             color: white;
             border: none;
             border-radius: 50%;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 14px;
             font-weight: bold;
             display: flex;
             align-items: center;
@@ -631,46 +646,21 @@
             z-index: 100;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             transition: all 0.2s ease;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            top: 50%;
+            padding: 0;
         }
-        .sidebar .sidebar-close-btn.draggable-mode {
-            cursor: move;
-            background: #10b981;
-            transform: translateY(-50%) scale(1.05);
-            box-shadow: 0 0 0 2px white, 0 4px 12px rgba(0,0,0,0.3);
-        }
-        .sidebar .sidebar-close-btn:hover {
-            transform: translateY(-50%) scale(1.05);
+        .resizer-btn:hover {
             background: var(--danger);
+            transform: translate(-50%, -50%) scale(1.05);
         }
-        .sidebar .sidebar-close-btn.draggable-mode:hover {
+        .resizer-btn.draggable-mode {
             background: #10b981;
+            cursor: move;
+            transform: translate(-50%, -50%) scale(1.05);
         }
-        .sidebar-mode-buttons {
-            display: flex;
-            gap: 8px;
-            padding: 8px 12px;
-            border-bottom: 1px solid var(--border);
-            background: inherit;
-            align-items: center;
-        }
-        .mode-icon-btn {
-            flex: 1;
-            background: var(--tab-bg);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 6px 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.2s;
-            color: var(--text-secondary);
-        }
-        .mode-icon-btn.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
+        
         .pagination-bar {
             display: flex;
             justify-content: space-between;
@@ -701,8 +691,6 @@
         .sidebar-controls-hidden {
             display: none !important;
         }
-        .resizer { transition: opacity 0.3s, background 0.2s; background: #cbd5e1; }
-        .resizer.hidden { width: 0 !important; opacity: 0; pointer-events: none; }
 
         .vocab-list { flex-grow: 1; overflow-y: auto; padding: 10px; scroll-behavior: smooth; }
         .vocab-header {
@@ -720,11 +708,6 @@
             z-index: 5;
             align-items: center;
         }
-        .vocab-header span:first-child {
-            width: 60px;
-            text-align: center;
-            flex-shrink: 0;
-        }
         .vocab-header .header-search-input {
             flex: 1;
             padding: 4px 8px;
@@ -735,8 +718,9 @@
             color: white;
             outline: none;
         }
-        .vocab-header .header-search-input::placeholder {
-            color: rgba(255,255,255,0.7);
+        .vocab-header .header-search-input:focus {
+            background: rgba(255,255,255,0.3);
+            outline: none;
         }
         body.night-mode .vocab-header {
             background: #1e40af;
@@ -1195,7 +1179,6 @@
         @media (max-width: 700px) {
             .chinese-word { gap: 4px 8px; padding: 8px 12px; }
             .khmer-text { font-size: 22px; padding: 8px 12px; }
-            .sidebar .sidebar-close-btn { top: 50%; left: -18px; width: 26px; height: 26px; font-size: 16px; }
             .choice-modal { min-width: 85vw; padding: 20px; }
             #floatingMenu { width: 320px; }
             .side-number-col { min-width: 50px; }
@@ -1382,7 +1365,7 @@
                     <div class="voice-row"><label style="font-weight: bold;">🎙️ Khmer Voice</label><select id="kmVoiceSelect" class="voice-select"><option value="km-KH-SreymomNeural">Sreymom (Female)</option><option value="km-KH-PisethNeural">Piseth (Male)</option></select></div>
                     <div class="voice-row"><label style="font-weight: bold;">🇨🇳 Chinese Voice</label><select id="zhVoiceSelect" class="voice-select"><option value="zh-CN-XiaoxiaoNeural">Xiaoxiao (女声)</option><option value="zh-CN-YunxiNeural">Yunxi (男声)</option><option value="zh-CN-YunyangNeural">Yunyang (新闻)</option><option value="zh-CN-XiaoyiNeural">Xiaoyi (教学)</option></select></div>
                     <div class="size-row"><label>🇨🇳 Speech Rate</label><input type="range" id="zhRateSlider" class="size-slider" min="-100" max="100" value="0" step="5"><span id="zhRateVal">0%</span></div>
-                    <div class="size-row"><label>ZH Repetitions</label><input type="range" id="zhReps" class="size-slider" min="1" max="10" value="3"><span id="repVal">3</span></div>
+                    <div class="size-row"><label>ZH Repetitions</label><input type="range" id="zhReps" class="size-slider" min="1" max="10" value="1"><span id="repVal">1</span></div>
                     <div class="size-row"><label>KM Repetitions</label><input type="range" id="kmReps" class="size-slider" min="1" max="10" value="1"><span id="kmRepVal">1</span></div>
                 </div>
 
@@ -1462,24 +1445,16 @@
         </div>
     </div>
 
-    <div class="resizer" id="dragResizer" style="width:12px; cursor:col-resize; background:#e2e8f0; z-index:10;"></div>
+    <div class="resizer" id="dragResizer">
+        <button class="resizer-btn" id="sidebarCloseBtn">✕</button>
+    </div>
     <div class="sidebar hidden" id="rightSide">
-        <button class="sidebar-close-btn" id="sidebarCloseBtn">✕</button>
-        <div class="sidebar-mode-buttons">
-            <button id="modeRandomBtn" class="mode-icon-btn active">🎲 RANDOM</button>
-            <button id="modeNormalBtn" class="mode-icon-btn">📋 NORMAL</button>
-        </div>
         <div id="paginationContainer" style="display: none;"></div>
         <div class="vocab-list" id="sidebarList"></div>
     </div>
 </div>
 
-<!-- COPY POPUP FOR IOS -->
-<div id="copyPopup" class="copy-popup">
-    <span id="popupMessage">📋 Ready to copy</span>
-    <button id="copyActionBtn">Copy</button>
-</div>
-
+<div id="copyPopup" class="copy-popup"><span id="popupMessage">📋 Ready to copy</span><button id="copyActionBtn">Copy</button></div>
 <div id="qrPopupOverlay" class="qr-overlay"><div class="qr-card"><button class="qr-close-btn" id="qrCloseBtn">✕</button><img src="/static/QR.png" alt="QR Code"></div></div>
 
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
@@ -1513,95 +1488,55 @@
         return result;
     }
 
-    // Display number starts from #2 (array index 0 → #2, index 1 → #3, etc.)
     function getDisplayNumberFromArrayIndex(arrayIndex) {
         return arrayIndex + 2;
     }
     
-    function getSheetRowZeroBased(displayRowArrayIndex) {
-        return displayRowArrayIndex;
-    }
-
     // ========== CORE FUNCTION: findHeaderAndRows ==========
     async function findHeaderAndRows(sheetId, headerName, rows) {
         const apiUrl = `https://opensheet.elk.sh/${sheetId}/Sheet1`;
-        
         try {
             const response = await fetch(apiUrl);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
             const data = await response.json();
             if (!data || data.length === 0) throw new Error("No data found");
-            
             const headers = Object.keys(data[0]);
             const targetHeader = headerName.toLowerCase();
             let columnIndex = -1;
             let actualHeader = "";
-            
             for (let i = 0; i < headers.length; i++) {
-                if (headers[i].toLowerCase() === targetHeader || 
-                    headers[i].toLowerCase().includes(targetHeader)) {
+                if (headers[i].toLowerCase() === targetHeader || headers[i].toLowerCase().includes(targetHeader)) {
                     columnIndex = i;
                     actualHeader = headers[i];
                     break;
                 }
             }
-            
-            if (columnIndex === -1) {
-                return { success: false, error: `Header "${headerName}" not found`, availableHeaders: headers };
-            }
-            
+            if (columnIndex === -1) return { success: false, error: `Header "${headerName}" not found`, availableHeaders: headers };
             const columnLetter = indexToLetter(columnIndex);
             const rowsArray = Array.isArray(rows) ? rows : [rows];
             const rowValues = {};
-            
             for (const rowNum of rowsArray) {
                 if (rowNum > 0 && rowNum <= data.length) {
                     const rowData = data[rowNum - 1];
-                    rowValues[`row${rowNum}`] = {
-                        value: rowData[actualHeader] || "",
-                        cell: `${columnLetter}${rowNum}`
-                    };
+                    rowValues[`row${rowNum}`] = { value: rowData[actualHeader] || "", cell: `${columnLetter}${rowNum}` };
                 }
             }
-            
-            return {
-                success: true,
-                headerName: actualHeader,
-                columnLetter: columnLetter,
-                columnIndex: columnIndex,
-                totalRows: data.length,
-                rows: rowValues,
-                sheetId: sheetId
-            };
+            return { success: true, headerName: actualHeader, columnLetter: columnLetter, columnIndex: columnIndex, totalRows: data.length, rows: rowValues, sheetId: sheetId };
         } catch (err) {
             return { success: false, error: err.message };
         }
     }
 
-    // ========== LOAD API AND PASSWORD USING HEADER DETECTION ==========
     async function loadApiAndPasswordFromSheet() {
         const sheetId = currentSheetId || DEFAULT_SHEET_ID;
         const apiResult = await findHeaderAndRows(sheetId, "API", [1, 2]);
-        
         if (apiResult.success) {
             const apiUrlValue = apiResult.rows.row1?.value || "";
             const passwordValue = apiResult.rows.row2?.value || "";
-            
-            if (apiUrlValue && apiUrlValue.startsWith('http')) {
-                detectedApiUrl = apiUrlValue;
-                console.log(`✅ API URL found at ${apiResult.columnLetter}1`);
-            } else {
-                detectedApiUrl = "";
-                console.warn(`⚠️ API URL not found`);
-            }
-            
-            if (passwordValue) {
-                dynamicPassword = passwordValue;
-                console.log(`✅ Password found at ${apiResult.columnLetter}2`);
-            } else {
-                dynamicPassword = "012891556";
-            }
+            if (apiUrlValue && apiUrlValue.startsWith('http')) detectedApiUrl = apiUrlValue;
+            else detectedApiUrl = "";
+            if (passwordValue) dynamicPassword = passwordValue;
+            else dynamicPassword = "012891556";
             return true;
         }
         return false;
@@ -1640,7 +1575,6 @@
         copyPopup = document.getElementById("copyPopup");
         copyBtn = document.getElementById("copyActionBtn");
         popupMessageSpan = document.getElementById("popupMessage");
-        
         copyBtn.addEventListener("click", function(e) {
             e.stopPropagation();
             if (pendingCopyText) {
@@ -1691,7 +1625,6 @@
     // ========== PASSWORD PROTECTION ==========
     function showPasswordModal(callback) {
         if (activePasswordModal) return;
-        
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
         modalDiv.innerHTML = `
@@ -1706,18 +1639,10 @@
         `;
         document.body.appendChild(modalDiv);
         activePasswordModal = modalDiv;
-        
         const input = modalDiv.querySelector('#passwordInput');
         const unlockBtn = modalDiv.querySelector('#unlockBtn');
         const cancelBtn = modalDiv.querySelector('#cancelPasswordBtn');
-        
-        const closeModal = () => {
-            if (activePasswordModal) {
-                activePasswordModal.remove();
-                activePasswordModal = null;
-            }
-        };
-        
+        const closeModal = () => { if (activePasswordModal) { activePasswordModal.remove(); activePasswordModal = null; } };
         unlockBtn.onclick = () => {
             if (input.value === dynamicPassword) {
                 editUnlocked = true;
@@ -1731,33 +1656,17 @@
                 input.focus();
             }
         };
-        
-        cancelBtn.onclick = () => {
-            closeModal();
-            if (callback) callback(false);
-        };
-        
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') unlockBtn.click();
-        });
-        
+        cancelBtn.onclick = () => { closeModal(); if (callback) callback(false); };
+        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') unlockBtn.click(); });
         input.focus();
-        
-        modalDiv.addEventListener('click', (e) => {
-            if (e.target === modalDiv) {
-                closeModal();
-                if (callback) callback(false);
-            }
-        });
+        modalDiv.addEventListener('click', (e) => { if (e.target === modalDiv) { closeModal(); if (callback) callback(false); } });
     }
     
     function isEditEnabled() { return editUnlocked; }
-    
     function updateEditButtonsState() {
         const editIcons = document.querySelectorAll('.edit-side-icon');
         const sheetIcons = document.querySelectorAll('.sheet-row-icon');
         const disabledClass = 'disabled';
-        
         if (editUnlocked) {
             editIcons.forEach(btn => btn.classList.remove(disabledClass));
             sheetIcons.forEach(btn => btn.classList.remove(disabledClass));
@@ -1791,279 +1700,138 @@
     let normalCurrentPage = 0;
     const ITEMS_PER_PAGE = 40;
     
-    function openSheetAndActivateCell(sheetRowZeroBased) {
-        if (!editUnlocked) {
-            showPasswordModal((unlocked) => {
-                if (unlocked) openSheetAndActivateCell(sheetRowZeroBased);
-            });
-            return;
-        }
-        if (!currentSheetId) {
-            showToast("❌ No sheet loaded");
-            return;
-        }
+    function openSheetAndActivateCell(sheetRowNumber) {
+        if (!editUnlocked) { showPasswordModal((unlocked) => { if (unlocked) openSheetAndActivateCell(sheetRowNumber); }); return; }
+        if (!currentSheetId) { showToast("❌ No sheet loaded"); return; }
         const columnLetter = 'E';
-        const sheetRowNumber = sheetRowZeroBased + 1;
         const rangeUrl = `${currentSheetUrl}/edit#gid=0&range=${columnLetter}${sheetRowNumber}`;
         window.open(rangeUrl, '_blank');
         showToast(`📂 Opening cell ${columnLetter}${sheetRowNumber}`);
     }
     
-    // Load sheet data
     async function loadSheetData() {
-        if (!currentSheetId) {
-            showToast("❌ Please enter a Google Sheet URL");
-            return;
-        }
-        
+        if (!currentSheetId) { showToast("❌ Please enter a Google Sheet URL"); return; }
         const apiUrl = `https://opensheet.elk.sh/${currentSheetId}/Sheet1`;
-        
         try {
             const response = await fetch(apiUrl);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
-            
-            if (!Array.isArray(data) || data.length === 0) {
-                throw new Error("No data found in sheet");
-            }
-            
+            if (!Array.isArray(data) || data.length === 0) throw new Error("No data found in sheet");
             const headerRow = data[0];
             const columnNames = Object.keys(headerRow);
-            
-            let khmerColIndex = -1;
-            let chineseColIndex = -1;
-            
+            let khmerColIndex = -1, chineseColIndex = -1;
             for (let i = 0; i < columnNames.length; i++) {
                 const colName = columnNames[i].toLowerCase();
-                if (colName.includes('khmer') || colName.includes('km') || colName.includes('ភាសា')) {
-                    khmerColIndex = i;
-                }
-                if (colName.includes('chinese') || colName.includes('zh') || colName.includes('中文')) {
-                    chineseColIndex = i;
-                }
+                if (colName.includes('khmer') || colName.includes('km') || colName.includes('ភាសា')) khmerColIndex = i;
+                if (colName.includes('chinese') || colName.includes('zh') || colName.includes('中文')) chineseColIndex = i;
             }
-            
             if (khmerColIndex === -1 && columnNames.length > 3) khmerColIndex = 3;
             if (chineseColIndex === -1 && columnNames.length > 4) chineseColIndex = 4;
-            
             const newVocabList = [];
-            
-            for (let i = 0; i < data.length; i++) {
+            // Header row (row1) becomes display #2, sheetRow = 2
+            const headerValues = Object.values(headerRow);
+            let headerKhmer = (khmerColIndex !== -1 && headerValues.length > khmerColIndex) ? (headerValues[khmerColIndex] || '') : '';
+            let headerChinese = (chineseColIndex !== -1 && headerValues.length > chineseColIndex) ? (headerValues[chineseColIndex] || '') : '';
+            newVocabList.push({ khmer: headerKhmer.toString().trim(), chinese: headerChinese.toString().trim(), sheetRow: 2 });
+            // Data rows (sheet rows 2,3,4...) become display #3, #4, #5... sheetRow = i+2
+            for (let i = 1; i < data.length; i++) {
                 const row = data[i];
                 const rowValues = Object.values(row);
                 const khmer = (khmerColIndex !== -1 && rowValues.length > khmerColIndex) ? (rowValues[khmerColIndex] || '') : '';
                 const chinese = (chineseColIndex !== -1 && rowValues.length > chineseColIndex) ? (rowValues[chineseColIndex] || '') : '';
-                
                 if (khmer || chinese) {
-                    newVocabList.push({ 
-                        khmer: khmer.toString().trim(), 
-                        chinese: chinese.toString().trim() 
-                    });
+                    newVocabList.push({ khmer: khmer.toString().trim(), chinese: chinese.toString().trim(), sheetRow: i + 2 });
                 }
             }
-            
             vocabList = newVocabList;
             vocabularyData = vocabList;
-            
             editUnlocked = false;
             updateEditButtonsState();
-            
-            showToast(`✅ Loaded ${vocabList.length} words (Display #2 = sheet row 1)`);
-            
+            showToast(`✅ Loaded ${vocabList.length} words (Display #2 = sheet row 2)`);
             await loadApiAndPasswordFromSheet();
             saveAllData();
-            
             if (appMode === 'random') {
-                if (historyIndex >= 0 && history[historyIndex] < vocabList.length) {
-                } else {
-                    pickRandom();
-                }
-                if (sidebarIndices.length > 0) {
-                    renderRandomSidebar(sidebarIndices[sidebarFocusIdx] || 0);
-                } else if (vocabList.length) {
-                    pickRandom();
-                }
+                if (historyIndex >= 0 && history[historyIndex] < vocabList.length) {}
+                else pickRandom();
+                if (sidebarIndices.length > 0) renderRandomSidebar(sidebarIndices[sidebarFocusIdx] || 0);
+                else if (vocabList.length) pickRandom();
             } else {
                 if (normalCurrentIdx >= vocabList.length) normalCurrentIdx = 0;
                 normalCurrentPage = getNormalPageForIndex(normalCurrentIdx);
                 renderNormalSidebar();
             }
-            
-        } catch (err) {
-            console.error("Error loading sheet:", err);
-            showToast(`❌ Error: ${err.message}`);
-        }
+        } catch (err) { console.error("Error loading sheet:", err); showToast(`❌ Error: ${err.message}`); }
     }
     
-    // ========== API CALLS ==========
     async function callApi(payload, op) {
-        if (!editUnlocked) {
-            showPasswordModal(async (unlocked) => {
-                if (unlocked) await callApi(payload, op);
-            });
-            return false;
-        }
-        
-        if (!detectedApiUrl || !detectedApiUrl.startsWith('http')) {
-            showToast("❌ No valid API URL found.");
-            return false;
-        }
-        
-        if (!currentSheetId) {
-            showToast("❌ No sheet loaded");
-            return false;
-        }
-        
+        if (!editUnlocked) { showPasswordModal(async (unlocked) => { if (unlocked) await callApi(payload, op); }); return false; }
+        if (!detectedApiUrl || !detectedApiUrl.startsWith('http')) { showToast("❌ No valid API URL found."); return false; }
+        if (!currentSheetId) { showToast("❌ No sheet loaded"); return false; }
         const fullPayload = { ...payload, sheetId: currentSheetId, sheetName: "Sheet1" };
-        
         try {
-            const res = await fetch(detectedApiUrl, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain" },
-                body: JSON.stringify(fullPayload)
-            });
+            const res = await fetch(detectedApiUrl, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(fullPayload) });
             const text = await res.text();
             let parsed = text;
             try { parsed = JSON.parse(text); } catch(e) {}
-            
-            if (res.ok && parsed.result === "success") {
-                showToast(`✅ ${op} successful`);
-                return true;
-            } else {
-                showToast(`❌ ${op} failed: ${parsed.message || parsed.result}`);
-                return false;
-            }
-        } catch(err) {
-            showToast(`❌ Error: ${err.message}`);
-            return false;
-        }
+            if (res.ok && parsed.result === "success") { showToast(`✅ ${op} successful`); return true; }
+            else { showToast(`❌ ${op} failed: ${parsed.message || parsed.result}`); return false; }
+        } catch(err) { showToast(`❌ Error: ${err.message}`); return false; }
     }
     
-    async function addVocabToSheet(khmer, chinese) {
-        if (!editUnlocked) {
-            showPasswordModal(async (unlocked) => {
-                if (unlocked) await addVocabToSheet(khmer, chinese);
-            });
-            return false;
-        }
-        if (!khmer && !chinese) {
-            showToast("⚠️ Please enter Khmer or Chinese");
-            return false;
-        }
-        return await callApi({ action: "add", vocab: khmer, chinese: chinese }, "ADD");
+    async function addVocabToSheet(khmer, chinese, insertAtRow = null) {
+        if (!editUnlocked) { showPasswordModal(async (unlocked) => { if (unlocked) await addVocabToSheet(khmer, chinese, insertAtRow); }); return false; }
+        if (!khmer && !chinese) { showToast("⚠️ Please enter Khmer or Chinese"); return false; }
+        if (insertAtRow !== null && insertAtRow >= 2) return await callApi({ action: "insert", row: insertAtRow - 1, vocab: khmer, chinese: chinese }, "INSERT");
+        else return await callApi({ action: "add", vocab: khmer, chinese: chinese }, "ADD");
     }
     
-    async function updateVocabByRow(sheetRowZeroBased, khmer, chinese) {
-        if (!editUnlocked) {
-            showPasswordModal(async (unlocked) => {
-                if (unlocked) await updateVocabByRow(sheetRowZeroBased, khmer, chinese);
-            });
-            return false;
-        }
-        if (sheetRowZeroBased === undefined || sheetRowZeroBased < 0) {
-            showToast("❌ Invalid row index");
-            return false;
-        }
-        return await callApi({ action: "update", row: sheetRowZeroBased, vocab: khmer, chinese: chinese }, "UPDATE");
+    async function updateVocabByRow(sheetRowNumber, khmer, chinese) {
+        if (!editUnlocked) { showPasswordModal(async (unlocked) => { if (unlocked) await updateVocabByRow(sheetRowNumber, khmer, chinese); }); return false; }
+        if (sheetRowNumber === undefined || sheetRowNumber < 1) { showToast("❌ Invalid row number"); return false; }
+        return await callApi({ action: "update", row: sheetRowNumber - 1, vocab: khmer, chinese: chinese }, "UPDATE");
     }
     
-    async function deleteVocabByRow(sheetRowZeroBased) {
-        if (!editUnlocked) {
-            showPasswordModal(async (unlocked) => {
-                if (unlocked) await deleteVocabByRow(sheetRowZeroBased);
-            });
-            return false;
-        }
-        if (sheetRowZeroBased === undefined || sheetRowZeroBased < 0) {
-            showToast("❌ Invalid row index");
-            return false;
-        }
-        return await callApi({ action: "delete", row: sheetRowZeroBased }, "DELETE");
+    async function deleteVocabByRow(sheetRowNumber) {
+        if (!editUnlocked) { showPasswordModal(async (unlocked) => { if (unlocked) await deleteVocabByRow(sheetRowNumber); }); return false; }
+        if (sheetRowNumber === undefined || sheetRowNumber < 1) { showToast("❌ Invalid row number"); return false; }
+        return await callApi({ action: "delete", row: sheetRowNumber - 1 }, "DELETE");
     }
     
-    function scrollToSidebarItem() {
-        setTimeout(() => {
-            const activeItem = document.querySelector('.vocab-item.active');
-            if (activeItem) {
-                activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }, 100);
-    }
+    function scrollToSidebarItem() { setTimeout(() => { const activeItem = document.querySelector('.vocab-item.active'); if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100); }
     
-    // ========== LOAD VOCABULARY MODAL ==========
     function showLoadVocabularyModal() {
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
-        modalDiv.innerHTML = `
-            <div class="file-source-card">
-                <h3>📥 Load Vocabulary</h3>
-                <div class="url-input-area">
-                    <input type="text" id="sheetUrlInputModal" placeholder="Google Sheet URL or ID" value="${currentSheetId || DEFAULT_SHEET_ID}">
-                    <button id="confirmUrlLoad" class="confirm-url-btn">Load Sheet</button>
-                </div>
-                <button class="close-modal" id="closeModalBtn">Cancel</button>
-            </div>
-        `;
+        modalDiv.innerHTML = `<div class="file-source-card"><h3>📥 Load Vocabulary</h3><div class="url-input-area"><input type="text" id="sheetUrlInputModal" placeholder="Google Sheet URL or ID" value="${currentSheetId || DEFAULT_SHEET_ID}"><button id="confirmUrlLoad" class="confirm-url-btn">Load Sheet</button></div><button class="close-modal" id="closeModalBtn">Cancel</button></div>`;
         document.body.appendChild(modalDiv);
-        
         const urlInput = modalDiv.querySelector('#sheetUrlInputModal');
         const loadBtn = modalDiv.querySelector('#confirmUrlLoad');
         const closeBtn = modalDiv.querySelector('#closeModalBtn');
-        
         loadBtn.onclick = async () => {
             const url = urlInput.value.trim();
-            if (!url) {
-                showToast("❌ Please enter a Google Sheet URL or ID", true);
-                return;
-            }
-            
+            if (!url) { showToast("❌ Please enter a Google Sheet URL or ID", true); return; }
             const extractedId = extractSheetIdFromUrl(url);
-            if (!extractedId) {
-                showToast("❌ Invalid Google Sheet URL. Could not extract Sheet ID.", true);
-                return;
-            }
-            
+            if (!extractedId) { showToast("❌ Invalid Google Sheet URL. Could not extract Sheet ID.", true); return; }
             currentSheetId = extractedId;
             currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`;
-            
             showToast(`📥 Loading sheet: ${currentSheetId}`);
             await loadSheetData();
             modalDiv.remove();
         };
-        
         closeBtn.onclick = () => modalDiv.remove();
         modalDiv.onclick = (e) => { if (e.target === modalDiv) modalDiv.remove(); };
     }
     
-    // ========== UI & APP FUNCTIONS ==========
     function getNormalPageForIndex(idx) { return Math.floor(idx / ITEMS_PER_PAGE); }
-    
-    function filterVocabBySearch(items) {
-        if (!headerSearchTerm) return items;
-        const term = headerSearchTerm.toLowerCase();
-        return items.filter(item => 
-            item.chinese.toLowerCase().includes(term) || 
-            item.khmer.toLowerCase().includes(term)
-        );
-    }
-    
+    function filterVocabBySearch(items) { if (!headerSearchTerm) return items; const term = headerSearchTerm.toLowerCase(); return items.filter(item => item.chinese.toLowerCase().includes(term) || item.khmer.toLowerCase().includes(term)); }
     function renderNormalSidebar() { 
         if (!vocabList.length) return; 
         const filteredList = filterVocabBySearch(vocabList);
-        if (filteredList.length === 0) {
-            sidebarIndices = [];
-            renderSidebarUI();
-            updateDisplay();
-            updatePaginationControls();
-            return;
-        }
+        if (filteredList.length === 0) { sidebarIndices = []; renderSidebarUI(); updateDisplay(); updatePaginationControls(); return; }
         const start = normalCurrentPage * ITEMS_PER_PAGE; 
         const end = Math.min(start + ITEMS_PER_PAGE, filteredList.length); 
         const indices = []; 
-        for (let i = start; i < end; i++) {
-            const originalIdx = vocabList.findIndex(v => v === filteredList[i]);
-            if (originalIdx !== -1) indices.push(originalIdx);
-        }
+        for (let i = start; i < end; i++) { const originalIdx = vocabList.findIndex(v => v === filteredList[i]); if (originalIdx !== -1) indices.push(originalIdx); }
         sidebarIndices = indices; 
         let focusPos = indices.indexOf(normalCurrentIdx); 
         if (focusPos === -1 && indices.length) { normalCurrentIdx = indices[0]; focusPos = 0; } 
@@ -2083,57 +1851,19 @@
         if (appMode === 'normal' && filteredList.length > ITEMS_PER_PAGE) { 
             const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE); 
             container.style.display = 'flex'; 
-            container.innerHTML = `<div class="pagination-bar"><button id="prevPageBtn" class="pagination-btn">◀ Prev</button><span class="pagination-info">Page ${normalCurrentPage+1} / ${totalPages}</span><button id="nextPageBtn" class="pagination-btn">Next ▶</button></div>`; 
-            
-            const prevBtn = document.getElementById('prevPageBtn');
-            const nextBtn = document.getElementById('nextPageBtn');
-            
-            let prevHoldTimer = null;
-            let nextHoldTimer = null;
-            
-            const goToFirstPage = () => {
-                if (normalCurrentPage !== 0) {
-                    normalCurrentPage = 0;
-                    const filtered = filterVocabBySearch(vocabList);
-                    if (filtered.length) normalCurrentIdx = vocabList.findIndex(v => v === filtered[0]);
-                    renderNormalSidebar();
-                    showToast("📖 Jumped to FIRST page");
-                }
-            };
-            
-            const goToLastPage = () => {
-                const filtered = filterVocabBySearch(vocabList);
-                const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-                if (normalCurrentPage !== totalPages - 1) {
-                    normalCurrentPage = totalPages - 1;
-                    const lastIdx = (totalPages - 1) * ITEMS_PER_PAGE;
-                    if (filtered[lastIdx]) normalCurrentIdx = vocabList.findIndex(v => v === filtered[lastIdx]);
-                    renderNormalSidebar();
-                    showToast("📖 Jumped to LAST page");
-                }
-            };
-            
-            if (prevBtn) {
-                prevBtn.onclick = () => { if (normalCurrentPage > 0) { normalCurrentPage--; renderNormalSidebar(); } };
-                prevBtn.addEventListener('mousedown', () => { prevHoldTimer = setTimeout(goToFirstPage, 1000); });
-                prevBtn.addEventListener('mouseup', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; });
-                prevBtn.addEventListener('mouseleave', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; });
-                prevBtn.addEventListener('touchstart', (e) => { e.preventDefault(); prevHoldTimer = setTimeout(goToFirstPage, 1000); });
-                prevBtn.addEventListener('touchend', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; });
+            container.innerHTML = `<div class="pagination-bar"><button id="prevPageBtn" class="pagination-btn">◀ Prev</button><span class="pagination-info">Page ${normalCurrentPage+1} / ${totalPages}</span><button id="nextPageBtn" class="pagination-btn">Next ▶</button><div id="modeIconsSide" style="display:flex; gap:4px; margin-left:8px;"></div></div>`; 
+            const modeIconsSide = document.getElementById('modeIconsSide');
+            if (modeIconsSide) {
+                modeIconsSide.innerHTML = `<button id="modeRandomIconBtn" class="mode-icon-btn ${appMode === 'random' ? 'active' : ''}" style="font-size:1rem; padding:4px 8px;">🎲</button><button id="modeNormalIconBtn" class="mode-icon-btn ${appMode === 'normal' ? 'active' : ''}" style="font-size:1rem; padding:4px 8px;">📋</button>`;
+                document.getElementById('modeRandomIconBtn')?.addEventListener('click', () => { if(appMode !== 'random') toggleAppMode(); });
+                document.getElementById('modeNormalIconBtn')?.addEventListener('click', () => { if(appMode !== 'normal') toggleAppMode(); });
             }
-            
-            if (nextBtn) {
-                nextBtn.onclick = () => { 
-                    const filtered = filterVocabBySearch(vocabList);
-                    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-                    if (normalCurrentPage + 1 < totalPages) { normalCurrentPage++; renderNormalSidebar(); } 
-                };
-                nextBtn.addEventListener('mousedown', () => { nextHoldTimer = setTimeout(goToLastPage, 1000); });
-                nextBtn.addEventListener('mouseup', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; });
-                nextBtn.addEventListener('mouseleave', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; });
-                nextBtn.addEventListener('touchstart', (e) => { e.preventDefault(); nextHoldTimer = setTimeout(goToLastPage, 1000); });
-                nextBtn.addEventListener('touchend', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; });
-            }
+            const prevBtn = document.getElementById('prevPageBtn'), nextBtn = document.getElementById('nextPageBtn');
+            let prevHoldTimer = null, nextHoldTimer = null;
+            const goToFirstPage = () => { if (normalCurrentPage !== 0) { normalCurrentPage = 0; const filtered = filterVocabBySearch(vocabList); if (filtered.length) normalCurrentIdx = vocabList.findIndex(v => v === filtered[0]); renderNormalSidebar(); showToast("📖 Jumped to FIRST page"); } };
+            const goToLastPage = () => { const filtered = filterVocabBySearch(vocabList); const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE); if (normalCurrentPage !== totalPages - 1) { normalCurrentPage = totalPages - 1; const lastIdx = (totalPages - 1) * ITEMS_PER_PAGE; if (filtered[lastIdx]) normalCurrentIdx = vocabList.findIndex(v => v === filtered[lastIdx]); renderNormalSidebar(); showToast("📖 Jumped to LAST page"); } };
+            if (prevBtn) { prevBtn.onclick = () => { if (normalCurrentPage > 0) { normalCurrentPage--; renderNormalSidebar(); } }; prevBtn.addEventListener('mousedown', () => { prevHoldTimer = setTimeout(goToFirstPage, 1000); }); prevBtn.addEventListener('mouseup', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; }); prevBtn.addEventListener('mouseleave', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; }); prevBtn.addEventListener('touchstart', (e) => { e.preventDefault(); prevHoldTimer = setTimeout(goToFirstPage, 1000); }); prevBtn.addEventListener('touchend', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; }); }
+            if (nextBtn) { nextBtn.onclick = () => { const filtered = filterVocabBySearch(vocabList); const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE); if (normalCurrentPage + 1 < totalPages) { normalCurrentPage++; renderNormalSidebar(); } }; nextBtn.addEventListener('mousedown', () => { nextHoldTimer = setTimeout(goToLastPage, 1000); }); nextBtn.addEventListener('mouseup', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; }); nextBtn.addEventListener('mouseleave', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; }); nextBtn.addEventListener('touchstart', (e) => { e.preventDefault(); nextHoldTimer = setTimeout(goToLastPage, 1000); }); nextBtn.addEventListener('touchend', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; }); }
         } else { container.style.display = 'none'; container.innerHTML = ''; } 
     }
     
@@ -2150,186 +1880,79 @@
     }
     
     function loadWordByMode(idx, addToHistory = true) { 
-        killAllSpeech(); 
-        if (!vocabList[idx]) return; 
+        killAllSpeech(); if (!vocabList[idx]) return; 
         if (appMode === 'random') { 
-            if (addToHistory) {
-                if (history[historyIndex] !== idx) {
-                    history = history.slice(0, historyIndex + 1);
-                    history.push(idx);
-                    historyIndex = history.length - 1;
-                }
-            }
+            if (addToHistory) { if (history[historyIndex] !== idx) { history = history.slice(0, historyIndex + 1); history.push(idx); historyIndex = history.length - 1; } }
             renderRandomSidebar(idx); 
         } else { 
             normalCurrentIdx = idx; 
             const filtered = filterVocabBySearch(vocabList);
             const newPage = Math.floor(filtered.findIndex(v => v === vocabList[idx]) / ITEMS_PER_PAGE);
-            if (newPage !== normalCurrentPage && newPage >= 0) { 
-                normalCurrentPage = newPage; 
-                renderNormalSidebar(); 
-            } else { 
-                let focusPos = sidebarIndices.indexOf(idx); 
-                if (focusPos !== -1) { 
-                    sidebarFocusIdx = focusPos; 
-                    renderSidebarUI(); 
-                    updateDisplay(); 
-                    const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; 
-                    if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); 
-                    scrollToActiveSidebarItem(); 
-                } else { 
-                    renderNormalSidebar(); 
-                } 
-            } 
+            if (newPage !== normalCurrentPage && newPage >= 0) { normalCurrentPage = newPage; renderNormalSidebar(); } 
+            else { let focusPos = sidebarIndices.indexOf(idx); if (focusPos !== -1) { sidebarFocusIdx = focusPos; renderSidebarUI(); updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); } else { renderNormalSidebar(); } } 
         } 
     }
     
-    function pickRandom() { 
-        if (appMode === 'normal') goNextNormal(); 
-        else if (vocabList.length) { 
-            const idx = Math.floor(Math.random() * vocabList.length); 
-            loadWordByMode(idx, true); 
-        } 
-    }
-    
-    function historyPrev() { 
-        if (appMode === 'random') { 
-            if (historyIndex > 0) { 
-                historyIndex--; 
-                loadWordByMode(history[historyIndex], false);
-            } 
-        } else goPrevNormal(); 
-    }
-    
-    function historyNext() { 
-        if (appMode === 'random') { 
-            if (historyIndex < history.length - 1) { 
-                historyIndex++; 
-                loadWordByMode(history[historyIndex], false);
-            } 
-        } else goNextNormal(); 
-    }
-    
-    function goPrevNormal() { 
-        if (!vocabList.length) return; 
-        const filtered = filterVocabBySearch(vocabList);
-        const currentFilteredIdx = filtered.findIndex(v => v === vocabList[normalCurrentIdx]);
-        let newFilteredIdx = currentFilteredIdx - 1;
-        if (newFilteredIdx < 0) newFilteredIdx = 0;
-        if (filtered[newFilteredIdx]) {
-            const newIdx = vocabList.findIndex(v => v === filtered[newFilteredIdx]);
-            loadWordByMode(newIdx, true);
-        }
-    }
-    
-    function goNextNormal() { 
-        if (!vocabList.length) return; 
-        const filtered = filterVocabBySearch(vocabList);
-        const currentFilteredIdx = filtered.findIndex(v => v === vocabList[normalCurrentIdx]);
-        let newFilteredIdx = currentFilteredIdx + 1;
-        if (newFilteredIdx >= filtered.length) newFilteredIdx = filtered.length - 1;
-        if (filtered[newFilteredIdx]) {
-            const newIdx = vocabList.findIndex(v => v === filtered[newFilteredIdx]);
-            loadWordByMode(newIdx, true);
-        }
-    }
-    
+    function pickRandom() { if (appMode === 'normal') goNextNormal(); else if (vocabList.length) { const idx = Math.floor(Math.random() * vocabList.length); loadWordByMode(idx, true); } }
+    function historyPrev() { if (appMode === 'random') { if (historyIndex > 0) { historyIndex--; loadWordByMode(history[historyIndex], false); } } else goPrevNormal(); }
+    function historyNext() { if (appMode === 'random') { if (historyIndex < history.length - 1) { historyIndex++; loadWordByMode(history[historyIndex], false); } } else goNextNormal(); }
+    function goPrevNormal() { if (!vocabList.length) return; const filtered = filterVocabBySearch(vocabList); const currentFilteredIdx = filtered.findIndex(v => v === vocabList[normalCurrentIdx]); let newFilteredIdx = currentFilteredIdx - 1; if (newFilteredIdx < 0) newFilteredIdx = 0; if (filtered[newFilteredIdx]) { const newIdx = vocabList.findIndex(v => v === filtered[newFilteredIdx]); loadWordByMode(newIdx, true); } }
+    function goNextNormal() { if (!vocabList.length) return; const filtered = filterVocabBySearch(vocabList); const currentFilteredIdx = filtered.findIndex(v => v === vocabList[normalCurrentIdx]); let newFilteredIdx = currentFilteredIdx + 1; if (newFilteredIdx >= filtered.length) newFilteredIdx = filtered.length - 1; if (filtered[newFilteredIdx]) { const newIdx = vocabList.findIndex(v => v === filtered[newFilteredIdx]); loadWordByMode(newIdx, true); } }
     function toggleAppMode() { 
         if (appMode === 'random') { 
-            appMode = 'normal'; 
-            document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; 
-            document.getElementById('modeRandomBtn').classList.remove('active'); 
-            document.getElementById('modeNormalBtn').classList.add('active'); 
-            const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; 
-            let idx = vocabList.findIndex(v => v.chinese === currentChinese); 
-            if (idx === -1 && vocabList.length) idx = 0; 
-            normalCurrentIdx = idx; 
-            const filtered = filterVocabBySearch(vocabList);
-            normalCurrentPage = Math.floor(filtered.findIndex(v => v === vocabList[idx]) / ITEMS_PER_PAGE);
-            if (normalCurrentPage < 0) normalCurrentPage = 0;
-            renderNormalSidebar(); 
+            appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; 
+            const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; normalCurrentIdx = idx; const filtered = filterVocabBySearch(vocabList); normalCurrentPage = Math.floor(filtered.findIndex(v => v === vocabList[idx]) / ITEMS_PER_PAGE); if (normalCurrentPage < 0) normalCurrentPage = 0; renderNormalSidebar(); 
         } else { 
-            appMode = 'random'; 
-            document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; 
-            document.getElementById('modeNormalBtn').classList.remove('active'); 
-            document.getElementById('modeRandomBtn').classList.add('active'); 
-            const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; 
-            let idx = vocabList.findIndex(v => v.chinese === currentChinese); 
-            if (idx === -1 && vocabList.length) idx = 0; 
-            if (idx !== -1) { 
-                history = [idx]; 
-                historyIndex = 0; 
-                renderRandomSidebar(idx); 
-            } else if (vocabList.length) pickRandom(); 
+            appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; 
+            const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; if (idx !== -1) { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); } else if (vocabList.length) pickRandom(); 
         } 
-        saveAllData(); 
+        saveAllData(); updatePaginationControls(); 
     }
     
     function toggleAuto() { autoActive = !autoActive; const btn = document.getElementById('autoBtn'); btn.classList.toggle('active', autoActive); btn.classList.toggle('off', !autoActive); btn.innerText = autoActive ? "AUTO: ON" : "AUTO: OFF"; if(autoActive) pickRandom(); else { clearTimeout(autoTimer); killAllSpeech(); } }
     function startAutoCycle() { clearTimeout(autoTimer); autoTimer = setTimeout(() => { if(autoActive) pickRandom(); }, parseInt(document.getElementById('autoDelay').value)*1000); }
-    function toggleSidebar() { sidebarVisible = !sidebarVisible; document.getElementById('rightSide').classList.toggle('hidden', !sidebarVisible); document.getElementById('dragResizer').classList.toggle('hidden', !sidebarVisible); document.getElementById('sidebarToggleBtn').innerText = sidebarVisible ? "HIDE SIDEBAR" : "SHOW SIDEBAR"; saveAllData(); }
+    function toggleSidebar() { sidebarVisible = !sidebarVisible; document.getElementById('rightSide').classList.toggle('hidden', !sidebarVisible); if(sidebarVisible){ document.getElementById('sidebarToggleBtn').innerText = "HIDE SIDEBAR"; } else { document.getElementById('sidebarToggleBtn').innerText = "SHOW SIDEBAR"; } saveAllData(); }
     
     function escapeHtml(str) { if(!str) return ""; return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
     
-    function scrollToActiveSidebarItem() { 
-        setTimeout(() => { 
-            const activeItem = document.querySelector('.vocab-item.active'); 
-            if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
-        }, 50); 
-    }
+    function scrollToActiveSidebarItem() { setTimeout(() => { const activeItem = document.querySelector('.vocab-item.active'); if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50); }
     
+    let searchDebounceTimer = null;
     function renderSidebarUI() { 
-        const list = document.getElementById('sidebarList'); 
-        list.innerHTML = ''; 
-        
+        const list = document.getElementById('sidebarList'); list.innerHTML = ''; 
         const headerDiv = document.createElement('div');
         headerDiv.className = 'vocab-header';
-        headerDiv.innerHTML = `
-            <span>#</span>
-            <input type="text" id="headerSearchInput" class="header-search-input" placeholder="🔍 Search vocabulary..." value="${escapeHtml(headerSearchTerm)}">
-        `;
+        // Removed the "#" span entirely (only the search input remains)
+        headerDiv.innerHTML = `<input type="text" id="headerSearchInput" class="header-search-input" placeholder="🔍 Search vocabulary..." value="${escapeHtml(headerSearchTerm)}">`;
         list.appendChild(headerDiv);
-        
         const searchInput = headerDiv.querySelector('#headerSearchInput');
         const handleSearch = (e) => {
-            headerSearchTerm = e.target.value;
-            if (appMode === 'normal') {
-                normalCurrentPage = 0;
-                normalCurrentIdx = 0;
-                renderNormalSidebar();
-            } else {
-                renderSidebarUI();
-            }
+            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => { 
+                headerSearchTerm = e.target.value; 
+                if (appMode === 'normal') { 
+                    normalCurrentPage = 0; 
+                    normalCurrentIdx = 0; 
+                    renderNormalSidebar(); 
+                } else { 
+                    renderSidebarUI(); 
+                } 
+                searchDebounceTimer = null; 
+            }, 300);
         };
         searchInput.addEventListener('input', handleSearch);
-        
+        searchInput.focus();
         let itemsToShow = sidebarIndices;
-        if (appMode === 'normal' && headerSearchTerm) {
-            const filtered = filterVocabBySearch(vocabList);
-            itemsToShow = filtered.map(item => vocabList.findIndex(v => v === item));
-        }
-        
+        if (appMode === 'normal' && headerSearchTerm) { const filtered = filterVocabBySearch(vocabList); itemsToShow = filtered.map(item => vocabList.findIndex(v => v === item)); }
         for (let sIdx = 0; sIdx < itemsToShow.length; sIdx++) { 
             const idx = itemsToShow[sIdx]; 
             const div = document.createElement('div'); 
             const isActive = (appMode === 'normal' && headerSearchTerm) ? (idx === normalCurrentIdx) : (sIdx === sidebarFocusIdx);
             div.className = `vocab-item ${isActive ? 'active' : ''}`; 
             const displayNumber = getDisplayNumberFromArrayIndex(idx);
-            const sheetRowZeroBased = idx;
+            const sheetRowNumber = vocabList[idx].sheetRow;
             const disabledClass = !editUnlocked ? 'disabled' : '';
-            div.innerHTML = `
-                <div class="side-number-col">
-                    <div class="side-number">#${displayNumber}</div>
-                    <div class="side-icons-row">
-                        <button class="edit-side-icon ${disabledClass}" onclick="event.stopPropagation(); ${editUnlocked ? `showEditModal(${idx}, ${sheetRowZeroBased}, '${escapeHtml(vocabList[idx].khmer)}', '${escapeHtml(vocabList[idx].chinese)}')` : `showPasswordModal(()=>{renderSidebarUI();})`}" title="Edit">✏️</button>
-                        <button class="sheet-row-icon ${disabledClass}" onclick="event.stopPropagation(); ${editUnlocked ? `openSheetAndActivateCell(${sheetRowZeroBased})` : `showPasswordModal(()=>{})`}" title="Open Sheet Row ${sheetRowZeroBased+1}">📊</button>
-                    </div>
-                </div>
-                <div class="word-wrapper" onclick="loadWordByMode(${idx}, true); event.stopPropagation()">
-                    <span class="side-zh">${escapeHtml(vocabList[idx].chinese)}</span>
-                    <span class="side-km">${escapeHtml(vocabList[idx].khmer)}</span>
-                </div>
-            `; 
+            div.innerHTML = `<div class="side-number-col"><div class="side-number">#${displayNumber}</div><div class="side-icons-row"><button class="edit-side-icon ${disabledClass}" onclick="event.stopPropagation(); ${editUnlocked ? `showEditModal(${idx}, ${sheetRowNumber}, '${escapeHtml(vocabList[idx].khmer)}', '${escapeHtml(vocabList[idx].chinese)}')` : `showPasswordModal(()=>{renderSidebarUI();})`}" title="Edit">✏️</button><button class="sheet-row-icon ${disabledClass}" onclick="event.stopPropagation(); ${editUnlocked ? `openSheetAndActivateCell(${sheetRowNumber})` : `showPasswordModal(()=>{})`}" title="Open Sheet Row ${sheetRowNumber}">📊</button></div></div><div class="word-wrapper" onclick="loadWordByMode(${idx}, true); event.stopPropagation()"><span class="side-zh">${escapeHtml(vocabList[idx].chinese)}</span><span class="side-km">${escapeHtml(vocabList[idx].khmer)}</span></div>`;
             list.appendChild(div); 
         } 
         applySidebarStyles(); 
@@ -2337,47 +1960,22 @@
         scrollToActiveSidebarItem(); 
     }
     
-    window.showEditModal = function(displayRowIdx, sheetRowZeroBased, currentKhmer, currentChinese) {
-        if (!editUnlocked) {
-            showPasswordModal(() => { showEditModal(displayRowIdx, sheetRowZeroBased, currentKhmer, currentChinese); });
-            return;
-        }
-        
+    window.showEditModal = function(displayRowIdx, sheetRowNumber, currentKhmer, currentChinese) {
+        if (!editUnlocked) { showPasswordModal(() => { showEditModal(displayRowIdx, sheetRowNumber, currentKhmer, currentChinese); }); return; }
         const displayNumber = getDisplayNumberFromArrayIndex(displayRowIdx);
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
-        modalDiv.innerHTML = `
-            <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;">
-                <h3>✏️ EDIT Display #${displayNumber}</h3>
-                <div style="margin-bottom:16px;">
-                    <input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(currentChinese)}" class="big-edit-input">
-                    <input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input">
-                </div>
-                <div class="edit-group-buttons">
-                    <button id="confirmUpdateBtn">💾 UPDATE SHEET</button>
-                    <button id="openSheetRowBtn" style="background:#3b82f6;">📊 OPEN SHEET</button>
-                </div>
-                <div class="delete-group-btn">
-                    <button id="deleteRowBtn">🗑️ DELETE Display #${displayNumber}</button>
-                </div>
-                <button id="cancelEditBtn" class="cancel-icon">✕</button>
-            </div>
-        `;
+        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>✏️ EDIT Display #${displayNumber}</h3><div style="margin-bottom:16px;"><input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(currentChinese)}" class="big-edit-input"><input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input"></div><div class="edit-group-buttons"><button id="confirmUpdateBtn">💾 UPDATE SHEET</button><button id="openSheetRowBtn" style="background:#3b82f6;">📊 OPEN SHEET</button></div><div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${displayNumber}</button></div><button id="cancelEditBtn" class="cancel-icon">✕</button></div>`;
         document.body.appendChild(modalDiv);
-        
         const chineseInput = document.getElementById('editChineseInput');
         const khmerInput = document.getElementById('editKhmerInput');
-        
         document.getElementById('confirmUpdateBtn').onclick = async () => {
             const newChinese = chineseInput.value.trim();
             const newKhmer = khmerInput.value.trim();
-            if (!newChinese && !newKhmer) {
-                showToast("⚠️ At least one field required");
-                return;
-            }
-            const success = await updateVocabByRow(sheetRowZeroBased, newKhmer || currentKhmer, newChinese || currentChinese);
+            if (!newChinese && !newKhmer) { showToast("⚠️ At least one field required"); return; }
+            const success = await updateVocabByRow(sheetRowNumber, newKhmer || currentKhmer, newChinese || currentChinese);
             if (success) {
-                vocabList[displayRowIdx] = { khmer: newKhmer || currentKhmer, chinese: newChinese || currentChinese };
+                vocabList[displayRowIdx] = { khmer: newKhmer || currentKhmer, chinese: newChinese || currentChinese, sheetRow: sheetRowNumber };
                 saveAllData();
                 renderSidebarUI();
                 updateDisplay();
@@ -2385,206 +1983,88 @@
             }
             modalDiv.remove();
         };
-        
-        document.getElementById('openSheetRowBtn').onclick = () => {
-            openSheetAndActivateCell(sheetRowZeroBased);
-            modalDiv.remove();
-        };
-        
+        document.getElementById('openSheetRowBtn').onclick = () => { openSheetAndActivateCell(sheetRowNumber); modalDiv.remove(); };
         document.getElementById('deleteRowBtn').onclick = async () => {
             if (confirm(`⚠️ Delete Display #${displayNumber}?`)) {
-                const success = await deleteVocabByRow(sheetRowZeroBased);
+                const success = await deleteVocabByRow(sheetRowNumber);
                 if (success) {
                     vocabList.splice(displayRowIdx, 1);
                     saveAllData();
-                    
-                    if (vocabList.length === 0) {
-                        sidebarIndices = [];
-                        renderSidebarUI();
-                        updateChineseDisplay("");
-                        document.getElementById('khmerWord').innerText = "";
-                        showToast("All vocabulary deleted");
-                    } else {
-                        if (appMode === 'normal') {
-                            if (normalCurrentIdx >= vocabList.length) normalCurrentIdx = vocabList.length - 1;
-                            normalCurrentPage = 0;
-                            renderNormalSidebar();
-                        } else {
-                            let newIdx = displayRowIdx;
-                            if (newIdx >= vocabList.length) newIdx = vocabList.length - 1;
-                            if (newIdx < 0 && vocabList.length > 0) newIdx = 0;
-                            if (newIdx >= 0) {
-                                history = [newIdx];
-                                historyIndex = 0;
-                                renderRandomSidebar(newIdx);
-                            } else {
-                                renderSidebarUI();
-                                updateChineseDisplay("");
-                                document.getElementById('khmerWord').innerText = "";
-                            }
-                        }
+                    if (vocabList.length === 0) { sidebarIndices = []; renderSidebarUI(); updateChineseDisplay(""); document.getElementById('khmerWord').innerText = ""; showToast("All vocabulary deleted"); }
+                    else {
+                        if (appMode === 'normal') { if (normalCurrentIdx >= vocabList.length) normalCurrentIdx = vocabList.length - 1; normalCurrentPage = 0; renderNormalSidebar(); }
+                        else { let newIdx = displayRowIdx; if (newIdx >= vocabList.length) newIdx = vocabList.length - 1; if (newIdx < 0 && vocabList.length > 0) newIdx = 0; if (newIdx >= 0) { history = [newIdx]; historyIndex = 0; renderRandomSidebar(newIdx); } else { renderSidebarUI(); updateChineseDisplay(""); document.getElementById('khmerWord').innerText = ""; } }
                     }
                     showToast("✅ Deleted successfully");
                 }
                 modalDiv.remove();
             }
         };
-        
         document.getElementById('cancelEditBtn').onclick = () => modalDiv.remove();
     };
     
     function showAddNewModal() {
-        if (!editUnlocked) {
-            showPasswordModal(() => { showAddNewModal(); });
-            return;
-        }
-        
+        if (!editUnlocked) { showPasswordModal(() => { showAddNewModal(); }); return; }
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
-        modalDiv.innerHTML = `
-            <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;">
-                <h3>➕ ADD NEW VOCABULARY</h3>
-                <div style="margin-bottom:16px;">
-                    <input id="addChineseInput" placeholder="Chinese word" class="big-edit-input">
-                    <input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input">
-                </div>
-                <div class="choice-search-area">
-                    <input type="text" id="vocabSearchInput" placeholder="🔍 Search vocabulary...">
-                    <div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>
-                </div>
-                <div class="edit-group-buttons">
-                    <button id="confirmAddBtn" style="background:#10b981;">✅ ADD TO SHEET</button>
-                </div>
-                <button id="cancelAddBtn" class="cancel-icon">✕</button>
-            </div>
-        `;
+        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>➕ ADD NEW VOCABULARY (at top after header)</h3><div style="margin-bottom:16px;"><input id="addChineseInput" placeholder="Chinese word" class="big-edit-input"><input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input"></div><div class="choice-search-area"><input type="text" id="vocabSearchInput" placeholder="🔍 Search vocabulary..."><div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div></div><div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#10b981;">✅ ADD TO SHEET (Row 2)</button></div><button id="cancelAddBtn" class="cancel-icon">✕</button></div>`;
         document.body.appendChild(modalDiv);
-        
         const addChinese = document.getElementById('addChineseInput');
         const addKhmer = document.getElementById('addKhmerInput');
         const searchInput = document.getElementById('vocabSearchInput');
         const searchResults = document.getElementById('vocabSearchResults');
-        
         const updateSearchResults = () => {
             const term = searchInput.value.trim().toLowerCase();
-            if (!term) {
-                searchResults.innerHTML = '';
-                return;
-            }
-            const filtered = vocabList.filter(item => 
-                item.chinese.toLowerCase().includes(term) || 
-                item.khmer.toLowerCase().includes(term)
-            ).slice(0, 10);
-            
-            if (filtered.length === 0) {
-                searchResults.innerHTML = '<div style="padding:8px; text-align:center; color:#888;">No matches</div>';
-                return;
-            }
-            
-            searchResults.innerHTML = filtered.map(item => `
-                <div style="padding:8px; border-bottom:1px solid #ccc; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px;" 
-                     onclick="document.getElementById('addChineseInput').value='${escapeHtml(item.chinese)}'; document.getElementById('addKhmerInput').value='${escapeHtml(item.khmer)}'; searchResults.innerHTML=''; searchInput.value='';">
-                    <strong>${escapeHtml(item.chinese)}</strong> — ${escapeHtml(item.khmer)}
-                </div>
-            `).join('');
+            if (!term) { searchResults.innerHTML = ''; return; }
+            const filtered = vocabList.filter(item => item.chinese.toLowerCase().includes(term) || item.khmer.toLowerCase().includes(term)).slice(0, 10);
+            if (filtered.length === 0) { searchResults.innerHTML = '<div style="padding:8px; text-align:center; color:#888;">No matches</div>'; return; }
+            searchResults.innerHTML = filtered.map(item => `<div style="padding:8px; border-bottom:1px solid #ccc; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px;" onclick="document.getElementById('addChineseInput').value='${escapeHtml(item.chinese)}'; document.getElementById('addKhmerInput').value='${escapeHtml(item.khmer)}'; searchResults.innerHTML=''; searchInput.value='';"><strong>${escapeHtml(item.chinese)}</strong> — ${escapeHtml(item.khmer)}</div>`).join('');
         };
-        
         searchInput.addEventListener('input', updateSearchResults);
-        
         document.getElementById('confirmAddBtn').onclick = async () => {
             const chinese = addChinese.value.trim();
             const khmer = addKhmer.value.trim();
-            if (!chinese && !khmer) {
-                showToast("⚠️ Enter at least one value");
-                return;
-            }
-            const success = await addVocabToSheet(khmer, chinese);
+            if (!chinese && !khmer) { showToast("⚠️ Enter at least one value"); return; }
+            const success = await addVocabToSheet(khmer, chinese, 2);
             if (success) {
                 await loadSheetData();
-                const newIdx = vocabList.length - 1;
-                if (appMode === 'random') {
-                    history = [newIdx];
-                    historyIndex = 0;
-                    renderRandomSidebar(newIdx);
-                } else {
-                    normalCurrentIdx = newIdx;
-                    normalCurrentPage = 0;
-                    renderNormalSidebar();
-                }
-                showToast(`✅ Added: ${chinese || khmer}`);
+                if (appMode === 'random') { history = [1]; historyIndex = 0; renderRandomSidebar(1); }
+                else { normalCurrentIdx = 1; normalCurrentPage = 0; renderNormalSidebar(); }
+                showToast(`✅ Added "${chinese || khmer}" as new #${getDisplayNumberFromArrayIndex(1)}`);
                 scrollToSidebarItem();
             }
             modalDiv.remove();
         };
-        
         document.getElementById('cancelAddBtn').onclick = () => modalDiv.remove();
     }
     
     // ========== PINYIN FIX ==========
     function getPinyinForText(text) {
-        if (!text || typeof window.pinyinPro === 'undefined') {
-            return text.split('').map(char => ({ char: char, pinyin: '' }));
-        }
-        
+        if (!text || typeof window.pinyinPro === 'undefined') return text.split('').map(char => ({ char: char, pinyin: '' }));
         try {
-            const pinyinArray = window.pinyinPro.pinyin(text, { 
-                toneType: "symbol", 
-                type: "array", 
-                multiple: false,
-                pattern: "pinyin"
-            });
-            
+            const pinyinArray = window.pinyinPro.pinyin(text, { toneType: "symbol", type: "array", multiple: false, pattern: "pinyin" });
             const result = [];
             for (let i = 0; i < text.length; i++) {
                 const char = text[i];
                 let pinyin = (pinyinArray[i] && pinyinArray[i] !== char) ? pinyinArray[i] : '';
-                if (pinyin && !pinyin.match(/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/)) {
-                    const withSymbols = window.pinyinPro.pinyin(char, { toneType: "symbol", pattern: "pinyin" });
-                    if (withSymbols && withSymbols !== char) {
-                        pinyin = withSymbols;
-                    }
-                }
+                if (pinyin && !pinyin.match(/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/)) { const withSymbols = window.pinyinPro.pinyin(char, { toneType: "symbol", pattern: "pinyin" }); if (withSymbols && withSymbols !== char) pinyin = withSymbols; }
                 result.push({ char: char, pinyin: pinyin });
             }
             return result;
-        } catch(e) {
-            console.error("Pinyin error:", e);
-            return text.split('').map(char => ({ char: char, pinyin: '' }));
-        }
+        } catch(e) { console.error("Pinyin error:", e); return text.split('').map(char => ({ char: char, pinyin: '' })); }
     }
     
     const tripleHtmlCache = new Map();
     function getTripleHTML(chineseText) {
         if (!chineseText) return '';
         if (tripleHtmlCache.has(chineseText)) return tripleHtmlCache.get(chineseText);
-        
         try {
             const pinyinData = getPinyinForText(chineseText);
             let html = '';
-            for (let i = 0; i < pinyinData.length; i++) {
-                const char = pinyinData[i].char;
-                const phonetic = pinyinData[i].pinyin;
-                html += `<div class="char-block">
-                            <div class="pinyin-top">${phonetic}</div>
-                            <div class="chinese-main">${char}</div>
-                            <div class="chinese-bottom">${char}</div>
-                         </div>`;
-            }
+            for (let i = 0; i < pinyinData.length; i++) { const char = pinyinData[i].char; const phonetic = pinyinData[i].pinyin; html += `<div class="char-block"><div class="pinyin-top">${phonetic}</div><div class="chinese-main">${char}</div><div class="chinese-bottom">${char}</div></div>`; }
             tripleHtmlCache.set(chineseText, html);
             return html;
-        } catch(e) { 
-            console.warn("pinyin error", e); 
-            let html = '';
-            for (let i = 0; i < chineseText.length; i++) {
-                const char = chineseText[i];
-                html += `<div class="char-block">
-                            <div class="pinyin-top"></div>
-                            <div class="chinese-main">${char}</div>
-                            <div class="chinese-bottom">${char}</div>
-                         </div>`;
-            }
-            return html;
-        }
+        } catch(e) { console.warn("pinyin error", e); let html = ''; for (let i = 0; i < chineseText.length; i++) { const char = chineseText[i]; html += `<div class="char-block"><div class="pinyin-top"></div><div class="chinese-main">${char}</div><div class="chinese-bottom">${char}</div></div>`; } return html; }
     }
     
     // ========== SPEECH ==========
@@ -2599,7 +2079,7 @@
     function speakKhmerFromMain() { const container = document.getElementById('khmerWord'); const plainText = container ? container.innerText : ''; if(plainText) { killAllSpeech(); speakKhmerEdge(plainText); } }
     async function speakAutoSequence(zhText, kmText) { killAllSpeech(); const zhReps = parseInt(document.getElementById('zhReps').value); const kmReps = parseInt(document.getElementById('kmReps').value); const zhVoice = document.getElementById('zhVoiceSelect').value; const kmVoice = document.getElementById('kmVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); for(let i=0; i<zhReps; i++) { await callEdgeTTS(zhText, zhVoice, rateFormatted); } if(kmText && kmText.trim()) { for(let j=0; j<kmReps; j++) { await callEdgeTTS(kmText, kmVoice, null); } } if(autoActive) startAutoCycle(); }
     
-    // ========== STYLE FUNCTIONS (simplified for space) ==========
+    // ========== STYLE FUNCTIONS (abbreviated but fully functional) ==========
     function getBottomScaleFactor(charCount) { if (charCount <= 2) return 1.0; if (charCount <= 5) return 0.8; if (charCount <= 7) return 0.5; if (charCount <= 10) return 0.4; if (charCount <= 13) return 0.25; return 0.10; }
     function applyBottomAutoScale() { const container = document.getElementById('chineseWord'); if (!container) return; const plainText = container.getAttribute('data-plain') || ''; const charCount = plainText.length; const scale = getBottomScaleFactor(charCount); const finalSize = Math.max(12, Math.min(120, Math.round(userSetBottomFontSize * scale))); container.querySelectorAll('.chinese-bottom').forEach(el => el.style.fontSize = finalSize + 'px'); }
     function shrinkChineseToFit() { const element = document.getElementById('chineseWord'); if (!element) return; const parentRect = document.getElementById('displayArea').getBoundingClientRect(); const maxWidth = parentRect.width * 0.85; if (maxWidth <= 0) return; const originalTransform = element.style.transform; const originalPosition = element.style.position; const originalLeft = element.style.left; const originalTop = element.style.top; element.style.position = 'absolute'; element.style.left = '0'; element.style.top = '0'; element.style.transform = 'none'; element.style.fontSize = userSetChineseFontSize + 'vh'; void element.offsetHeight; let finalSize = userSetChineseFontSize; if (element.scrollWidth > maxWidth) { let low = 2, high = userSetChineseFontSize, bestSize = low; for (let i = 0; i < 12; i++) { if (low > high) break; const mid = (low + high) / 2; element.style.fontSize = mid + 'vh'; void element.offsetHeight; if (element.scrollWidth <= maxWidth) { bestSize = mid; low = mid + 0.5; } else high = mid - 0.5; } finalSize = bestSize; } element.style.fontSize = finalSize + 'vh'; element.style.position = originalPosition || 'absolute'; element.style.left = originalLeft || chineseX + '%'; element.style.top = originalTop || chineseY + '%'; element.style.transform = originalTransform || 'translate(-50%, -50%)'; document.getElementById('mZhSizeVal').innerText = Math.round(finalSize) + 'vh'; const chineseText = element.getAttribute('data-plain') || ''; const charCount = chineseText.length; let targetScale = 1.0; if (charCount >= 14) targetScale = 0.10; else if (charCount >= 11) targetScale = 0.15; else if (charCount >= 8) targetScale = 0.20; else if (charCount >= 6) targetScale = 0.30; else if (charCount >= 5) targetScale = 0.40; else if (charCount >= 4) targetScale = 0.60; else if (charCount >= 3) targetScale = 0.80; else targetScale = 1.0; const appliedSize = Math.max(10, Math.min(120, Math.round(userSetPinyinFontSize * targetScale))); const pinyinFont = document.getElementById('pinyinFont').value; const pinyinColor = document.getElementById('pinyinColor').value; const isPinyinBold = document.getElementById('pinyinBold').classList.contains('active'); document.querySelectorAll('.pinyin-top').forEach(el => { if(pinyinFont !== 'inherit') el.style.fontFamily = pinyinFont; el.style.color = pinyinColor; el.style.fontWeight = isPinyinBold ? 'bold' : 'normal'; el.style.fontSize = appliedSize + 'px'; }); applyBottomAutoScale(); }
@@ -2621,13 +2101,13 @@
     function applyStyles() { const mKm = document.getElementById('khmerWord'); if(mKm){ mKm.style.fontFamily = document.getElementById('mKmFont').value; mKm.style.color = document.getElementById('mKmColor').value; mKm.style.fontWeight = document.getElementById('mKmBold').classList.contains('active') ? 'bold' : '500'; } applySidebarStyles(); document.getElementById('delayVal').innerText = document.getElementById('autoDelay').value+'s'; document.getElementById('repVal').innerText = document.getElementById('zhReps').value; document.getElementById('kmRepVal').innerText = document.getElementById('kmReps').value; applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyShadow(); saveAllData(); forceShrink(); }
     function applyShadow() { const shadowValue = document.getElementById('shadowSlider').value; const percent = Math.round(shadowValue); document.getElementById('shadowVal').innerText = percent + '%'; const shadowBlur = percent * 0.4; const shadowOffset = percent * 0.2; const shadowOpacity = Math.min(0.5, percent / 40); const shadowStyle = `${shadowOffset}px ${shadowOffset}px ${shadowBlur}px rgba(0,0,0,${shadowOpacity})`; document.querySelectorAll('.chinese-main').forEach(el => el.style.textShadow = shadowStyle); const khmerElementW = document.getElementById('khmerWord'); if (khmerElementW) khmerElementW.style.textShadow = shadowStyle; saveAllData(); }
     function saveAllData() { const settings = { mZhSize: userSetChineseFontSize, mKmSize: userSetKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: userSetBottomFontSize, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage, shadow: document.getElementById('shadowSlider').value }; localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList)); localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings)); }
-    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings){ const s = JSON.parse(savedSettings); userSetChineseFontSize = s.mZhSize || 42; userSetKhmerFontSize = s.mKmSize || 42; document.getElementById('mZhSize').value = userSetChineseFontSize; document.getElementById('mKmSize').value = userSetKhmerFontSize; document.getElementById('mZhColor').value = s.mZhColor || "#000000"; document.getElementById('mKmColor').value = s.mKmColor || "#000000"; document.getElementById('zhReps').value = s.zhReps || 3; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor; document.getElementById('sVocabSpacing').value = s.vocabSpacing || 8; document.body.style.setProperty('--vocab-spacing', (s.vocabSpacing || 8) + 'px'); document.getElementById('vocabSpacingVal').innerText = (s.vocabSpacing || 8) + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.pinyinFont) document.getElementById('pinyinFont').value = s.pinyinFont; if(s.pinyinColor) document.getElementById('pinyinColor').value = s.pinyinColor; if(s.pinyinBold !== undefined) { const btn = document.getElementById('pinyinBold'); if(s.pinyinBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.pinyinSizePx) { document.getElementById('pinyinSizePx').value = s.pinyinSizePx; userSetPinyinFontSize = parseInt(s.pinyinSizePx); } if(s.pinyinSpacing) document.getElementById('pinyinSpacing').value = s.pinyinSpacing; if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont; if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor; if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomFontSize = parseInt(s.bottomSizePx); } if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible; if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible; if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; document.getElementById('modeNormalBtn').classList.add('active'); document.getElementById('modeRandomBtn').classList.remove('active'); } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; document.getElementById('modeRandomBtn').classList.add('active'); document.getElementById('modeNormalBtn').classList.remove('active'); } normalCurrentIdx = s.normalCurrentIdx || 0; normalCurrentPage = s.normalCurrentPage || 0; sidebarVisible = s.sidebarVisible !== undefined ? s.sidebarVisible : false; if(!sidebarVisible) { document.getElementById('rightSide').classList.add('hidden'); document.getElementById('dragResizer').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; } } else { document.getElementById('pinyinFont').value = "'Baguette Simplified'"; document.getElementById('pinyinColor').value = "#000000"; document.getElementById('pinyinSizePx').value = "55"; userSetPinyinFontSize = 55; document.getElementById('pinyinSpacing').value = "0"; document.getElementById('bottomSizePx').value = "55"; userSetBottomFontSize = 55; document.getElementById('mKmColor').value = "#000000"; document.getElementById('bottomCharColor').value = "#2563eb"; document.getElementById('shadowSlider').value = "3"; sidebarVisible = false; document.getElementById('rightSide').classList.add('hidden'); document.getElementById('dragResizer').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; applyPinyinStyles(); applyBottomStyles(); } applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility(); setKhmerFontSize(userSetKhmerFontSize); applyShadow(); applyBottomAutoScale(); }
+    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings){ const s = JSON.parse(savedSettings); userSetChineseFontSize = s.mZhSize || 42; userSetKhmerFontSize = s.mKmSize || 42; document.getElementById('mZhSize').value = userSetChineseFontSize; document.getElementById('mKmSize').value = userSetKhmerFontSize; document.getElementById('mZhColor').value = s.mZhColor || "#000000"; document.getElementById('mKmColor').value = s.mKmColor || "#000000"; document.getElementById('zhReps').value = s.zhReps || 1; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor; document.getElementById('sVocabSpacing').value = s.vocabSpacing || 8; document.body.style.setProperty('--vocab-spacing', (s.vocabSpacing || 8) + 'px'); document.getElementById('vocabSpacingVal').innerText = (s.vocabSpacing || 8) + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.pinyinFont) document.getElementById('pinyinFont').value = s.pinyinFont; if(s.pinyinColor) document.getElementById('pinyinColor').value = s.pinyinColor; if(s.pinyinBold !== undefined) { const btn = document.getElementById('pinyinBold'); if(s.pinyinBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.pinyinSizePx) { document.getElementById('pinyinSizePx').value = s.pinyinSizePx; userSetPinyinFontSize = parseInt(s.pinyinSizePx); } if(s.pinyinSpacing) document.getElementById('pinyinSpacing').value = s.pinyinSpacing; if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont; if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor; if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomFontSize = parseInt(s.bottomSizePx); } if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible; if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible; if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; } normalCurrentIdx = s.normalCurrentIdx || 0; normalCurrentPage = s.normalCurrentPage || 0; sidebarVisible = s.sidebarVisible !== undefined ? s.sidebarVisible : false; if(!sidebarVisible) { document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; } } else { document.getElementById('pinyinFont').value = "'Baguette Simplified'"; document.getElementById('pinyinColor').value = "#000000"; document.getElementById('pinyinSizePx').value = "55"; userSetPinyinFontSize = 55; document.getElementById('pinyinSpacing').value = "0"; document.getElementById('bottomSizePx').value = "55"; userSetBottomFontSize = 55; document.getElementById('mKmColor').value = "#000000"; document.getElementById('bottomCharColor').value = "#2563eb"; document.getElementById('shadowSlider').value = "3"; sidebarVisible = false; document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; applyPinyinStyles(); applyBottomStyles(); } applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility(); setKhmerFontSize(userSetKhmerFontSize); applyShadow(); applyBottomAutoScale(); }
     function toggleBold(btnId, applyCallback) { const btn = document.getElementById(btnId); if (btn) { btn.classList.toggle('active'); if (applyCallback && typeof applyCallback === 'function') { applyCallback(); } else { applyStyles(); } } }
     function switchTab(tab) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active'); document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab))); if (tab === 'side' && !sidebarVisible) { toggleSidebar(); } }
     function setupBackgroundClick() { document.getElementById('bgClickArea').addEventListener('click', function(e) { if (e.target.closest('#floatingMenu')) return; if (e.target.closest('.chinese-word')) return; if (e.target.closest('.khmer-text')) return; pickRandom(); }); }
     function toggleMenu(hide) { if (hide) { document.getElementById("floatingMenu").style.display = "none"; document.getElementById("minimizedTrigger").style.display = "flex"; } else { document.getElementById("floatingMenu").style.display = "block"; document.getElementById("minimizedTrigger").style.display = "none"; } if (hide) applyStoredGearPosition(); }
     
-    // ========== DRAG & LAYER (simplified) ==========
+    // ========== DRAG & LAYER (fully functional) ==========
     let chineseElement = null, khmerElement = null;
     let chineseX = 50, chineseY = 40, khmerX = 50, khmerY = 70;
     let topLayerX = 0, topLayerY = 0, bottomLayerX = 0, bottomLayerY = 0;
@@ -2647,7 +2127,7 @@
     function resetChinesePosition() { chineseX = 50; chineseY = 40; if (chineseElement) { chineseElement.style.left = '50%'; chineseElement.style.top = '40%'; } saveAllDragPositions(); forceShrink(); }
     function resetKhmerPosition() { khmerX = 50; khmerY = 70; if (khmerElement) { khmerElement.style.left = '50%'; khmerElement.style.top = '70%'; } saveAllDragPositions(); forceShrink(); }
     function resetLayerOffsets() { topLayerX = 0; topLayerY = 0; bottomLayerX = 0; bottomLayerY = 0; applyLayerTransforms(); saveAllDragPositions(); }
-    function showLayerChoiceModal() { return new Promise((resolve) => { const modalDiv = document.createElement('div'); modalDiv.className = 'modal-overlay'; modalDiv.innerHTML = `<div class="choice-modal"><h3>✧ CHOOSE ACTION ✧</h3><div class="choice-search-area"><input type="text" id="choiceSearchInput" placeholder="🔍 Search vocabulary..."><div id="choiceSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div></div><div class="choice-buttons"><button class="choice-top">🔶 Drag Top Pinyin</button><button class="choice-bottom">🔷 Drag Bottom Char</button><div class="edit-group-buttons"><button id="editVocabBtn" style="background:#f59e0b;">✏️ EDIT CURRENT</button><button id="addVocabBtn" style="background:#10b981;">➕ ADD NEW</button></div><div class="choice-reset-group"><button class="choice-reset-chinese">⟳ Reset Chinese Pos</button><button class="choice-reset-khmer">⟳ Reset Khmer Pos</button><button class="choice-reset-layers">⟳ Reset Layer Offsets</button></div><button class="choice-cancel">✕ Cancel</button></div></div>`; document.body.appendChild(modalDiv); const searchInput = modalDiv.querySelector('#choiceSearchInput'); const searchResults = modalDiv.querySelector('#choiceSearchResults'); const updateSearch = () => { const term = searchInput.value.trim().toLowerCase(); if (!term) { searchResults.innerHTML = ''; return; } const filtered = vocabList.filter(item => item.chinese.toLowerCase().includes(term) || item.khmer.toLowerCase().includes(term)).slice(0, 8); if (filtered.length === 0) { searchResults.innerHTML = '<div style="padding:8px; text-align:center; color:#ccc;">No matches</div>'; return; } searchResults.innerHTML = filtered.map(item => `<div style="padding:8px; border-bottom:1px solid #555; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px; color:white;" onclick="loadWordByMode(${vocabList.findIndex(v => v === item)}, true); document.querySelector('.modal-overlay')?.remove();"><strong>${escapeHtml(item.chinese)}</strong> — ${escapeHtml(item.khmer)}</div>`).join(''); }; searchInput.addEventListener('input', updateSearch); const topBtn = modalDiv.querySelector('.choice-top'); const bottomBtn = modalDiv.querySelector('.choice-bottom'); const editBtn = modalDiv.querySelector('#editVocabBtn'); const addBtn = modalDiv.querySelector('#addVocabBtn'); const resetChineseBtn = modalDiv.querySelector('.choice-reset-chinese'); const resetKhmerBtn = modalDiv.querySelector('.choice-reset-khmer'); const resetLayersBtn = modalDiv.querySelector('.choice-reset-layers'); const cancelBtn = modalDiv.querySelector('.choice-cancel'); const cleanup = (result) => { modalDiv.remove(); resolve(result); }; topBtn.onclick = () => cleanup('top'); bottomBtn.onclick = () => cleanup('bottom'); editBtn.onclick = () => { if (!editUnlocked) { showPasswordModal(() => { showEditModal(sidebarIndices[sidebarFocusIdx], sidebarIndices[sidebarFocusIdx], vocabList[sidebarIndices[sidebarFocusIdx]]?.khmer, vocabList[sidebarIndices[sidebarFocusIdx]]?.chinese); cleanup(null); }); } else { showEditModal(sidebarIndices[sidebarFocusIdx], sidebarIndices[sidebarFocusIdx], vocabList[sidebarIndices[sidebarFocusIdx]]?.khmer, vocabList[sidebarIndices[sidebarFocusIdx]]?.chinese); cleanup(null); } }; addBtn.onclick = () => { if (!editUnlocked) { showPasswordModal(() => { showAddNewModal(); cleanup(null); }); } else { showAddNewModal(); cleanup(null); } }; resetChineseBtn.onclick = () => { resetChinesePosition(); cleanup(null); }; resetKhmerBtn.onclick = () => { resetKhmerPosition(); cleanup(null); }; resetLayersBtn.onclick = () => { resetLayerOffsets(); cleanup(null); }; cancelBtn.onclick = () => cleanup(null); modalDiv.onclick = (e) => { if (e.target === modalDiv) cleanup(null); }; }); }
+    function showLayerChoiceModal() { return new Promise((resolve) => { const modalDiv = document.createElement('div'); modalDiv.className = 'modal-overlay'; modalDiv.innerHTML = `<div class="choice-modal"><h3>✧ CHOOSE ACTION ✧</h3><div class="choice-search-area"><input type="text" id="choiceSearchInput" placeholder="🔍 Search vocabulary..."><div id="choiceSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div></div><div class="choice-buttons"><button class="choice-top">🔶 Drag Top Pinyin</button><button class="choice-bottom">🔷 Drag Bottom Char</button><div class="edit-group-buttons"><button id="editVocabBtn" style="background:#f59e0b;">✏️ EDIT CURRENT</button><button id="addVocabBtn" style="background:#10b981;">➕ ADD NEW</button></div><div class="choice-reset-group"><button class="choice-reset-chinese">⟳ Reset Chinese Pos</button><button class="choice-reset-khmer">⟳ Reset Khmer Pos</button><button class="choice-reset-layers">⟳ Reset Layer Offsets</button></div><button class="choice-cancel">✕ Cancel</button></div></div>`; document.body.appendChild(modalDiv); const searchInput = modalDiv.querySelector('#choiceSearchInput'); const searchResults = modalDiv.querySelector('#choiceSearchResults'); const updateSearch = () => { const term = searchInput.value.trim().toLowerCase(); if (!term) { searchResults.innerHTML = ''; return; } const filtered = vocabList.filter(item => item.chinese.toLowerCase().includes(term) || item.khmer.toLowerCase().includes(term)).slice(0, 8); if (filtered.length === 0) { searchResults.innerHTML = '<div style="padding:8px; text-align:center; color:#ccc;">No matches</div>'; return; } searchResults.innerHTML = filtered.map(item => `<div style="padding:8px; border-bottom:1px solid #555; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px; color:white;" onclick="loadWordByMode(${vocabList.findIndex(v => v === item)}, true); document.querySelector('.modal-overlay')?.remove();"><strong>${escapeHtml(item.chinese)}</strong> — ${escapeHtml(item.khmer)}</div>`).join(''); }; searchInput.addEventListener('input', updateSearch); const topBtn = modalDiv.querySelector('.choice-top'); const bottomBtn = modalDiv.querySelector('.choice-bottom'); const editBtn = modalDiv.querySelector('#editVocabBtn'); const addBtn = modalDiv.querySelector('#addVocabBtn'); const resetChineseBtn = modalDiv.querySelector('.choice-reset-chinese'); const resetKhmerBtn = modalDiv.querySelector('.choice-reset-khmer'); const resetLayersBtn = modalDiv.querySelector('.choice-reset-layers'); const cancelBtn = modalDiv.querySelector('.choice-cancel'); const cleanup = (result) => { modalDiv.remove(); resolve(result); }; topBtn.onclick = () => cleanup('top'); bottomBtn.onclick = () => cleanup('bottom'); editBtn.onclick = () => { if (!editUnlocked) { showPasswordModal(() => { showEditModal(sidebarIndices[sidebarFocusIdx], vocabList[sidebarIndices[sidebarFocusIdx]]?.sheetRow, vocabList[sidebarIndices[sidebarFocusIdx]]?.khmer, vocabList[sidebarIndices[sidebarFocusIdx]]?.chinese); cleanup(null); }); } else { showEditModal(sidebarIndices[sidebarFocusIdx], vocabList[sidebarIndices[sidebarFocusIdx]]?.sheetRow, vocabList[sidebarIndices[sidebarFocusIdx]]?.khmer, vocabList[sidebarIndices[sidebarFocusIdx]]?.chinese); cleanup(null); } }; addBtn.onclick = () => { if (!editUnlocked) { showPasswordModal(() => { showAddNewModal(); cleanup(null); }); } else { showAddNewModal(); cleanup(null); } }; resetChineseBtn.onclick = () => { resetChinesePosition(); cleanup(null); }; resetKhmerBtn.onclick = () => { resetKhmerPosition(); cleanup(null); }; resetLayersBtn.onclick = () => { resetLayerOffsets(); cleanup(null); }; cancelBtn.onclick = () => cleanup(null); modalDiv.onclick = (e) => { if (e.target === modalDiv) cleanup(null); }; }); }
     function onChinesePointerDown(e) { e.preventDefault(); e.stopPropagation(); const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); pressStartX = clientX; pressStartY = clientY; hasMovedDuringPress = false; longPressTimer = setTimeout(async () => { if (!hasMovedDuringPress && !dragActive && !copyLocked) { const plainText = chineseElement.getAttribute('data-plain') || ''; if (plainText) { if (isIOS) { showCopyPopupWithButton(plainText, "Chinese"); } else { await copyTextDirectly(plainText, "Chinese"); } } const choice = await showLayerChoiceModal(); if (choice === 'top') startLayerDrag('top', pressStartX, pressStartY); else if (choice === 'bottom') startLayerDrag('bottom', pressStartX, pressStartY); } longPressTimer = null; }, 1000); window.addEventListener('mousemove', onPressMove); window.addEventListener('touchmove', onPressMove); window.addEventListener('mouseup', onPressEnd); window.addEventListener('touchend', onPressEnd); }
     function onKhmerPointerDown(e) { e.preventDefault(); e.stopPropagation(); let khmerLongPressTimer = null; let khmerHasMoved = false; const onMove = () => { khmerHasMoved = true; if (khmerLongPressTimer) clearTimeout(khmerLongPressTimer); }; const onUp = () => { if (khmerLongPressTimer) clearTimeout(khmerLongPressTimer); window.removeEventListener('mousemove', onMove); window.removeEventListener('touchmove', onMove); window.removeEventListener('mouseup', onUp); window.removeEventListener('touchend', onUp); }; khmerLongPressTimer = setTimeout(async () => { if (!khmerHasMoved && !copyLocked) { const khmerText = khmerElement.innerText; if (khmerText) { if (isIOS) { showCopyPopupWithButton(khmerText, "Khmer"); } else { await copyTextDirectly(khmerText, "Khmer"); } } } onUp(); }, 1000); window.addEventListener('mousemove', onMove); window.addEventListener('touchmove', onMove); window.addEventListener('mouseup', onUp); window.addEventListener('touchend', onUp); }
     function onPressMove(e) { const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); if (Math.abs(clientX - pressStartX) > 8 || Math.abs(clientY - pressStartY) > 8) { hasMovedDuringPress = true; if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } startWordDrag(pressStartX, pressStartY); } }
@@ -2662,8 +2142,44 @@
     // ========== FLOATING MENU DRAG ==========
     function initFloatingMenuDrag() { const dragHandle = document.getElementById('dragHandle'); const floatingMenu = document.getElementById('floatingMenu'); if (!dragHandle || !floatingMenu) return; let isDraggingMenu = false; let startX = 0, startY = 0; let startLeft = 0, startTop = 0; const onStart = (e) => { e.preventDefault(); e.stopPropagation(); isDraggingMenu = true; const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); startX = clientX; startY = clientY; const rect = floatingMenu.getBoundingClientRect(); startLeft = rect.left; startTop = rect.top; floatingMenu.style.transition = 'none'; }; const onMove = (e) => { if (!isDraggingMenu) return; e.preventDefault(); const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); let newLeft = startLeft + (clientX - startX); let newTop = startTop + (clientY - startY); newLeft = Math.max(0, Math.min(window.innerWidth - floatingMenu.offsetWidth, newLeft)); newTop = Math.max(0, Math.min(window.innerHeight - floatingMenu.offsetHeight, newTop)); floatingMenu.style.left = newLeft + 'px'; floatingMenu.style.top = newTop + 'px'; floatingMenu.style.right = 'auto'; floatingMenu.style.bottom = 'auto'; }; const onEnd = () => { if (!isDraggingMenu) return; isDraggingMenu = false; floatingMenu.style.transition = ''; const left = parseFloat(floatingMenu.style.left); const top = parseFloat(floatingMenu.style.top); if (!isNaN(left) && !isNaN(top)) { localStorage.setItem('floatingMenuLeft', left); localStorage.setItem('floatingMenuTop', top); } }; const applyStoredPosition = () => { const savedLeft = localStorage.getItem('floatingMenuLeft'); const savedTop = localStorage.getItem('floatingMenuTop'); if (savedLeft !== null && savedTop !== null) { const left = Math.max(0, Math.min(window.innerWidth - floatingMenu.offsetWidth, parseFloat(savedLeft))); const top = Math.max(0, Math.min(window.innerHeight - floatingMenu.offsetHeight, parseFloat(savedTop))); floatingMenu.style.left = left + 'px'; floatingMenu.style.top = top + 'px'; floatingMenu.style.right = 'auto'; floatingMenu.style.bottom = 'auto'; } else { floatingMenu.style.left = '20px'; floatingMenu.style.top = '20px'; } }; dragHandle.addEventListener('mousedown', onStart); dragHandle.addEventListener('touchstart', onStart, { passive: false }); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); applyStoredPosition(); window.addEventListener('resize', () => applyStoredPosition()); }
     
-    // ========== SIDEBAR CLOSE BUTTON DRAG ==========
-    function initSidebarCloseBtnDrag() { const closeBtn = document.getElementById('sidebarCloseBtn'); if (!closeBtn) return; let longPressTimer = null; let isDragMode = false; let isDragging = false; let startX = 0, startY = 0; let startBtnLeft = 0, startBtnTop = 0; let pressStartTime = 0; const updateBtnCenterPosition = () => { const sidebar = document.getElementById('rightSide'); if (sidebar && !sidebar.classList.contains('hidden')) { const sidebarRect = sidebar.getBoundingClientRect(); const btnHeight = closeBtn.offsetHeight; const centerTop = sidebarRect.top + (sidebarRect.height / 2) - (btnHeight / 2); closeBtn.style.top = centerTop + 'px'; closeBtn.style.left = (sidebarRect.left - 22) + 'px'; closeBtn.style.position = 'fixed'; closeBtn.style.transform = 'translateY(0)'; localStorage.setItem('closeBtnLeft', closeBtn.style.left); localStorage.setItem('closeBtnTop', closeBtn.style.top); } }; const activateDragMode = () => { isDragMode = true; closeBtn.classList.add('draggable-mode'); closeBtn.innerHTML = '⤨'; showToast("Drag mode enabled — move the button"); }; const deactivateDragMode = () => { isDragMode = false; isDragging = false; closeBtn.classList.remove('draggable-mode'); closeBtn.innerHTML = '✕'; if (closeBtn.style.left && closeBtn.style.top) { localStorage.setItem('closeBtnLeft', closeBtn.style.left); localStorage.setItem('closeBtnTop', closeBtn.style.top); } }; const onStart = (e) => { if (isDragMode) { e.preventDefault(); e.stopPropagation(); isDragging = true; const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); startX = clientX; startY = clientY; const rect = closeBtn.getBoundingClientRect(); startBtnLeft = rect.left; startBtnTop = rect.top; closeBtn.style.transition = 'none'; return; } pressStartTime = Date.now(); longPressTimer = setTimeout(() => { activateDragMode(); longPressTimer = null; }, 800); }; const onMove = (e) => { if (isDragMode && isDragging) { e.preventDefault(); const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); let newLeft = startBtnLeft + (clientX - startX); let newTop = startBtnTop + (clientY - startY); newLeft = Math.max(-30, Math.min(window.innerWidth - 20, newLeft)); newTop = Math.max(5, Math.min(window.innerHeight - 50, newTop)); closeBtn.style.position = 'fixed'; closeBtn.style.left = newLeft + 'px'; closeBtn.style.top = newTop + 'px'; closeBtn.style.right = 'auto'; closeBtn.style.bottom = 'auto'; closeBtn.style.transform = 'translateY(0)'; return; } if (longPressTimer && !isDragMode) { const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); if (Math.abs(clientX - startX) > 5 || Math.abs(clientY - startY) > 5) { if (longPressTimer) clearTimeout(longPressTimer); longPressTimer = null; } } }; const onEnd = (e) => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; if (!isDragMode && (Date.now() - pressStartTime) < 800) { if (sidebarVisible) toggleSidebar(); } } if (isDragMode && isDragging) { isDragging = false; closeBtn.style.transition = ''; deactivateDragMode(); e.preventDefault(); e.stopPropagation(); } }; const applyStoredPosition = () => { const savedLeft = localStorage.getItem('closeBtnLeft'); const savedTop = localStorage.getItem('closeBtnTop'); if (savedLeft && savedTop) { closeBtn.style.position = 'fixed'; closeBtn.style.left = savedLeft; closeBtn.style.top = savedTop; closeBtn.style.right = 'auto'; closeBtn.style.bottom = 'auto'; closeBtn.style.transform = 'translateY(0)'; } else { updateBtnCenterPosition(); } }; closeBtn.addEventListener('mousedown', onStart); closeBtn.addEventListener('touchstart', onStart, { passive: false }); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); applyStoredPosition(); const observer = new MutationObserver(() => { const sidebar = document.getElementById('rightSide'); if (sidebar && !sidebar.classList.contains('hidden')) { if (!localStorage.getItem('closeBtnLeft')) { updateBtnCenterPosition(); } } }); observer.observe(document.getElementById('rightSide'), { attributes: true, attributeFilter: ['class'] }); window.addEventListener('resize', () => { if (!localStorage.getItem('closeBtnLeft')) { updateBtnCenterPosition(); } }); }
+    // ========== SIDEBAR RESIZER DRAG & INTEGRATED CLOSE BUTTON (with CSS variable) ==========
+    function initSidebarResizer() {
+        const resizer = document.getElementById('dragResizer');
+        const sidebar = document.getElementById('rightSide');
+        const closeBtn = document.getElementById('sidebarCloseBtn');
+        let startX = 0, startWidth = 0, isResizing = false;
+        const updateSidebarWidth = (newWidth) => {
+            const finalWidth = Math.min(window.innerWidth * 0.7, Math.max(200, newWidth));
+            document.documentElement.style.setProperty('--sidebar-width', finalWidth + 'px');
+            sidebar.style.width = 'var(--sidebar-width)';
+            localStorage.setItem('sidebarWidth', finalWidth);
+        };
+        const onResizeStart = (e) => { e.preventDefault(); isResizing = true; startX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); startWidth = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width')); window.addEventListener('mousemove', onResizeMove); window.addEventListener('mouseup', onResizeEnd); window.addEventListener('touchmove', onResizeMove, { passive: false }); window.addEventListener('touchend', onResizeEnd); };
+        const onResizeMove = (e) => { if (!isResizing) return; e.preventDefault(); const currentX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const delta = startX - currentX; let newWidth = startWidth + delta; updateSidebarWidth(newWidth); };
+        const onResizeEnd = () => { isResizing = false; window.removeEventListener('mousemove', onResizeMove); window.removeEventListener('mouseup', onResizeEnd); window.removeEventListener('touchmove', onResizeMove); window.removeEventListener('touchend', onResizeEnd); };
+        resizer.addEventListener('mousedown', onResizeStart); resizer.addEventListener('touchstart', onResizeStart, { passive: false });
+        const savedWidth = localStorage.getItem('sidebarWidth');
+        if (savedWidth && !sidebar.classList.contains('hidden')) updateSidebarWidth(parseFloat(savedWidth));
+        else updateSidebarWidth(400);
+        // Close button functionality (toggle sidebar)
+        if (closeBtn) {
+            let longPressTimer = null, isDragMode = false, isDraggingBtn = false, btnStartX = 0, btnStartY = 0, btnStartLeft = 0, btnStartTop = 0;
+            const activateDragMode = () => { isDragMode = true; closeBtn.classList.add('draggable-mode'); closeBtn.innerHTML = '⤨'; showToast("Drag mode enabled — move the button"); };
+            const deactivateDragMode = () => { isDragMode = false; isDraggingBtn = false; closeBtn.classList.remove('draggable-mode'); closeBtn.innerHTML = '✕'; if (closeBtn.style.left && closeBtn.style.top) { localStorage.setItem('resizerBtnLeft', closeBtn.style.left); localStorage.setItem('resizerBtnTop', closeBtn.style.top); } };
+            const onBtnStart = (e) => {
+                if (isDragMode) { e.preventDefault(); e.stopPropagation(); isDraggingBtn = true; const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); btnStartX = clientX; btnStartY = clientY; const rect = closeBtn.getBoundingClientRect(); btnStartLeft = rect.left; btnStartTop = rect.top; closeBtn.style.transition = 'none'; return; }
+                longPressTimer = setTimeout(() => { activateDragMode(); longPressTimer = null; }, 800);
+            };
+            const onBtnMove = (e) => {
+                if (isDragMode && isDraggingBtn) { e.preventDefault(); const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); let newLeft = btnStartLeft + (clientX - btnStartX); let newTop = btnStartTop + (clientY - btnStartY); newLeft = Math.max(5, Math.min(window.innerWidth - 40, newLeft)); newTop = Math.max(5, Math.min(window.innerHeight - 40, newTop)); closeBtn.style.position = 'fixed'; closeBtn.style.left = newLeft + 'px'; closeBtn.style.top = newTop + 'px'; closeBtn.style.right = 'auto'; closeBtn.style.bottom = 'auto'; return; }
+                if (longPressTimer) { const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); if (Math.abs(clientX - btnStartX) > 5 || Math.abs(clientY - btnStartY) > 5) { if (longPressTimer) clearTimeout(longPressTimer); longPressTimer = null; } }
+            };
+            const onBtnEnd = (e) => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; if (!isDragMode) toggleSidebar(); } if (isDragMode && isDraggingBtn) { isDraggingBtn = false; closeBtn.style.transition = ''; deactivateDragMode(); e.preventDefault(); e.stopPropagation(); } };
+            closeBtn.addEventListener('mousedown', onBtnStart); closeBtn.addEventListener('touchstart', onBtnStart, { passive: false }); window.addEventListener('mousemove', onBtnMove); window.addEventListener('mouseup', onBtnEnd); window.addEventListener('touchmove', onBtnMove, { passive: false }); window.addEventListener('touchend', onBtnEnd);
+            const savedLeft = localStorage.getItem('resizerBtnLeft'), savedTop = localStorage.getItem('resizerBtnTop');
+            if (savedLeft && savedTop) { closeBtn.style.position = 'fixed'; closeBtn.style.left = savedLeft; closeBtn.style.top = savedTop; closeBtn.style.right = 'auto'; closeBtn.style.bottom = 'auto'; }
+        }
+    }
     
     // ========== SWIPE / TOUCH NAVIGATION ==========
     let touchStartY = 0, touchStartX = 0, touchMoved = false;
@@ -2673,77 +2189,27 @@
     
     // ========== INITIALIZATION ==========
     async function initializeSheet() { currentSheetId = DEFAULT_SHEET_ID; currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`; await loadSheetData(); }
-    
     const gearTrigger = document.getElementById('minimizedTrigger');
-    if (gearTrigger) { gearTrigger.addEventListener('click', function(e) { e.stopPropagation(); }); }
+    if (gearTrigger) gearTrigger.addEventListener('click', function(e) { e.stopPropagation(); });
     
     window.onload = async () => {
         initCopyPopup();
         loadSettings(); 
         const savedList = localStorage.getItem('vocabMaster_List'); 
-        if(savedList){ 
-            vocabList = JSON.parse(savedList); 
-            if(vocabList.length) { 
-                if (appMode === 'random') pickRandom(); 
-                else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } 
-            } 
-        }
-        initNightMode(); 
-        applyStyles(); 
-        initGearDrag(); 
-        setupQRPopup(); 
-        setupBackgroundClick(); 
-        initChineseDrag(); 
-        initKhmerDrag(); 
-        loadAllDragPositions();
-        initCtrlWheelResize();
-        initFloatingMenuDrag();
-        initSidebarCloseBtnDrag();
-        initSwipeNavigation();
-        
+        if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) { if (appMode === 'random') pickRandom(); else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } } }
+        initNightMode(); applyStyles(); initGearDrag(); setupQRPopup(); setupBackgroundClick(); initChineseDrag(); initKhmerDrag(); loadAllDragPositions(); initCtrlWheelResize(); initFloatingMenuDrag(); initSidebarResizer(); initSwipeNavigation();
         await initializeSheet();
-        
         const gearIcon = document.getElementById('minimizedTrigger');
-        if (gearIcon) {
-            gearIcon.addEventListener('click', (e) => e.stopPropagation());
-            gearIcon.addEventListener('touchstart', (e) => e.stopPropagation());
-            gearIcon.addEventListener('mousedown', (e) => e.stopPropagation());
-        }
-        
-        // FIXED: Close button event listener with proper mobile support
+        if (gearIcon) { gearIcon.addEventListener('click', (e) => e.stopPropagation()); gearIcon.addEventListener('touchstart', (e) => e.stopPropagation()); gearIcon.addEventListener('mousedown', (e) => e.stopPropagation()); }
         const closeFloatingBtn = document.getElementById('closeFloatingMenuBtn');
-        if (closeFloatingBtn) {
-            const newCloseBtn = closeFloatingBtn.cloneNode(true);
-            closeFloatingBtn.parentNode.replaceChild(newCloseBtn, closeFloatingBtn);
-            newCloseBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggleMenu(true); });
-            newCloseBtn.addEventListener('touchstart', function(e) { e.preventDefault(); e.stopPropagation(); toggleMenu(true); }, { passive: false });
-        }
-        
-        // FIXED: Dark mode button
+        if (closeFloatingBtn) { const newCloseBtn = closeFloatingBtn.cloneNode(true); closeFloatingBtn.parentNode.replaceChild(newCloseBtn, closeFloatingBtn); newCloseBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggleMenu(true); }); newCloseBtn.addEventListener('touchstart', function(e) { e.preventDefault(); e.stopPropagation(); toggleMenu(true); }, { passive: false }); }
         const darkModeBtn = document.getElementById('dragDarkModeBtn');
-        if (darkModeBtn) {
-            const newDarkBtn = darkModeBtn.cloneNode(true);
-            darkModeBtn.parentNode.replaceChild(newDarkBtn, darkModeBtn);
-            newDarkBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggleNightMode(); });
-            newDarkBtn.addEventListener('touchstart', function(e) { e.preventDefault(); e.stopPropagation(); toggleNightMode(); }, { passive: false });
-        }
-        
-        // FIXED: ABA icon
+        if (darkModeBtn) { const newDarkBtn = darkModeBtn.cloneNode(true); darkModeBtn.parentNode.replaceChild(newDarkBtn, darkModeBtn); newDarkBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggleNightMode(); }); newDarkBtn.addEventListener('touchstart', function(e) { e.preventDefault(); e.stopPropagation(); toggleNightMode(); }, { passive: false }); }
         const abaIcon = document.getElementById('abaIconInline');
-        if (abaIcon) {
-            const newAbaIcon = abaIcon.cloneNode(true);
-            abaIcon.parentNode.replaceChild(newAbaIcon, abaIcon);
-            newAbaIcon.addEventListener('click', async function(e) { e.preventDefault(); e.stopPropagation(); const overlay = document.getElementById('qrPopupOverlay'); if (overlay) overlay.style.display = 'flex'; await loadSheetData(); });
-            newAbaIcon.addEventListener('touchstart', async function(e) { e.preventDefault(); e.stopPropagation(); const overlay = document.getElementById('qrPopupOverlay'); if (overlay) overlay.style.display = 'flex'; await loadSheetData(); }, { passive: false });
-        }
-        
+        if (abaIcon) { const newAbaIcon = abaIcon.cloneNode(true); abaIcon.parentNode.replaceChild(newAbaIcon, abaIcon); newAbaIcon.addEventListener('click', async function(e) { e.preventDefault(); e.stopPropagation(); const overlay = document.getElementById('qrPopupOverlay'); if (overlay) overlay.style.display = 'flex'; await loadSheetData(); }); newAbaIcon.addEventListener('touchstart', async function(e) { e.preventDefault(); e.stopPropagation(); const overlay = document.getElementById('qrPopupOverlay'); if (overlay) overlay.style.display = 'flex'; await loadSheetData(); }, { passive: false }); }
         if (!sidebarVisible) document.getElementById('sidebarControlsContainer')?.classList.add('sidebar-controls-hidden');
-        const topSection = document.getElementById('topPinyinSection');
-        const topToggleBtn = document.getElementById('toggleTopPinyinSectionBtn');
-        const bottomSection = document.getElementById('bottomSection');
-        const bottomToggleBtn = document.getElementById('toggleBottomSectionBtn');
-        const topHidden = localStorage.getItem('topPinyinSectionHidden') === 'true';
-        const bottomHidden = localStorage.getItem('bottomSectionHidden') === 'true';
+        const topSection = document.getElementById('topPinyinSection'), topToggleBtn = document.getElementById('toggleTopPinyinSectionBtn'), bottomSection = document.getElementById('bottomSection'), bottomToggleBtn = document.getElementById('toggleBottomSectionBtn');
+        const topHidden = localStorage.getItem('topPinyinSectionHidden') === 'true', bottomHidden = localStorage.getItem('bottomSectionHidden') === 'true';
         if (topHidden) { topSection.classList.add('hidden'); topToggleBtn.innerText = '🙈'; topPinyinVisible = false; }
         if (bottomHidden) { bottomSection.classList.add('hidden'); bottomToggleBtn.innerText = '🙈'; bottomCharVisible = false; }
         applyTextVisibility();
@@ -2767,38 +2233,25 @@
         document.getElementById('bottomCharColor').addEventListener('input', applyBottomStyles);
         const bottomSizeSlider = document.getElementById('bottomSizePx');
         bottomSizeSlider.addEventListener('input', function() { userSetBottomFontSize = parseInt(this.value); document.getElementById('bottomSizeVal').innerText = userSetBottomFontSize + 'px'; applyBottomAutoScale(); saveAllData(); });
-        document.getElementById('sidebarCloseBtn').addEventListener('click', () => { if (sidebarVisible) toggleSidebar(); });
-        document.getElementById('modeRandomBtn').addEventListener('click', () => { if (appMode !== 'random') toggleAppMode(); });
-        document.getElementById('modeNormalBtn').addEventListener('click', () => { if (appMode !== 'normal') toggleAppMode(); });
         window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); pickRandom(); } else if (e.code === 'ArrowLeft') { e.preventDefault(); historyPrev(); } else if (e.code === 'ArrowRight') { e.preventDefault(); historyNext(); } else if (e.code === 'ArrowDown') { e.preventDefault(); moveSidebarFocus(1); } else if (e.code === 'ArrowUp') { e.preventDefault(); moveSidebarFocus(-1); } });
         if(vocabList.length) updateDisplay();
         setTimeout(() => { loadAllDragPositions(); forceShrink(); applyBottomAutoScale(); }, 100);
-        
         document.getElementById('insertDataBtn').onclick = () => { showLoadVocabularyModal(); };
     };
     
-    function initGearDrag() { applyStoredGearPosition(); let gearDragActive = false; let startMouseX = 0, startMouseY = 0, startLeft = 0, startTop = 0; let gearDragOccurred = false; function onStart(e) { e.preventDefault(); e.stopPropagation(); gearDragActive = true; gearDragOccurred = false; const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); startMouseX = cx; startMouseY = cy; startLeft = gearLeft; startTop = gearTop; } function onMove(e) { if (!gearDragActive) return; e.preventDefault(); const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); if (Math.abs(cx - startMouseX) > 5 || Math.abs(cy - startMouseY) > 5) gearDragOccurred = true; let newLeft = startLeft + (cx - startMouseX); let newTop = startTop + (cy - startMouseY); newLeft = Math.min(Math.max(5, newLeft), window.innerWidth - 65); newTop = Math.min(Math.max(5, newTop), window.innerHeight - 75); gearLeft = newLeft; gearTop = newTop; gearElemDrag.style.left = newLeft + 'px'; gearElemDrag.style.top = newTop + 'px'; } function onEnd() { if (!gearDragActive) return; gearDragActive = false; if (!gearDragOccurred) { const isMenuVisible = document.getElementById('floatingMenu').style.display !== 'none'; if (isMenuVisible) toggleMenu(true); else { toggleMenu(false); currentMenuTransform = { x: 0, y: 0 }; floatingMenuDiv.style.transform = `translate3d(0px, 0px, 0)`; saveMenuPosition(); } } saveGearPosition(); } gearElemDrag.addEventListener('mousedown', onStart); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); gearElemDrag.addEventListener('touchstart', onStart, { passive: false }); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); }
-    
-    let gearLeft = 20, gearTop = 20;
-    const gearElemDrag = document.getElementById('minimizedTrigger');
-    let currentMenuTransform = { x: 0, y: 0 };
-    const floatingMenuDiv = document.getElementById('floatingMenu');
+    function initGearDrag() { applyStoredGearPosition(); let gearDragActive = false, startMouseX = 0, startMouseY = 0, startLeft = 0, startTop = 0, gearDragOccurred = false; function onStart(e) { e.preventDefault(); e.stopPropagation(); gearDragActive = true; gearDragOccurred = false; const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); startMouseX = cx; startMouseY = cy; startLeft = gearLeft; startTop = gearTop; } function onMove(e) { if (!gearDragActive) return; e.preventDefault(); const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); if (Math.abs(cx - startMouseX) > 5 || Math.abs(cy - startMouseY) > 5) gearDragOccurred = true; let newLeft = startLeft + (cx - startMouseX); let newTop = startTop + (cy - startMouseY); newLeft = Math.min(Math.max(5, newLeft), window.innerWidth - 65); newTop = Math.min(Math.max(5, newTop), window.innerHeight - 75); gearLeft = newLeft; gearTop = newTop; gearElemDrag.style.left = newLeft + 'px'; gearElemDrag.style.top = newTop + 'px'; } function onEnd() { if (!gearDragActive) return; gearDragActive = false; if (!gearDragOccurred) { const isMenuVisible = document.getElementById('floatingMenu').style.display !== 'none'; if (isMenuVisible) toggleMenu(true); else { toggleMenu(false); currentMenuTransform = { x: 0, y: 0 }; floatingMenuDiv.style.transform = `translate3d(0px, 0px, 0)`; saveMenuPosition(); } } saveGearPosition(); } gearElemDrag.addEventListener('mousedown', onStart); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); gearElemDrag.addEventListener('touchstart', onStart, { passive: false }); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); }
+    let gearLeft = 20, gearTop = 20; const gearElemDrag = document.getElementById('minimizedTrigger'); let currentMenuTransform = { x: 0, y: 0 }; const floatingMenuDiv = document.getElementById('floatingMenu');
     function applyStoredMenuPosition() { const storedX = parseFloat(localStorage.getItem('menuPosX')) || 0; const storedY = parseFloat(localStorage.getItem('menuPosY')) || 0; if (!isNaN(storedX) && !isNaN(storedY)) { currentMenuTransform.x = storedX; currentMenuTransform.y = storedY; floatingMenuDiv.style.transform = `translate3d(${storedX}px, ${storedY}px, 0)`; } }
     function saveMenuPosition() { localStorage.setItem('menuPosX', currentMenuTransform.x); localStorage.setItem('menuPosY', currentMenuTransform.y); }
     function saveGearPosition() { if (gearElemDrag) { const left = gearElemDrag.offsetLeft, top = gearElemDrag.offsetTop; if (!isNaN(left) && !isNaN(top)) { localStorage.setItem('gearPosLeft', left); localStorage.setItem('gearPosTop', top); } } }
     function applyStoredGearPosition() { let left = parseFloat(localStorage.getItem('gearPosLeft')), top = parseFloat(localStorage.getItem('gearPosTop')); if (isNaN(left)) left = window.innerWidth - 80; if (isNaN(top)) top = 30; left = Math.min(Math.max(5, left), window.innerWidth - 65); top = Math.min(Math.max(5, top), window.innerHeight - 75); gearLeft = left; gearTop = top; gearElemDrag.style.left = left + 'px'; gearElemDrag.style.top = top + 'px'; }
-    
-    function initCtrlWheelResize() { const chineseWord = document.getElementById('chineseWord'); const khmerWord = document.getElementById('khmerWord'); if (chineseWord) { chineseWord.addEventListener('wheel', function(e) { if (e.ctrlKey) { e.preventDefault(); const delta = e.deltaY > 0 ? -1 : 1; let newSize = userSetChineseFontSize + delta; newSize = Math.max(10, Math.min(150, newSize)); setChineseFontSize(newSize); } }); } if (khmerWord) { khmerWord.addEventListener('wheel', function(e) { if (e.ctrlKey) { e.preventDefault(); const delta = e.deltaY > 0 ? -1 : 1; let newSize = userSetKhmerFontSize + delta; newSize = Math.max(10, Math.min(150, newSize)); setKhmerFontSize(newSize); } }); } }
-    
+    function initCtrlWheelResize() { const chineseWord = document.getElementById('chineseWord'); const khmerWord = document.getElementById('khmerWord'); if (chineseWord) chineseWord.addEventListener('wheel', function(e) { if (e.ctrlKey) { e.preventDefault(); const delta = e.deltaY > 0 ? -1 : 1; let newSize = userSetChineseFontSize + delta; newSize = Math.max(10, Math.min(150, newSize)); setChineseFontSize(newSize); } }); if (khmerWord) khmerWord.addEventListener('wheel', function(e) { if (e.ctrlKey) { e.preventDefault(); const delta = e.deltaY > 0 ? -1 : 1; let newSize = userSetKhmerFontSize + delta; newSize = Math.max(10, Math.min(150, newSize)); setKhmerFontSize(newSize); } }); }
     function initNightMode() { if(localStorage.getItem('vocabMaster_NightMode')==='true') document.body.classList.add('night-mode'); const btn = document.getElementById('dragDarkModeBtn'); if(btn && btn.innerHTML) btn.innerHTML = document.body.classList.contains('night-mode') ? '☀️' : '🌙'; }
     function toggleNightMode(){ document.body.classList.toggle('night-mode'); localStorage.setItem('vocabMaster_NightMode',document.body.classList.contains('night-mode')); const btn = document.getElementById('dragDarkModeBtn'); if(btn) btn.innerHTML = document.body.classList.contains('night-mode') ? '☀️' : '🌙'; applyStyles(); renderSidebarUI(); }
     function setupQRPopup() { const overlay = document.getElementById('qrPopupOverlay'); const closeBtn = document.getElementById('qrCloseBtn'); if (closeBtn) closeBtn.addEventListener('click', () => overlay.style.display = 'none'); overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; }); }
     function applyRateDisplay() { const rateSlider = document.getElementById('zhRateSlider'); const rateSpan = document.getElementById('zhRateVal'); if(rateSlider && rateSpan) rateSpan.innerText = (parseInt(rateSlider.value) > 0 ? '+' : '') + rateSlider.value + '%'; saveAllData(); }
-    
     function moveSidebarFocus(delta) { if (!sidebarIndices.length) return; let newFocus = sidebarFocusIdx + delta; if (newFocus < 0) newFocus = sidebarIndices.length - 1; if (newFocus >= sidebarIndices.length) newFocus = 0; sidebarFocusIdx = newFocus; updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); }
-    
     function extractSheetIdFromUrl(url) { if (!url) return null; if (url.match(/^[a-zA-Z0-9_-]{30,50}$/)) return url; const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/); if (match) return match[1]; const pubMatch = url.match(/\/d\/e\/([a-zA-Z0-9_-]+)/); if (pubMatch) return pubMatch[1]; return null; }
-    
     window.historyPrev = historyPrev; window.historyNext = historyNext; window.moveSidebarFocus = moveSidebarFocus; window.toggleAuto = toggleAuto; window.toggleSidebar = toggleSidebar; window.switchTab = switchTab; window.toggleMenu = toggleMenu; window.pickRandom = pickRandom; window.loadWordByMode = loadWordByMode; window.toggleBold = toggleBold; window.openSheetAndActivateCell = openSheetAndActivateCell; window.showPasswordModal = showPasswordModal; window.goPrevNormal = goPrevNormal; window.goNextNormal = goNextNormal;
 </script>
 </body>
