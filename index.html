@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>📖 Vocab Master – Final (Fast Search + Hold to Resize)</title>
+    <title>📖 Vocab Master – Final (Search Focus Fixed)</title>
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
     <style>
-        /* ========== CUSTOM WEB FONTS ========== */
+        /* ========== CUSTOM WEB FONTS (kept as before) ========== */
         @font-face {
             font-family: 'BaguettePinyin';
             src: url('/static/Fonts/Chinese/pinyin-baguette.woff2') format('woff2');
@@ -540,7 +540,7 @@
         
         .pinyin-top {
             font-size: 0.35em;
-            color: #f97316;
+            color: white;
             font-weight: 600;
             letter-spacing: 0.5px;
             line-height: 1.2;
@@ -572,7 +572,7 @@
             margin-top: 4px;
             position: relative;
             transition: none;
-            color: #2563eb;
+            color: white;
             order: 3;
         }
         body.night-mode .chinese-bottom { color: #60a5fa; }
@@ -583,7 +583,7 @@
             padding: 12px 20px;
             font-size: 32px;
             font-weight: 500;
-            color: #a78bfa;
+            color: white;
             white-space: nowrap;
             font-family: 'KHLazySmooth', 'Segoe UI', system-ui;
             transition: none;
@@ -613,7 +613,6 @@
         }
         .sidebar.hidden { width: 0 !important; min-width: 0 !important; border: none; overflow: hidden; }
         
-        /* Resizer styling - thinner, and hidden when sidebar hidden */
         .resizer {
             width: 6px;
             cursor: col-resize;
@@ -626,13 +625,8 @@
             touch-action: none;
             flex-shrink: 0;
         }
-        .resizer.hidden {
-            display: none !important;
-        }
-        .resizer:hover {
-            background: var(--accent);
-        }
-        /* Close button on resizer - no background, centered */
+        .resizer.hidden { display: none !important; }
+        .resizer:hover { background: var(--accent); }
         .resizer-btn {
             position: absolute;
             width: 28px;
@@ -659,12 +653,8 @@
             background: rgba(0,0,0,0.1);
             transform: translate(-50%, -50%) scale(1.1);
         }
-        body.night-mode .resizer-btn {
-            color: white;
-        }
-        .resizer-btn:active {
-            transform: translate(-50%, -50%) scale(0.95);
-        }
+        body.night-mode .resizer-btn { color: white; }
+        .resizer-btn:active { transform: translate(-50%, -50%) scale(0.95); }
         
         .pagination-bar {
             display: flex;
@@ -686,16 +676,8 @@
             font-weight: 600;
             transition: all 0.2s;
         }
-        .pagination-btn:active {
-            transform: scale(0.96);
-        }
-        .pagination-info {
-            font-size: 0.7rem;
-            align-self: center;
-        }
-        .sidebar-controls-hidden {
-            display: none !important;
-        }
+        .pagination-btn:active { transform: scale(0.96); }
+        .pagination-info { font-size: 0.7rem; align-self: center; }
 
         .vocab-list { flex-grow: 1; overflow-y: auto; padding: 10px; scroll-behavior: smooth; }
         .vocab-header {
@@ -707,8 +689,6 @@
             background: transparent;
             color: var(--text-primary);
             border-radius: 10px;
-            font-size: 0.75rem;
-            font-weight: bold;
             position: sticky;
             top: 0;
             z-index: 5;
@@ -716,28 +696,23 @@
         .choice-search-area {
             background: rgba(0,0,0,0.1);
             border-radius: 40px;
-            padding: 4px 12px;
+            padding: 8px 12px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        body.night-mode .choice-search-area {
-            background: rgba(255,255,255,0.1);
-        }
+        body.night-mode .choice-search-area { background: rgba(255,255,255,0.1); }
         .choice-search-area input {
             width: 100%;
-            padding: 6px 8px;
+            padding: 8px 12px;
             border-radius: 40px;
             border: none;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             background: rgba(255,255,255,0.9);
             color: #0f172a;
             outline: none;
         }
-        body.night-mode .choice-search-area input {
-            background: #334155;
-            color: white;
-        }
+        body.night-mode .choice-search-area input { background: #334155; color: white; }
         .mode-icons-container {
             display: flex;
             gap: 12px;
@@ -756,11 +731,7 @@
             align-items: center;
             justify-content: center;
         }
-        .mode-icon-small.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
+        .mode-icon-small.active { background: var(--accent); color: white; border-color: var(--accent); }
         .vocab-item { 
             padding: 10px 12px; 
             margin-bottom: var(--vocab-spacing, 8px); 
@@ -785,12 +756,7 @@
             margin-right: 12px;
             gap: 6px;
         }
-        .side-number {
-            font-size: 0.7rem;
-            font-weight: bold;
-            color: var(--text-secondary);
-            text-align: center;
-        }
+        .side-number { font-size: 0.7rem; font-weight: bold; color: var(--text-secondary); text-align: center; }
         .edit-side-icon, .sheet-row-icon {
             background: none;
             border: none;
@@ -802,231 +768,49 @@
             opacity: 0.7;
             line-height: 1;
         }
-        .edit-side-icon.disabled, .sheet-row-icon.disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            pointer-events: auto;
-        }
+        .edit-side-icon.disabled, .sheet-row-icon.disabled { opacity: 0.3; cursor: not-allowed; pointer-events: auto; }
         .edit-side-icon:hover:not(.disabled), .sheet-row-icon:hover:not(.disabled) {
             opacity: 1;
             background: rgba(0,0,0,0.1);
             transform: scale(1.05);
         }
-        body.night-mode .edit-side-icon:hover:not(.disabled), body.night-mode .sheet-row-icon:hover:not(.disabled) {
-            background: rgba(255,255,255,0.15);
-        }
-        .side-icons-row {
-            display: flex;
-            gap: 5px;
-            align-items: center;
-        }
+        body.night-mode .edit-side-icon:hover:not(.disabled), body.night-mode .sheet-row-icon:hover:not(.disabled) { background: rgba(255,255,255,0.15); }
+        .side-icons-row { display: flex; gap: 5px; align-items: center; }
         
-        .word-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            cursor: pointer;
-        }
-        .side-zh { font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis; }
-        .side-km { font-size: 0.85rem; opacity: 0.8; white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis; }
+        .word-wrapper { flex: 1; display: flex; flex-direction: column; cursor: pointer; }
+        .side-zh { font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis; color: white; }
+        .side-km { font-size: 0.85rem; opacity: 0.8; white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis; color: white; }
         
         .btn-main { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.75rem; flex: 1; transition: all 0.2s; }
         .btn-accent { background: var(--accent); color: white; border: none; }
         .btn-toggle.active { background: var(--success); color: white; }
         .btn-toggle.off { background: #94a3b8; color: white; }
 
-        .file-source-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            justify-content: center;
-            align-items: center;
-            z-index: 20000;
-        }
-        .file-source-card {
-            background: white;
-            border-radius: 24px;
-            padding: 24px 28px;
-            width: 340px;
-            max-width: 90%;
-            text-align: center;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-            animation: fadeInUp 0.2s ease;
-        }
-        .password-modal {
-            background: white;
-            border-radius: 24px;
-            padding: 24px 28px;
-            width: 320px;
-            max-width: 90%;
-            text-align: center;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-        }
-        .password-modal input {
-            width: 100%;
-            padding: 12px;
-            margin: 16px 0;
-            border-radius: 40px;
-            border: 1px solid var(--border);
-            font-size: 1rem;
-            text-align: center;
-        }
-        .search-popup {
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: 20px;
-            width: 340px;
-            max-width: 90%;
-            text-align: center;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-        }
-        .search-popup input {
-            width: 100%;
-            padding: 10px;
-            border-radius: 40px;
-            border: 1px solid var(--border);
-            font-size: 1rem;
-            margin-bottom: 16px;
-            background: var(--input-bg);
-            color: var(--text-primary);
-        }
-        .search-results {
-            max-height: 300px;
-            overflow-y: auto;
-            text-align: left;
-        }
-        .search-result-item {
-            padding: 8px 12px;
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .search-result-item:hover {
-            background: var(--accent);
-            color: white;
-        }
-        .close-search {
-            margin-top: 12px;
-            background: #475569;
-        }
-        .url-input-area {
-            margin: 12px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .url-input-area input {
-            padding: 12px;
-            border-radius: 32px;
-            border: 1px solid #cbd5e1;
-            font-size: 0.8rem;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        .confirm-url-btn {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 32px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .close-modal {
-            background: #e2e8f0;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 40px;
-            margin-top: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            width: 100%;
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .file-source-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 20000; }
+        .file-source-card { background: white; border-radius: 24px; padding: 24px 28px; width: 340px; max-width: 90%; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.3); animation: fadeInUp 0.2s ease; }
+        .password-modal { background: white; border-radius: 24px; padding: 24px 28px; width: 320px; max-width: 90%; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
+        .password-modal input { width: 100%; padding: 12px; margin: 16px 0; border-radius: 40px; border: 1px solid var(--border); font-size: 1rem; text-align: center; }
+        .search-popup { background: var(--card-bg); border-radius: 24px; padding: 20px; width: 340px; max-width: 90%; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
+        .search-popup input { width: 100%; padding: 10px; border-radius: 40px; border: 1px solid var(--border); font-size: 1rem; margin-bottom: 16px; background: var(--input-bg); color: var(--text-primary); }
+        .search-results { max-height: 300px; overflow-y: auto; text-align: left; }
+        .search-result-item { padding: 8px 12px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s; }
+        .search-result-item:hover { background: var(--accent); color: white; }
+        .close-search { margin-top: 12px; background: #475569; }
+        .url-input-area { margin: 12px 0; display: flex; flex-direction: column; gap: 12px; }
+        .url-input-area input { padding: 12px; border-radius: 32px; border: 1px solid #cbd5e1; font-size: 0.8rem; width: 100%; box-sizing: border-box; }
+        .confirm-url-btn { background: #2563eb; color: white; border: none; padding: 10px; border-radius: 32px; font-weight: bold; cursor: pointer; }
+        .close-modal { background: #e2e8f0; border: none; padding: 10px 18px; border-radius: 40px; margin-top: 12px; cursor: pointer; font-weight: 600; width: 100%; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .qr-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.75);
-            justify-content: center;
-            align-items: center;
-            z-index: 10001;
-            backdrop-filter: blur(4px);
-        }
-        .qr-card {
-            position: relative;
-            background: white;
-            border-radius: 24px;
-            padding: 20px;
-            box-shadow: 0 25px 45px rgba(0,0,0,0.3);
-            max-width: 90%;
-            width: auto;
-            display: inline-block;
-            animation: fadeInScale 0.2s ease;
-        }
-        .qr-card img {
-            width: 280px;
-            max-width: 70vw;
-            height: auto;
-            border-radius: 16px;
-            display: block;
-        }
-        .qr-close-btn {
-            position: absolute;
-            top: -12px;
-            right: -12px;
-            background: #1e293b;
-            color: white;
-            border: none;
-            border-radius: 40px;
-            width: 32px;
-            height: 32px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            transition: background 0.2s;
-        }
-        .qr-close-btn:hover {
-            background: #ef4444;
-        }
-        @keyframes fadeInScale {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
+        .qr-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); justify-content: center; align-items: center; z-index: 10001; backdrop-filter: blur(4px); }
+        .qr-card { position: relative; background: white; border-radius: 24px; padding: 20px; box-shadow: 0 25px 45px rgba(0,0,0,0.3); max-width: 90%; width: auto; display: inline-block; animation: fadeInScale 0.2s ease; }
+        .qr-card img { width: 280px; max-width: 70vw; height: auto; border-radius: 16px; display: block; }
+        .qr-close-btn { position: absolute; top: -12px; right: -12px; background: #1e293b; color: white; border: none; border-radius: 40px; width: 32px; height: 32px; font-size: 18px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: background 0.2s; }
+        .qr-close-btn:hover { background: #ef4444; }
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-        .vis-toggle-btn {
-            flex: 1;
-            background: #e2e8f0;
-            border: 1px solid var(--border);
-            padding: 6px 8px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-        }
-        .vis-toggle-btn.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
+        .vis-toggle-btn { flex: 1; background: #e2e8f0; border: 1px solid var(--border); padding: 6px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; }
+        .vis-toggle-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
 
         .modal-overlay {
             position: fixed;
@@ -1042,175 +826,32 @@
             z-index: 20000;
         }
         
-        .choice-modal {
-            background: transparent !important;
-            border-radius: 32px;
-            padding: 30px;
-            text-align: center;
-            border: none;
-            box-shadow: none;
-            animation: fadeIn 0.2s ease;
-            min-width: 420px;
-            max-width: 90vw;
-        }
-        
-        .choice-modal h3 {
-            color: white;
-            margin-bottom: 24px;
-            font-size: 1.6rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            background: rgba(0,0,0,0.5);
-            padding: 12px 24px;
-            border-radius: 60px;
-            display: inline-flex;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        .choice-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            justify-content: center;
-        }
-        
-        .choice-buttons button {
-            padding: 12px 20px;
-            font-size: 14px;
-            border: none;
-            border-radius: 40px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        
+        .choice-modal { background: transparent !important; border-radius: 32px; padding: 30px; text-align: center; border: none; box-shadow: none; animation: fadeIn 0.2s ease; min-width: 420px; max-width: 90vw; }
+        .choice-modal h3 { color: white; margin-bottom: 24px; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; gap: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); background: rgba(0,0,0,0.5); padding: 12px 24px; border-radius: 60px; display: inline-flex; margin-left: auto; margin-right: auto; }
+        .choice-buttons { display: flex; flex-direction: column; gap: 12px; justify-content: center; }
+        .choice-buttons button { padding: 12px 20px; font-size: 14px; border: none; border-radius: 40px; color: white; font-weight: 600; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         .choice-top { background: #f97316; }
         .choice-bottom { background: #3b82f6; }
-        .choice-reset-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
+        .choice-reset-group { display: flex; gap: 10px; margin-top: 10px; }
         .choice-reset-chinese { background: #10b981; flex: 1; }
         .choice-reset-khmer { background: #8b5cf6; flex: 1; }
         .choice-reset-layers { background: #ef4444; flex: 1; }
         .choice-cancel { background: #475569; margin-top: 12px; }
-        
-        .choice-search-area {
-            margin: 12px 0;
-            background: rgba(0,0,0,0.3);
-            border-radius: 40px;
-            padding: 8px 16px;
-        }
-        .choice-search-area input {
-            width: 100%;
-            padding: 10px;
-            border-radius: 40px;
-            border: none;
-            font-size: 0.9rem;
-            background: rgba(255,255,255,0.9);
-            text-align: center;
-        }
-        body.night-mode .choice-search-area input {
-            background: #334155;
-            color: white;
-        }
-        
-        .modal-sheet-link {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 40px;
-            padding: 8px 16px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
-        .modal-sheet-link:hover {
-            background: #2563eb;
-            transform: scale(1.02);
-        }
-        
-        .cancel-icon {
-            background: #475569;
-            color: white;
-            border: none;
-            border-radius: 60px;
-            width: 50px;
-            height: 50px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            margin: 16px auto 0 auto;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        .cancel-icon:hover {
-            background: #334155;
-            transform: scale(0.98);
-        }
-        
-        .big-edit-input {
-            font-size: 1.3rem !important;
-            padding: 16px 20px !important;
-            width: 90% !important;
-            border-radius: 60px !important;
-            border: 1px solid rgba(255,255,255,0.3) !important;
-            background: rgba(51, 65, 85, 0.95) !important;
-            backdrop-filter: blur(8px);
-            color: white !important;
-            margin-bottom: 20px !important;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            text-align: center;
-        }
-        
-        .edit-group-buttons button,
-        .delete-group-btn button {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
+        .choice-search-area { margin: 12px 0; background: rgba(0,0,0,0.3); border-radius: 40px; padding: 8px 16px; }
+        .choice-search-area input { width: 100%; padding: 10px; border-radius: 40px; border: none; font-size: 0.9rem; background: rgba(255,255,255,0.9); text-align: center; }
+        body.night-mode .choice-search-area input { background: #334155; color: white; }
+        .modal-sheet-link { background: #3b82f6; color: white; border: none; border-radius: 40px; padding: 8px 16px; font-size: 0.8rem; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .modal-sheet-link:hover { background: #2563eb; transform: scale(1.02); }
+        .cancel-icon { background: #475569; color: white; border: none; border-radius: 60px; width: 50px; height: 50px; font-size: 1.5rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; margin: 16px auto 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .cancel-icon:hover { background: #334155; transform: scale(0.98); }
+        .big-edit-input { font-size: 1.3rem !important; padding: 16px 20px !important; width: 90% !important; border-radius: 60px !important; border: 1px solid rgba(255,255,255,0.3) !important; background: rgba(51, 65, 85, 0.95) !important; backdrop-filter: blur(8px); color: white !important; margin-bottom: 20px !important; display: block; margin-left: auto; margin-right: auto; text-align: center; }
+        .edit-group-buttons button, .delete-group-btn button { box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-        .section-header .section-title {
-            font-weight: bold;
-            font-size: 0.7rem;
-        }
-        .toggle-section-btn {
-            background: none;
-            border: none;
-            font-size: 1rem;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 20px;
-            transition: all 0.2s;
-        }
-        .section-content.hidden {
-            display: none;
-        }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .section-header .section-title { font-weight: bold; font-size: 0.7rem; }
+        .toggle-section-btn { background: none; border: none; font-size: 1rem; cursor: pointer; padding: 4px 8px; border-radius: 20px; transition: all 0.2s; }
+        .section-content.hidden { display: none; }
 
         @media (max-width: 700px) {
             .chinese-word { gap: 4px 8px; padding: 8px 12px; }
@@ -1218,6 +859,7 @@
             .choice-modal { min-width: 85vw; padding: 20px; }
             #floatingMenu { width: 320px; }
             .side-number-col { min-width: 50px; }
+            .choice-search-area input { font-size: 0.9rem; padding: 10px; }
         }
         
         .copy-popup {
@@ -1238,93 +880,19 @@
             border: 1px solid rgba(255,255,255,0.2);
             animation: fadeInScale 0.2s ease;
         }
-        .copy-popup span {
-            color: white;
-            font-size: 18px;
-            font-weight: 500;
-        }
-        .copy-popup button {
-            background: #3b82f6;
-            border: none;
-            border-radius: 40px;
-            padding: 12px 32px;
-            font-size: 16px;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .copy-popup button:active {
-            transform: scale(0.96);
-        }
-        
-        .copy-toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 40px;
-            font-size: 14px;
-            z-index: 20001;
-            pointer-events: none;
-            opacity: 0.9;
-            white-space: nowrap;
-        }
-        
-        .edit-group-buttons {
-            display: flex;
-            gap: 16px;
-            margin-top: 12px;
-        }
-        .edit-group-buttons button {
-            flex: 1;
-            padding: 16px 12px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border-radius: 60px;
-            transition: all 0.2s;
-            cursor: pointer;
-            border: none;
-        }
-        .edit-group-buttons button:first-child {
-            background: #f59e0b;
-            color: white;
-        }
-        .edit-group-buttons button:first-child:hover {
-            background: #e67e22;
-            transform: scale(0.98);
-        }
-        .edit-group-buttons button:last-child {
-            background: #475569;
-            color: white;
-        }
-        .edit-group-buttons button:last-child:hover {
-            background: #334155;
-            transform: scale(0.98);
-        }
-        
-        .delete-group-btn {
-            margin-top: 16px;
-        }
-        .delete-group-btn button {
-            background: #dc2626;
-            color: white;
-            padding: 16px 12px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border-radius: 60px;
-            transition: all 0.2s;
-            cursor: pointer;
-            border: none;
-            width: 100%;
-        }
-        .delete-group-btn button:hover {
-            background: #b91c1c;
-            transform: scale(0.98);
-        }
+        .copy-popup span { color: white; font-size: 18px; font-weight: 500; }
+        .copy-popup button { background: #3b82f6; border: none; border-radius: 40px; padding: 12px 32px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; transition: all 0.2s; }
+        .copy-popup button:active { transform: scale(0.96); }
+        .copy-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 8px 16px; border-radius: 40px; font-size: 14px; z-index: 20001; pointer-events: none; opacity: 0.9; white-space: nowrap; }
+        .edit-group-buttons { display: flex; gap: 16px; margin-top: 12px; }
+        .edit-group-buttons button { flex: 1; padding: 16px 12px; font-size: 1.2rem; font-weight: bold; border-radius: 60px; transition: all 0.2s; cursor: pointer; border: none; }
+        .edit-group-buttons button:first-child { background: #f59e0b; color: white; }
+        .edit-group-buttons button:first-child:hover { background: #e67e22; transform: scale(0.98); }
+        .edit-group-buttons button:last-child { background: #475569; color: white; }
+        .edit-group-buttons button:last-child:hover { background: #334155; transform: scale(0.98); }
+        .delete-group-btn { margin-top: 16px; }
+        .delete-group-btn button { background: #dc2626; color: white; padding: 16px 12px; font-size: 1.2rem; font-weight: bold; border-radius: 60px; transition: all 0.2s; cursor: pointer; border: none; width: 100%; }
+        .delete-group-btn button:hover { background: #b91c1c; transform: scale(0.98); }
     </style>
 </head>
 <body>
@@ -1378,7 +946,7 @@
                             <option value="'Hanyi Changyi'">Hanyi Changyi</option>
                             <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
                             <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
-                        </select><input type="color" id="mZhColor" value="#000000"><button id="mZhBold" class="bold-icon-btn" onclick="toggleBold('mZhBold', applyChineseMainStyle)"><span>BOLD</span></button></div>
+                        </select><input type="color" id="mZhColor" value="#ffffff"><button id="mZhBold" class="bold-icon-btn" onclick="toggleBold('mZhBold', applyChineseMainStyle)"><span>BOLD</span></button></div>
                         <div class="size-row"><label>Main Char Size (vh)</label><input type="range" id="mZhSize" class="size-slider" min="2" max="150" value="42"><span id="mZhSizeVal">42vh</span></div>
                         <div class="shadow-style-grid">
                             <label>Shadow</label>
@@ -1392,7 +960,7 @@
                         <option value="'KHROSAPSRA'">Rosapsra</option>
                         <option value="'KHMithSalaPali'">MithSalaPali</option>
                         <option value="'KHSAMADY'">Samady KS</option>
-                    </select><input type="color" id="mKmColor" value="#000000"><button id="mKmBold" class="bold-icon-btn" onclick="toggleBold('mKmBold', applyStyles)"><span>BOLD</span></button></div>
+                    </select><input type="color" id="mKmColor" value="#ffffff"><button id="mKmBold" class="bold-icon-btn" onclick="toggleBold('mKmBold', applyStyles)"><span>BOLD</span></button></div>
                     <div class="size-row"><label>KM Size (vh)</label><input type="range" id="mKmSize" class="size-slider" min="2" max="150" value="42"><span id="mKmSizeVal">42vh</span></div>
                 </div>
 
@@ -1407,8 +975,8 @@
                 <div id="sideControls" class="control-group">
                     <button id="sidebarToggleBtn" class="btn-main btn-accent" style="margin-bottom:10px; width:100%;" onclick="toggleSidebar()">SHOW SIDEBAR</button>
                     <div id="sidebarControlsContainer">
-                        <div class="side-style-grid"><label>ZH Font</label><select id="sZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette</option><option value="'XHeiPinyin'">X Hei</option><option value="'Cream Pudding Pinyin'">Cream Pudding</option><option value="'Pinyin'">FZPY01</option></select><input type="color" id="sZhColor" value="#000000"></div>
-                        <div class="side-style-grid"><label>KM Font</label><select id="sKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option><option value="'KHROSAPSRA'">Rosapsra</option><option value="'KHMithSalaPali'">MithSalaPali</option></select><input type="color" id="sKmColor" value="#475569"></div>
+                        <div class="side-style-grid"><label>ZH Font</label><select id="sZhFont" class="font-select"><option value="'BaguettePinyin'">Baguette</option><option value="'XHeiPinyin'">X Hei</option><option value="'Cream Pudding Pinyin'">Cream Pudding</option><option value="'Pinyin'">FZPY01</option></select><input type="color" id="sZhColor" value="#ffffff"></div>
+                        <div class="side-style-grid"><label>KM Font</label><select id="sKmFont" class="font-select"><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option><option value="'KHROSAPSRA'">Rosapsra</option><option value="'KHMithSalaPali'">MithSalaPali</option></select><input type="color" id="sKmColor" value="#ffffff"></div>
                         <div class="size-row"><label>ZH Side Size</label><input type="range" id="sZhSize" min="0.5" max="4" step="0.1" value="1.1"></div>
                         <div class="size-row"><label>KM Side Size</label><input type="range" id="sKmSize" min="0.5" max="4" step="0.1" value="0.9"></div>
                         <div class="size-row"><label>📋 Vocab Spacing</label><input type="range" id="sVocabSpacing" min="0" max="30" step="1" value="8"><span id="vocabSpacingVal">8px</span></div>
@@ -1437,7 +1005,7 @@
                                     <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
                                     <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
                                 </select>
-                                <input type="color" id="pinyinColor" value="#000000">
+                                <input type="color" id="pinyinColor" value="#ffffff">
                                 <button id="pinyinBold" class="bold-icon-btn active" onclick="toggleBold('pinyinBold', applyPinyinStyles)"><span>BOLD</span></button>
                             </div>
                             <div class="size-row"><label>Size (px)</label><input type="range" id="pinyinSizePx" class="size-slider" min="20" max="120" value="55"><span id="pinyinSizeVal">55px</span></div>
@@ -1463,7 +1031,7 @@
                                         <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti</option>
                                         <option value="'Hanyi Extra Bold'">Hanyi Extra Bold</option>
                                     </select>
-                                    <input type="color" id="bottomCharColor" value="#2563eb">
+                                    <input type="color" id="bottomCharColor" value="#ffffff">
                                     <button id="bottomBold" class="bold-icon-btn" onclick="toggleBold('bottomBold', applyBottomStyles)"><span>BOLD</span></button>
                                 </div>
                                 <div class="size-row"><label>Size (px)</label><input type="range" id="bottomSizePx" class="size-slider" min="20" max="120" value="55"><span id="bottomSizeVal">55px</span></div>
@@ -1480,7 +1048,7 @@
         </div>
     </div>
 
-    <div class="resizer" id="dragResizer">
+    <div class="resizer hidden" id="dragResizer">
         <button class="resizer-btn" id="sidebarCloseBtn">☰</button>
     </div>
     <div class="sidebar hidden" id="rightSide">
@@ -1812,11 +1380,11 @@
         } catch(err) { showToast(`❌ Error: ${err.message}`); return false; }
     }
     
-    async function addVocabToSheet(khmer, chinese, insertAtRow = null) {
-        if (!editUnlocked) { showPasswordModal(async (unlocked) => { if (unlocked) await addVocabToSheet(khmer, chinese, insertAtRow); }); return false; }
+    async function addVocabToSheet(khmer, chinese) {
+        if (!editUnlocked) { showPasswordModal(async (unlocked) => { if (unlocked) await addVocabToSheet(khmer, chinese); }); return false; }
         if (!khmer && !chinese) { showToast("⚠️ Please enter Khmer or Chinese"); return false; }
-        if (insertAtRow !== null && insertAtRow >= 2) return await callApi({ action: "insert", row: insertAtRow - 1, vocab: khmer, chinese: chinese }, "INSERT");
-        else return await callApi({ action: "add", vocab: khmer, chinese: chinese }, "ADD");
+        // Append at the end: no row parameter
+        return await callApi({ action: "add", vocab: khmer, chinese: chinese }, "ADD");
     }
     
     async function updateVocabByRow(sheetRowNumber, khmer, chinese) {
@@ -1965,7 +1533,6 @@
         const searchInput = headerDiv.querySelector('#headerSearchInput');
         const handleSearch = (e) => {
             if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
-            // FASTER: debounce reduced to 150ms for near-instant filtering
             searchDebounceTimer = setTimeout(() => { 
                 headerSearchTerm = e.target.value; 
                 if (appMode === 'normal') { 
@@ -1975,13 +1542,17 @@
                 } else { 
                     renderSidebarUI(); 
                 } 
+                // After re-render, refocus the search input and restore its value
+                const newSearchInput = document.getElementById('headerSearchInput');
+                if (newSearchInput) {
+                    newSearchInput.value = headerSearchTerm;
+                    newSearchInput.focus();
+                }
                 searchDebounceTimer = null; 
-            }, 150);
+            }, 100);
         };
         searchInput.addEventListener('input', handleSearch);
-        // Do NOT auto-focus the search input on mobile to avoid keyboard popping up unintentionally
         
-        // Add mode icons inside the header
         const modeIconsContainer = headerDiv.querySelector('#modeIconsContainer');
         modeIconsContainer.innerHTML = `
             <button id="modeRandomIconHeader" class="mode-icon-small ${appMode === 'random' ? 'active' : ''}">🎲</button>
@@ -1990,7 +1561,6 @@
         document.getElementById('modeRandomIconHeader')?.addEventListener('click', () => { if(appMode !== 'random') toggleAppMode(); });
         document.getElementById('modeNormalIconHeader')?.addEventListener('click', () => { if(appMode !== 'normal') toggleAppMode(); });
         
-        // Build pagination container inside header
         const paginationDiv = headerDiv.querySelector('#paginationContainer');
         updatePaginationControlsInside(paginationDiv);
         
@@ -2035,12 +1605,23 @@
         modalDiv.className = 'modal-overlay';
         modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>✏️ EDIT Display #${displayNumber}</h3><div style="margin-bottom:16px;"><input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(currentChinese)}" class="big-edit-input"><input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input"></div><div class="edit-group-buttons"><button id="confirmUpdateBtn">💾 UPDATE SHEET</button><button id="openSheetRowBtn" style="background:#3b82f6;">📊 OPEN SHEET</button></div><div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${displayNumber}</button></div><button id="cancelEditBtn" class="cancel-icon">✕</button></div>`;
         document.body.appendChild(modalDiv);
+        
+        const preventShortcuts = (e) => {
+            if (e.key === ' ' || e.key === 'Space' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.stopPropagation();
+            }
+        };
         const chineseInput = document.getElementById('editChineseInput');
         const khmerInput = document.getElementById('editKhmerInput');
+        chineseInput.addEventListener('keydown', preventShortcuts);
+        khmerInput.addEventListener('keydown', preventShortcuts);
+        
         document.getElementById('confirmUpdateBtn').onclick = async () => {
             const newChinese = chineseInput.value.trim();
             const newKhmer = khmerInput.value.trim();
             if (!newChinese && !newKhmer) { showToast("⚠️ At least one field required"); return; }
+            // Close modal immediately, then perform update
+            modalDiv.remove();
             const success = await updateVocabByRow(sheetRowNumber, newKhmer || currentKhmer, newChinese || currentChinese);
             if (success) {
                 vocabList[displayRowIdx] = { khmer: newKhmer || currentKhmer, chinese: newChinese || currentChinese, sheetRow: sheetRowNumber };
@@ -2049,22 +1630,48 @@
                 updateDisplay();
                 showToast("✅ Updated successfully");
             }
-            modalDiv.remove();
         };
         document.getElementById('openSheetRowBtn').onclick = () => { openSheetAndActivateCell(sheetRowNumber); modalDiv.remove(); };
         document.getElementById('deleteRowBtn').onclick = async () => {
             if (confirm(`⚠️ Delete Display #${displayNumber}?`)) {
+                // Close modal immediately
+                modalDiv.remove();
                 const success = await deleteVocabByRow(sheetRowNumber);
                 if (success) {
-                    vocabList.splice(displayRowIdx, 1);
+                    const deletedIdx = displayRowIdx;
+                    vocabList.splice(deletedIdx, 1);
                     saveAllData();
-                    if (vocabList.length === 0) { sidebarIndices = []; renderSidebarUI(); updateChineseDisplay(""); document.getElementById('khmerWord').innerText = ""; showToast("All vocabulary deleted"); }
-                    else {
-                        if (appMode === 'normal') { if (normalCurrentIdx >= vocabList.length) normalCurrentIdx = vocabList.length - 1; normalCurrentPage = 0; renderNormalSidebar(); }
-                        else { let newIdx = displayRowIdx; if (newIdx >= vocabList.length) newIdx = vocabList.length - 1; if (newIdx < 0 && vocabList.length > 0) newIdx = 0; if (newIdx >= 0) { history = [newIdx]; historyIndex = 0; renderRandomSidebar(newIdx); } else { renderSidebarUI(); updateChineseDisplay(""); document.getElementById('khmerWord').innerText = ""; } }
+                    
+                    if (vocabList.length === 0) {
+                        sidebarIndices = [];
+                        renderSidebarUI();
+                        updateChineseDisplay("");
+                        document.getElementById('khmerWord').innerText = "";
+                        showToast("All vocabulary deleted");
+                    } else {
+                        // Return to previous vocabulary: if deleted was the current one, go to previous index or first
+                        let newIdx = deletedIdx;
+                        if (newIdx >= vocabList.length) newIdx = vocabList.length - 1;
+                        if (newIdx < 0) newIdx = 0;
+                        if (appMode === 'normal') {
+                            normalCurrentIdx = newIdx;
+                            normalCurrentPage = getNormalPageForIndex(newIdx);
+                            renderNormalSidebar();
+                        } else {
+                            if (newIdx >= 0) {
+                                history = [newIdx];
+                                historyIndex = 0;
+                                renderRandomSidebar(newIdx);
+                            } else {
+                                renderSidebarUI();
+                                updateChineseDisplay("");
+                                document.getElementById('khmerWord').innerText = "";
+                            }
+                        }
                     }
                     showToast("✅ Deleted successfully");
                 }
+            } else {
                 modalDiv.remove();
             }
         };
@@ -2075,10 +1682,18 @@
         if (!editUnlocked) { showPasswordModal(() => { showAddNewModal(); }); return; }
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
-        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>➕ ADD NEW VOCABULARY (at top after header)</h3><div style="margin-bottom:16px;"><input id="addChineseInput" placeholder="Chinese word" class="big-edit-input"><input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input"></div><div class="choice-search-area"><input type="text" id="vocabSearchInput" placeholder="🔍 Search vocabulary..."><div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div></div><div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#10b981;">✅ ADD TO SHEET (Row 2)</button></div><button id="cancelAddBtn" class="cancel-icon">✕</button></div>`;
+        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>➕ ADD NEW VOCABULARY (appends at the end)</h3><div style="margin-bottom:16px;"><input id="addChineseInput" placeholder="Chinese word" class="big-edit-input"><input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input"></div><div class="choice-search-area"><input type="text" id="vocabSearchInput" placeholder="🔍 Search vocabulary..."><div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div></div><div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#10b981;">✅ ADD TO SHEET (last row)</button></div><button id="cancelAddBtn" class="cancel-icon">✕</button></div>`;
         document.body.appendChild(modalDiv);
         const addChinese = document.getElementById('addChineseInput');
         const addKhmer = document.getElementById('addKhmerInput');
+        const preventShortcuts = (e) => {
+            if (e.key === ' ' || e.key === 'Space' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.stopPropagation();
+            }
+        };
+        addChinese.addEventListener('keydown', preventShortcuts);
+        addKhmer.addEventListener('keydown', preventShortcuts);
+        
         const searchInput = document.getElementById('vocabSearchInput');
         const searchResults = document.getElementById('vocabSearchResults');
         const updateSearchResults = () => {
@@ -2089,19 +1704,29 @@
             searchResults.innerHTML = filtered.map(item => `<div style="padding:8px; border-bottom:1px solid #ccc; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px;" onclick="document.getElementById('addChineseInput').value='${escapeHtml(item.chinese)}'; document.getElementById('addKhmerInput').value='${escapeHtml(item.khmer)}'; searchResults.innerHTML=''; searchInput.value='';"><strong>${escapeHtml(item.chinese)}</strong> — ${escapeHtml(item.khmer)}</div>`).join('');
         };
         searchInput.addEventListener('input', updateSearchResults);
+        
         document.getElementById('confirmAddBtn').onclick = async () => {
             const chinese = addChinese.value.trim();
             const khmer = addKhmer.value.trim();
             if (!chinese && !khmer) { showToast("⚠️ Enter at least one value"); return; }
-            const success = await addVocabToSheet(khmer, chinese, 2);
+            // Close modal immediately
+            modalDiv.remove();
+            const success = await addVocabToSheet(khmer, chinese);
             if (success) {
-                await loadSheetData();
-                if (appMode === 'random') { history = [1]; historyIndex = 0; renderRandomSidebar(1); }
-                else { normalCurrentIdx = 1; normalCurrentPage = 0; renderNormalSidebar(); }
-                showToast(`✅ Added "${chinese || khmer}" as new #${getDisplayNumberFromArrayIndex(1)}`);
+                await loadSheetData();  // Reloads fresh data from sheet
+                const newIdx = vocabList.length - 1;
+                if (appMode === 'random') {
+                    history = [newIdx];
+                    historyIndex = 0;
+                    renderRandomSidebar(newIdx);
+                } else {
+                    normalCurrentIdx = newIdx;
+                    normalCurrentPage = getNormalPageForIndex(newIdx);
+                    renderNormalSidebar();
+                }
+                showToast(`✅ Added "${chinese || khmer}" as new #${getDisplayNumberFromArrayIndex(newIdx)}`);
                 scrollToSidebarItem();
             }
-            modalDiv.remove();
         };
         document.getElementById('cancelAddBtn').onclick = () => modalDiv.remove();
     }
@@ -2169,7 +1794,7 @@
     function applyStyles() { const mKm = document.getElementById('khmerWord'); if(mKm){ mKm.style.fontFamily = document.getElementById('mKmFont').value; mKm.style.color = document.getElementById('mKmColor').value; mKm.style.fontWeight = document.getElementById('mKmBold').classList.contains('active') ? 'bold' : '500'; } applySidebarStyles(); document.getElementById('delayVal').innerText = document.getElementById('autoDelay').value+'s'; document.getElementById('repVal').innerText = document.getElementById('zhReps').value; document.getElementById('kmRepVal').innerText = document.getElementById('kmReps').value; applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyShadow(); saveAllData(); forceShrink(); }
     function applyShadow() { const shadowValue = document.getElementById('shadowSlider').value; const percent = Math.round(shadowValue); document.getElementById('shadowVal').innerText = percent + '%'; const shadowBlur = percent * 0.4; const shadowOffset = percent * 0.2; const shadowOpacity = Math.min(0.5, percent / 40); const shadowStyle = `${shadowOffset}px ${shadowOffset}px ${shadowBlur}px rgba(0,0,0,${shadowOpacity})`; document.querySelectorAll('.chinese-main').forEach(el => el.style.textShadow = shadowStyle); const khmerElementW = document.getElementById('khmerWord'); if (khmerElementW) khmerElementW.style.textShadow = shadowStyle; saveAllData(); }
     function saveAllData() { const settings = { mZhSize: userSetChineseFontSize, mKmSize: userSetKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: userSetBottomFontSize, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage, shadow: document.getElementById('shadowSlider').value }; localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList)); localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings)); }
-    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings){ const s = JSON.parse(savedSettings); userSetChineseFontSize = s.mZhSize || 42; userSetKhmerFontSize = s.mKmSize || 42; document.getElementById('mZhSize').value = userSetChineseFontSize; document.getElementById('mKmSize').value = userSetKhmerFontSize; document.getElementById('mZhColor').value = s.mZhColor || "#000000"; document.getElementById('mKmColor').value = s.mKmColor || "#000000"; document.getElementById('zhReps').value = s.zhReps || 1; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor; document.getElementById('sVocabSpacing').value = s.vocabSpacing || 8; document.body.style.setProperty('--vocab-spacing', (s.vocabSpacing || 8) + 'px'); document.getElementById('vocabSpacingVal').innerText = (s.vocabSpacing || 8) + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.pinyinFont) document.getElementById('pinyinFont').value = s.pinyinFont; if(s.pinyinColor) document.getElementById('pinyinColor').value = s.pinyinColor; if(s.pinyinBold !== undefined) { const btn = document.getElementById('pinyinBold'); if(s.pinyinBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.pinyinSizePx) { document.getElementById('pinyinSizePx').value = s.pinyinSizePx; userSetPinyinFontSize = parseInt(s.pinyinSizePx); } if(s.pinyinSpacing) document.getElementById('pinyinSpacing').value = s.pinyinSpacing; if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont; if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor; if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomFontSize = parseInt(s.bottomSizePx); } if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible; if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible; if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; } normalCurrentIdx = s.normalCurrentIdx || 0; normalCurrentPage = s.normalCurrentPage || 0; sidebarVisible = s.sidebarVisible !== undefined ? s.sidebarVisible : false; if(!sidebarVisible) { document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; } } else { document.getElementById('pinyinFont').value = "'Baguette Simplified'"; document.getElementById('pinyinColor').value = "#000000"; document.getElementById('pinyinSizePx').value = "55"; userSetPinyinFontSize = 55; document.getElementById('pinyinSpacing').value = "0"; document.getElementById('bottomSizePx').value = "55"; userSetBottomFontSize = 55; document.getElementById('mKmColor').value = "#000000"; document.getElementById('bottomCharColor').value = "#2563eb"; document.getElementById('shadowSlider').value = "3"; sidebarVisible = false; document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; applyPinyinStyles(); applyBottomStyles(); } applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility(); setKhmerFontSize(userSetKhmerFontSize); applyShadow(); applyBottomAutoScale(); }
+    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings){ const s = JSON.parse(savedSettings); userSetChineseFontSize = s.mZhSize || 42; userSetKhmerFontSize = s.mKmSize || 42; document.getElementById('mZhSize').value = userSetChineseFontSize; document.getElementById('mKmSize').value = userSetKhmerFontSize; document.getElementById('mZhColor').value = s.mZhColor || "#ffffff"; document.getElementById('mKmColor').value = s.mKmColor || "#ffffff"; document.getElementById('zhReps').value = s.zhReps || 1; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor || "#ffffff"; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor || "#ffffff"; document.getElementById('sVocabSpacing').value = s.vocabSpacing || 8; document.body.style.setProperty('--vocab-spacing', (s.vocabSpacing || 8) + 'px'); document.getElementById('vocabSpacingVal').innerText = (s.vocabSpacing || 8) + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.pinyinFont) document.getElementById('pinyinFont').value = s.pinyinFont; if(s.pinyinColor) document.getElementById('pinyinColor').value = s.pinyinColor || "#ffffff"; if(s.pinyinBold !== undefined) { const btn = document.getElementById('pinyinBold'); if(s.pinyinBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.pinyinSizePx) { document.getElementById('pinyinSizePx').value = s.pinyinSizePx; userSetPinyinFontSize = parseInt(s.pinyinSizePx); } if(s.pinyinSpacing) document.getElementById('pinyinSpacing').value = s.pinyinSpacing; if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont; if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor || "#ffffff"; if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomFontSize = parseInt(s.bottomSizePx); } if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible; if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible; if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; } normalCurrentIdx = s.normalCurrentIdx || 0; normalCurrentPage = s.normalCurrentPage || 0; sidebarVisible = s.sidebarVisible !== undefined ? s.sidebarVisible : false; if(!sidebarVisible) { document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; } } else { document.getElementById('pinyinFont').value = "'Baguette Simplified'"; document.getElementById('pinyinColor').value = "#ffffff"; document.getElementById('pinyinSizePx').value = "55"; userSetPinyinFontSize = 55; document.getElementById('pinyinSpacing').value = "0"; document.getElementById('bottomSizePx').value = "55"; userSetBottomFontSize = 55; document.getElementById('mKmColor').value = "#ffffff"; document.getElementById('bottomCharColor').value = "#ffffff"; document.getElementById('shadowSlider').value = "3"; sidebarVisible = false; document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; applyPinyinStyles(); applyBottomStyles(); } applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility(); setKhmerFontSize(userSetKhmerFontSize); applyShadow(); applyBottomAutoScale(); }
     function toggleBold(btnId, applyCallback) { const btn = document.getElementById(btnId); if (btn) { btn.classList.toggle('active'); if (applyCallback && typeof applyCallback === 'function') { applyCallback(); } else { applyStyles(); } } }
     function switchTab(tab) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active'); document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab))); if (tab === 'side' && !sidebarVisible) { toggleSidebar(); } }
     function setupBackgroundClick() { 
@@ -2178,13 +1803,11 @@
             if (e.target.closest('#floatingMenu')) return; 
             if (e.target.closest('.chinese-word')) return; 
             if (e.target.closest('.khmer-text')) return; 
-            // Force blur any active input to prevent keyboard on mobile
             if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
                 document.activeElement.blur();
             }
             pickRandom(); 
         }); 
-        // Also on touchstart, prevent any potential focus stealing
         bgArea.addEventListener('touchstart', function(e) {
             if (e.target.closest('#floatingMenu')) return;
             if (e.target.closest('.chinese-word')) return;
@@ -2196,7 +1819,7 @@
     }
     function toggleMenu(hide) { if (hide) { document.getElementById("floatingMenu").style.display = "none"; document.getElementById("minimizedTrigger").style.display = "flex"; } else { document.getElementById("floatingMenu").style.display = "block"; document.getElementById("minimizedTrigger").style.display = "none"; } if (hide) applyStoredGearPosition(); }
     
-    // ========== DRAG & LAYER (fully functional) ==========
+    // ========== DRAG & LAYER ==========
     let chineseElement = null, khmerElement = null;
     let chineseX = 50, chineseY = 40, khmerX = 50, khmerY = 70;
     let topLayerX = 0, topLayerY = 0, bottomLayerX = 0, bottomLayerY = 0;
@@ -2231,7 +1854,7 @@
     // ========== FLOATING MENU DRAG ==========
     function initFloatingMenuDrag() { const dragHandle = document.getElementById('dragHandle'); const floatingMenu = document.getElementById('floatingMenu'); if (!dragHandle || !floatingMenu) return; let isDraggingMenu = false; let startX = 0, startY = 0; let startLeft = 0, startTop = 0; const onStart = (e) => { e.preventDefault(); e.stopPropagation(); isDraggingMenu = true; const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); startX = clientX; startY = clientY; const rect = floatingMenu.getBoundingClientRect(); startLeft = rect.left; startTop = rect.top; floatingMenu.style.transition = 'none'; }; const onMove = (e) => { if (!isDraggingMenu) return; e.preventDefault(); const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); let newLeft = startLeft + (clientX - startX); let newTop = startTop + (clientY - startY); newLeft = Math.max(0, Math.min(window.innerWidth - floatingMenu.offsetWidth, newLeft)); newTop = Math.max(0, Math.min(window.innerHeight - floatingMenu.offsetHeight, newTop)); floatingMenu.style.left = newLeft + 'px'; floatingMenu.style.top = newTop + 'px'; floatingMenu.style.right = 'auto'; floatingMenu.style.bottom = 'auto'; }; const onEnd = () => { if (!isDraggingMenu) return; isDraggingMenu = false; floatingMenu.style.transition = ''; const left = parseFloat(floatingMenu.style.left); const top = parseFloat(floatingMenu.style.top); if (!isNaN(left) && !isNaN(top)) { localStorage.setItem('floatingMenuLeft', left); localStorage.setItem('floatingMenuTop', top); } }; const applyStoredPosition = () => { const savedLeft = localStorage.getItem('floatingMenuLeft'); const savedTop = localStorage.getItem('floatingMenuTop'); if (savedLeft !== null && savedTop !== null) { const left = Math.max(0, Math.min(window.innerWidth - floatingMenu.offsetWidth, parseFloat(savedLeft))); const top = Math.max(0, Math.min(window.innerHeight - floatingMenu.offsetHeight, parseFloat(savedTop))); floatingMenu.style.left = left + 'px'; floatingMenu.style.top = top + 'px'; floatingMenu.style.right = 'auto'; floatingMenu.style.bottom = 'auto'; } else { floatingMenu.style.left = '20px'; floatingMenu.style.top = '20px'; } }; dragHandle.addEventListener('mousedown', onStart); dragHandle.addEventListener('touchstart', onStart, { passive: false }); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); applyStoredPosition(); window.addEventListener('resize', () => applyStoredPosition()); }
     
-    // ========== SIDEBAR RESIZER DRAG & INTEGRATED CLOSE BUTTON (resize on hold) ==========
+    // ========== SIDEBAR RESIZER DRAG & INTEGRATED CLOSE BUTTON ==========
     function initSidebarResizer() {
         const resizer = document.getElementById('dragResizer');
         const sidebar = document.getElementById('rightSide');
@@ -2268,7 +1891,6 @@
             window.removeEventListener('touchmove', onResizeMove);
             window.removeEventListener('touchend', onResizeEnd);
         };
-        // Resizer itself: start resize on mouse/touch down
         resizer.addEventListener('mousedown', (e) => { e.preventDefault(); startResize(e.clientX); });
         resizer.addEventListener('touchstart', (e) => { e.preventDefault(); startResize(e.touches[0].clientX); }, { passive: false });
         
@@ -2276,23 +1898,18 @@
         if (savedWidth && !sidebar.classList.contains('hidden')) updateSidebarWidth(parseFloat(savedWidth));
         else updateSidebarWidth(400);
         
-        // Close button functionality: short press toggles sidebar, long press (hold) starts resizing
         if (closeBtn) {
             let pressTimer = null;
-            let hasMoved = false;
             const onBtnStart = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
                 pressTimer = setTimeout(() => {
-                    // Long press detected -> start resizing
                     startResize(clientX);
                     pressTimer = null;
-                    // Visual feedback
                     closeBtn.style.transform = 'translate(-50%, -50%) scale(0.9)';
                     setTimeout(() => { closeBtn.style.transform = ''; }, 150);
                 }, 500);
-                // Also track move to cancel if moved significantly
                 const onMove = (moveEvent) => {
                     const moveX = moveEvent.clientX ?? (moveEvent.touches ? moveEvent.touches[0].clientX : 0);
                     if (Math.abs(moveX - clientX) > 10) {
@@ -2317,7 +1934,6 @@
             };
             closeBtn.addEventListener('mousedown', onBtnStart);
             closeBtn.addEventListener('touchstart', onBtnStart, { passive: false });
-            // Short press (click) toggles sidebar
             closeBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -2336,6 +1952,32 @@
     async function initializeSheet() { currentSheetId = DEFAULT_SHEET_ID; currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`; await loadSheetData(); }
     const gearTrigger = document.getElementById('minimizedTrigger');
     if (gearTrigger) gearTrigger.addEventListener('click', function(e) { e.stopPropagation(); });
+    
+    window.addEventListener('keydown', function(e) {
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+            if (e.key === ' ' || e.key === 'Space' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.stopPropagation();
+                return;
+            }
+        }
+        if (e.code === 'Space') {
+            e.preventDefault();
+            pickRandom();
+        } else if (e.code === 'ArrowLeft') {
+            e.preventDefault();
+            historyPrev();
+        } else if (e.code === 'ArrowRight') {
+            e.preventDefault();
+            historyNext();
+        } else if (e.code === 'ArrowDown') {
+            e.preventDefault();
+            moveSidebarFocus(1);
+        } else if (e.code === 'ArrowUp') {
+            e.preventDefault();
+            moveSidebarFocus(-1);
+        }
+    });
     
     window.onload = async () => {
         initCopyPopup();
@@ -2378,7 +2020,6 @@
         document.getElementById('bottomCharColor').addEventListener('input', applyBottomStyles);
         const bottomSizeSlider = document.getElementById('bottomSizePx');
         bottomSizeSlider.addEventListener('input', function() { userSetBottomFontSize = parseInt(this.value); document.getElementById('bottomSizeVal').innerText = userSetBottomFontSize + 'px'; applyBottomAutoScale(); saveAllData(); });
-        window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); pickRandom(); } else if (e.code === 'ArrowLeft') { e.preventDefault(); historyPrev(); } else if (e.code === 'ArrowRight') { e.preventDefault(); historyNext(); } else if (e.code === 'ArrowDown') { e.preventDefault(); moveSidebarFocus(1); } else if (e.code === 'ArrowUp') { e.preventDefault(); moveSidebarFocus(-1); } });
         if(vocabList.length) updateDisplay();
         setTimeout(() => { loadAllDragPositions(); forceShrink(); applyBottomAutoScale(); }, 100);
         document.getElementById('insertDataBtn').onclick = () => { showLoadVocabularyModal(); };
