@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>📖 Vocab Master – Final (Search Focus Fixed)</title>
+    <title>📖 Vocab Master – Final (All Fixes)</title>
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
     <style>
-        /* ========== CUSTOM WEB FONTS (kept as before) ========== */
+        /* ========== CUSTOM WEB FONTS ========== */
         @font-face {
             font-family: 'BaguettePinyin';
             src: url('/static/Fonts/Chinese/pinyin-baguette.woff2') format('woff2');
@@ -629,14 +629,14 @@
         .resizer:hover { background: var(--accent); }
         .resizer-btn {
             position: absolute;
-            width: 28px;
-            height: 28px;
+            width: 40px;
+            height: 40px;
             background: transparent;
             color: var(--text-primary);
             border: none;
             border-radius: 50%;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 18px;
             font-weight: bold;
             display: flex;
             align-items: center;
@@ -647,14 +647,14 @@
             transform: translate(-50%, -50%);
             top: 50%;
             padding: 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            background: rgba(128,128,128,0.4);
+            touch-action: none;
         }
-        .resizer-btn:hover {
-            background: rgba(0,0,0,0.1);
-            transform: translate(-50%, -50%) scale(1.1);
+        .resizer-btn:active {
+            transform: translate(-50%, -50%) scale(0.95);
         }
-        body.night-mode .resizer-btn { color: white; }
-        .resizer-btn:active { transform: translate(-50%, -50%) scale(0.95); }
+        body.night-mode .resizer-btn { color: white; background: rgba(255,255,255,0.3); }
         
         .pagination-bar {
             display: flex;
@@ -670,14 +670,15 @@
             background: var(--tab-bg);
             border: 1px solid var(--border);
             border-radius: 20px;
-            padding: 4px 12px;
+            padding: 10px 16px;
             cursor: pointer;
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             font-weight: 600;
             transition: all 0.2s;
+            min-width: 70px;
         }
         .pagination-btn:active { transform: scale(0.96); }
-        .pagination-info { font-size: 0.7rem; align-self: center; }
+        .pagination-info { font-size: 0.75rem; align-self: center; }
 
         .vocab-list { flex-grow: 1; overflow-y: auto; padding: 10px; scroll-behavior: smooth; }
         .vocab-header {
@@ -778,10 +779,10 @@
         .side-icons-row { display: flex; gap: 5px; align-items: center; }
         
         .word-wrapper { flex: 1; display: flex; flex-direction: column; cursor: pointer; }
-        .side-zh { font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis; color: white; }
-        .side-km { font-size: 0.85rem; opacity: 0.8; white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis; color: white; }
+        .side-zh { font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis; color: var(--text-primary); }
+        .side-km { font-size: 0.85rem; opacity: 0.8; white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis; color: var(--text-primary); }
         
-        .btn-main { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.75rem; flex: 1; transition: all 0.2s; }
+        .btn-main { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.75rem; flex: 1; transition: all 0.2s; color: var(--text-primary); }
         .btn-accent { background: var(--accent); color: white; border: none; }
         .btn-toggle.active { background: var(--success); color: white; }
         .btn-toggle.off { background: #94a3b8; color: white; }
@@ -789,7 +790,7 @@
         .file-source-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 20000; }
         .file-source-card { background: white; border-radius: 24px; padding: 24px 28px; width: 340px; max-width: 90%; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.3); animation: fadeInUp 0.2s ease; }
         .password-modal { background: white; border-radius: 24px; padding: 24px 28px; width: 320px; max-width: 90%; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
-        .password-modal input { width: 100%; padding: 12px; margin: 16px 0; border-radius: 40px; border: 1px solid var(--border); font-size: 1rem; text-align: center; }
+        .password-modal input { width: 100%; padding: 12px; margin: 16px 0; border-radius: 40px; border: 1px solid var(--border); font-size: 1rem; text-align: center; color: var(--text-primary); background: var(--input-bg); }
         .search-popup { background: var(--card-bg); border-radius: 24px; padding: 20px; width: 340px; max-width: 90%; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
         .search-popup input { width: 100%; padding: 10px; border-radius: 40px; border: 1px solid var(--border); font-size: 1rem; margin-bottom: 16px; background: var(--input-bg); color: var(--text-primary); }
         .search-results { max-height: 300px; overflow-y: auto; text-align: left; }
@@ -860,6 +861,7 @@
             #floatingMenu { width: 320px; }
             .side-number-col { min-width: 50px; }
             .choice-search-area input { font-size: 0.9rem; padding: 10px; }
+            .pagination-btn { padding: 8px 14px; min-width: 60px; font-size: 0.75rem; }
         }
         
         .copy-popup {
@@ -1258,6 +1260,7 @@
                 input.focus();
             }
         };
+        // Fixed: cancel button properly closes modal
         cancelBtn.onclick = () => { closeModal(); if (callback) callback(false); };
         input.addEventListener('keypress', (e) => { if (e.key === 'Enter') unlockBtn.click(); });
         input.focus();
@@ -1383,7 +1386,6 @@
     async function addVocabToSheet(khmer, chinese) {
         if (!editUnlocked) { showPasswordModal(async (unlocked) => { if (unlocked) await addVocabToSheet(khmer, chinese); }); return false; }
         if (!khmer && !chinese) { showToast("⚠️ Please enter Khmer or Chinese"); return false; }
-        // Append at the end: no row parameter
         return await callApi({ action: "add", vocab: khmer, chinese: chinese }, "ADD");
     }
     
@@ -1533,6 +1535,7 @@
         const searchInput = headerDiv.querySelector('#headerSearchInput');
         const handleSearch = (e) => {
             if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+            // Wait 1 second after typing finishes before searching
             searchDebounceTimer = setTimeout(() => { 
                 headerSearchTerm = e.target.value; 
                 if (appMode === 'normal') { 
@@ -1549,7 +1552,7 @@
                     newSearchInput.focus();
                 }
                 searchDebounceTimer = null; 
-            }, 100);
+            }, 1000);
         };
         searchInput.addEventListener('input', handleSearch);
         
@@ -1593,8 +1596,14 @@
             let prevHoldTimer = null, nextHoldTimer = null;
             const goToFirstPage = () => { if (normalCurrentPage !== 0) { normalCurrentPage = 0; const filtered = filterVocabBySearch(vocabList); if (filtered.length) normalCurrentIdx = vocabList.findIndex(v => v === filtered[0]); renderNormalSidebar(); showToast("📖 Jumped to FIRST page"); } };
             const goToLastPage = () => { const filtered = filterVocabBySearch(vocabList); const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE); if (normalCurrentPage !== totalPages - 1) { normalCurrentPage = totalPages - 1; const lastIdx = (totalPages - 1) * ITEMS_PER_PAGE; if (filtered[lastIdx]) normalCurrentIdx = vocabList.findIndex(v => v === filtered[lastIdx]); renderNormalSidebar(); showToast("📖 Jumped to LAST page"); } };
-            if (prevBtn) { prevBtn.onclick = () => { if (normalCurrentPage > 0) { normalCurrentPage--; renderNormalSidebar(); } }; prevBtn.addEventListener('mousedown', () => { prevHoldTimer = setTimeout(goToFirstPage, 1000); }); prevBtn.addEventListener('mouseup', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; }); prevBtn.addEventListener('mouseleave', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; }); prevBtn.addEventListener('touchstart', (e) => { e.preventDefault(); prevHoldTimer = setTimeout(goToFirstPage, 1000); }); prevBtn.addEventListener('touchend', () => { if (prevHoldTimer) clearTimeout(prevHoldTimer); prevHoldTimer = null; }); }
-            if (nextBtn) { nextBtn.onclick = () => { const filtered = filterVocabBySearch(vocabList); const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE); if (normalCurrentPage + 1 < totalPages) { normalCurrentPage++; renderNormalSidebar(); } }; nextBtn.addEventListener('mousedown', () => { nextHoldTimer = setTimeout(goToLastPage, 1000); }); nextBtn.addEventListener('mouseup', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; }); nextBtn.addEventListener('mouseleave', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; }); nextBtn.addEventListener('touchstart', (e) => { e.preventDefault(); nextHoldTimer = setTimeout(goToLastPage, 1000); }); nextBtn.addEventListener('touchend', () => { if (nextHoldTimer) clearTimeout(nextHoldTimer); nextHoldTimer = null; }); }
+            if (prevBtn) { 
+                prevBtn.onclick = (e) => { e.preventDefault(); if (normalCurrentPage > 0) { normalCurrentPage--; renderNormalSidebar(); } };
+                prevBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if (normalCurrentPage > 0) { normalCurrentPage--; renderNormalSidebar(); } }, { passive: false });
+            }
+            if (nextBtn) { 
+                nextBtn.onclick = (e) => { e.preventDefault(); const filtered = filterVocabBySearch(vocabList); const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE); if (normalCurrentPage + 1 < totalPages) { normalCurrentPage++; renderNormalSidebar(); } };
+                nextBtn.addEventListener('touchstart', (e) => { e.preventDefault(); const filtered = filterVocabBySearch(vocabList); const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE); if (normalCurrentPage + 1 < totalPages) { normalCurrentPage++; renderNormalSidebar(); } }, { passive: false });
+            }
         } else { container.style.display = 'none'; container.innerHTML = ''; } 
     }
     
@@ -1620,7 +1629,6 @@
             const newChinese = chineseInput.value.trim();
             const newKhmer = khmerInput.value.trim();
             if (!newChinese && !newKhmer) { showToast("⚠️ At least one field required"); return; }
-            // Close modal immediately, then perform update
             modalDiv.remove();
             const success = await updateVocabByRow(sheetRowNumber, newKhmer || currentKhmer, newChinese || currentChinese);
             if (success) {
@@ -1634,7 +1642,6 @@
         document.getElementById('openSheetRowBtn').onclick = () => { openSheetAndActivateCell(sheetRowNumber); modalDiv.remove(); };
         document.getElementById('deleteRowBtn').onclick = async () => {
             if (confirm(`⚠️ Delete Display #${displayNumber}?`)) {
-                // Close modal immediately
                 modalDiv.remove();
                 const success = await deleteVocabByRow(sheetRowNumber);
                 if (success) {
@@ -1649,7 +1656,6 @@
                         document.getElementById('khmerWord').innerText = "";
                         showToast("All vocabulary deleted");
                     } else {
-                        // Return to previous vocabulary: if deleted was the current one, go to previous index or first
                         let newIdx = deletedIdx;
                         if (newIdx >= vocabList.length) newIdx = vocabList.length - 1;
                         if (newIdx < 0) newIdx = 0;
@@ -1709,11 +1715,10 @@
             const chinese = addChinese.value.trim();
             const khmer = addKhmer.value.trim();
             if (!chinese && !khmer) { showToast("⚠️ Enter at least one value"); return; }
-            // Close modal immediately
             modalDiv.remove();
             const success = await addVocabToSheet(khmer, chinese);
             if (success) {
-                await loadSheetData();  // Reloads fresh data from sheet
+                await loadSheetData();
                 const newIdx = vocabList.length - 1;
                 if (appMode === 'random') {
                     history = [newIdx];
@@ -1772,13 +1777,13 @@
     function speakKhmerFromMain() { const container = document.getElementById('khmerWord'); const plainText = container ? container.innerText : ''; if(plainText) { killAllSpeech(); speakKhmerEdge(plainText); } }
     async function speakAutoSequence(zhText, kmText) { killAllSpeech(); const zhReps = parseInt(document.getElementById('zhReps').value); const kmReps = parseInt(document.getElementById('kmReps').value); const zhVoice = document.getElementById('zhVoiceSelect').value; const kmVoice = document.getElementById('kmVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); for(let i=0; i<zhReps; i++) { await callEdgeTTS(zhText, zhVoice, rateFormatted); } if(kmText && kmText.trim()) { for(let j=0; j<kmReps; j++) { await callEdgeTTS(kmText, kmVoice, null); } } if(autoActive) startAutoCycle(); }
     
-    // ========== STYLE FUNCTIONS (abbreviated but fully functional) ==========
+    // ========== STYLE FUNCTIONS ==========
     function getBottomScaleFactor(charCount) { if (charCount <= 2) return 1.0; if (charCount <= 5) return 0.8; if (charCount <= 7) return 0.5; if (charCount <= 10) return 0.4; if (charCount <= 13) return 0.25; return 0.10; }
     function applyBottomAutoScale() { const container = document.getElementById('chineseWord'); if (!container) return; const plainText = container.getAttribute('data-plain') || ''; const charCount = plainText.length; const scale = getBottomScaleFactor(charCount); const finalSize = Math.max(12, Math.min(120, Math.round(userSetBottomFontSize * scale))); container.querySelectorAll('.chinese-bottom').forEach(el => el.style.fontSize = finalSize + 'px'); }
     function shrinkChineseToFit() { const element = document.getElementById('chineseWord'); if (!element) return; const parentRect = document.getElementById('displayArea').getBoundingClientRect(); const maxWidth = parentRect.width * 0.85; if (maxWidth <= 0) return; const originalTransform = element.style.transform; const originalPosition = element.style.position; const originalLeft = element.style.left; const originalTop = element.style.top; element.style.position = 'absolute'; element.style.left = '0'; element.style.top = '0'; element.style.transform = 'none'; element.style.fontSize = userSetChineseFontSize + 'vh'; void element.offsetHeight; let finalSize = userSetChineseFontSize; if (element.scrollWidth > maxWidth) { let low = 2, high = userSetChineseFontSize, bestSize = low; for (let i = 0; i < 12; i++) { if (low > high) break; const mid = (low + high) / 2; element.style.fontSize = mid + 'vh'; void element.offsetHeight; if (element.scrollWidth <= maxWidth) { bestSize = mid; low = mid + 0.5; } else high = mid - 0.5; } finalSize = bestSize; } element.style.fontSize = finalSize + 'vh'; element.style.position = originalPosition || 'absolute'; element.style.left = originalLeft || chineseX + '%'; element.style.top = originalTop || chineseY + '%'; element.style.transform = originalTransform || 'translate(-50%, -50%)'; document.getElementById('mZhSizeVal').innerText = Math.round(finalSize) + 'vh'; const chineseText = element.getAttribute('data-plain') || ''; const charCount = chineseText.length; let targetScale = 1.0; if (charCount >= 14) targetScale = 0.10; else if (charCount >= 11) targetScale = 0.15; else if (charCount >= 8) targetScale = 0.20; else if (charCount >= 6) targetScale = 0.30; else if (charCount >= 5) targetScale = 0.40; else if (charCount >= 4) targetScale = 0.60; else if (charCount >= 3) targetScale = 0.80; else targetScale = 1.0; const appliedSize = Math.max(10, Math.min(120, Math.round(userSetPinyinFontSize * targetScale))); const pinyinFont = document.getElementById('pinyinFont').value; const pinyinColor = document.getElementById('pinyinColor').value; const isPinyinBold = document.getElementById('pinyinBold').classList.contains('active'); document.querySelectorAll('.pinyin-top').forEach(el => { if(pinyinFont !== 'inherit') el.style.fontFamily = pinyinFont; el.style.color = pinyinColor; el.style.fontWeight = isPinyinBold ? 'bold' : 'normal'; el.style.fontSize = appliedSize + 'px'; }); applyBottomAutoScale(); }
     function shrinkKhmerToFit() { const element = document.getElementById('khmerWord'); if (!element) return; const parentRect = document.getElementById('displayArea').getBoundingClientRect(); const maxWidth = parentRect.width * 0.85; if (maxWidth <= 0) return; const originalTransform = element.style.transform; const originalPosition = element.style.position; const originalLeft = element.style.left; const originalTop = element.style.top; element.style.position = 'absolute'; element.style.left = '0'; element.style.top = '0'; element.style.transform = 'none'; element.style.fontSize = userSetKhmerFontSize + 'vh'; void element.offsetHeight; let finalSize = userSetKhmerFontSize; if (element.scrollWidth > maxWidth) { let low = 2, high = userSetKhmerFontSize, bestSize = low; for (let i = 0; i < 12; i++) { if (low > high) break; const mid = (low + high) / 2; element.style.fontSize = mid + 'vh'; void element.offsetHeight; if (element.scrollWidth <= maxWidth) { bestSize = mid; low = mid + 0.5; } else high = mid - 0.5; } finalSize = bestSize; } element.style.fontSize = finalSize + 'vh'; element.style.position = originalPosition || 'absolute'; element.style.left = originalLeft || khmerX + '%'; element.style.top = originalTop || khmerY + '%'; element.style.transform = originalTransform || 'translate(-50%, -50%)'; document.getElementById('mKmSizeVal').innerText = Math.round(finalSize) + 'vh'; }
     function forceShrink() { setTimeout(() => { shrinkChineseToFit(); shrinkKhmerToFit(); }, 50); }
-    let topPinyinVisible = true, bottomCharVisible = true;
+    let topPinyinVisible = true, bottomCharVisible = false;
     function updateChineseDisplay(text) { const container = document.getElementById('chineseWord'); if (!container) return; container.innerHTML = getTripleHTML(text); container.setAttribute('data-plain', text); applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyLayerTransforms(); applyTextVisibility(); forceShrink(); applyBottomAutoScale(); }
     function applyTextVisibility() { const container = document.getElementById('chineseWord'); if (!container) return; container.querySelectorAll('.pinyin-top').forEach(el => el.style.display = topPinyinVisible ? '' : 'none'); container.querySelectorAll('.chinese-bottom').forEach(el => el.style.display = bottomCharVisible ? '' : 'none'); }
     function applyChineseMainStyle() { const container = document.getElementById('chineseWord'); if (!container) return; const mainFont = document.getElementById('mZhFont').value; const mainColor = document.getElementById('mZhColor').value; const isBold = document.getElementById('mZhBold').classList.contains('active'); const newSize = parseFloat(document.getElementById('mZhSize').value); userSetChineseFontSize = newSize; container.style.fontSize = userSetChineseFontSize + 'vh'; container.querySelectorAll('.chinese-main').forEach(el => { el.style.fontFamily = mainFont; el.style.color = mainColor; el.style.fontWeight = isBold ? 'bold' : '500'; }); document.getElementById('mZhSizeVal').innerText = userSetChineseFontSize + 'vh'; applyShadow(); forceShrink(); }
@@ -1816,6 +1821,22 @@
                 document.activeElement.blur();
             }
         }, { passive: false });
+        // Mouse wheel on background: up = previous, down = next
+        bgArea.addEventListener('wheel', function(e) {
+            // Don't interfere with ctrl+wheel on Chinese/Khmer words
+            if (e.ctrlKey) return;
+            if (e.deltaY < 0) {
+                // Scroll up - previous word
+                e.preventDefault();
+                if (appMode === 'random') historyPrev();
+                else goPrevNormal();
+            } else if (e.deltaY > 0) {
+                // Scroll down - next word
+                e.preventDefault();
+                if (appMode === 'random') historyNext();
+                else goNextNormal();
+            }
+        }, { passive: false });
     }
     function toggleMenu(hide) { if (hide) { document.getElementById("floatingMenu").style.display = "none"; document.getElementById("minimizedTrigger").style.display = "flex"; } else { document.getElementById("floatingMenu").style.display = "block"; document.getElementById("minimizedTrigger").style.display = "none"; } if (hide) applyStoredGearPosition(); }
     
@@ -1848,8 +1869,100 @@
     function startLayerDrag(layerType, startX, startY) { if (dragActive) return; dragActive = true; dragType = layerType; dragStartMouseX = startX; dragStartMouseY = startY; if (layerType === 'top') { dragStartTopX = topLayerX; dragStartTopY = topLayerY; } else { dragStartBottomX = bottomLayerX; dragStartBottomY = bottomLayerY; } chineseElement.style.opacity = '0.8'; chineseElement.style.cursor = 'grabbing'; window.addEventListener('mousemove', onGlobalDragMove); window.addEventListener('mouseup', onGlobalDragEnd); window.addEventListener('touchmove', onGlobalDragMove, { passive: false }); window.addEventListener('touchend', onGlobalDragEnd); }
     function onGlobalDragMove(e) { if (!dragActive) return; e.preventDefault(); const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); const deltaX = clientX - dragStartMouseX; const deltaY = clientY - dragStartMouseY; if (dragType === 'word') { const canvasRect = canvas.getBoundingClientRect(); let originalPxX = (dragStartLeft / 100) * canvasRect.width; let originalPxY = (dragStartTop / 100) * canvasRect.height; let newPxX = originalPxX + deltaX; let newPxY = originalPxY + deltaY; chineseX = (newPxX / canvasRect.width) * 100; chineseY = (newPxY / canvasRect.height) * 100; chineseElement.style.left = chineseX + '%'; chineseElement.style.top = chineseY + '%'; } else if (dragType === 'top') { topLayerX = dragStartTopX + deltaX; topLayerY = dragStartTopY + deltaY; topLayerX = Math.max(-800, Math.min(800, topLayerX)); topLayerY = Math.max(-800, Math.min(800, topLayerY)); applyLayerTransforms(); } else if (dragType === 'bottom') { bottomLayerX = dragStartBottomX + deltaX; bottomLayerY = dragStartBottomY + deltaY; bottomLayerX = Math.max(-800, Math.min(800, bottomLayerX)); bottomLayerY = Math.max(-800, Math.min(800, bottomLayerY)); applyLayerTransforms(); } }
     function onGlobalDragEnd() { if (!dragActive) return; if (dragType === 'word') chineseElement.style.cursor = 'grab'; else chineseElement.style.opacity = ''; saveAllDragPositions(); dragActive = false; dragType = null; window.removeEventListener('mousemove', onGlobalDragMove); window.removeEventListener('mouseup', onGlobalDragEnd); window.removeEventListener('touchmove', onGlobalDragMove); window.removeEventListener('touchend', onGlobalDragEnd); forceShrink(); }
-    function initChineseDrag() { chineseElement = document.getElementById('chineseWord'); if (!chineseElement) return; chineseElement.style.position = 'absolute'; chineseElement.style.left = chineseX + '%'; chineseElement.style.top = chineseY + '%'; chineseElement.style.transform = 'translate(-50%, -50%)'; chineseElement.style.cursor = 'grab'; chineseElement.addEventListener('click', (e) => { e.stopPropagation(); speakChineseFromMain(); }); chineseElement.addEventListener('mousedown', onChinesePointerDown); chineseElement.addEventListener('touchstart', onChinesePointerDown, { passive: false }); chineseElement.addEventListener('touchstart', (e) => handlePinchStart(e, 'chinese'), { passive: false }); chineseElement.addEventListener('touchmove', (e) => handlePinchMove(e, 'chinese'), { passive: false }); chineseElement.addEventListener('touchend', handlePinchEnd); }
-    function initKhmerDrag() { khmerElement = document.getElementById('khmerWord'); if (!khmerElement) return; khmerElement.style.position = 'absolute'; khmerElement.style.left = khmerX + '%'; khmerElement.style.top = khmerY + '%'; khmerElement.style.transform = 'translate(-50%, -50%)'; khmerElement.style.cursor = 'grab'; khmerElement.addEventListener('click', (e) => { e.stopPropagation(); speakKhmerFromMain(); }); khmerElement.addEventListener('touchstart', (e) => handlePinchStart(e, 'khmer'), { passive: false }); khmerElement.addEventListener('touchmove', (e) => handlePinchMove(e, 'khmer'), { passive: false }); khmerElement.addEventListener('touchend', handlePinchEnd); let khmerDragActive = false, khmerStartMouseX, khmerStartMouseY, khmerStartLeft, khmerStartTop, khmerMoved = false; const onStart = (e) => { e.preventDefault(); e.stopPropagation(); khmerDragActive = true; khmerMoved = false; const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); khmerStartMouseX = clientX; khmerStartMouseY = clientY; khmerStartLeft = khmerX; khmerStartTop = khmerY; khmerElement.style.cursor = 'grabbing'; const onMove = (e2) => { if (!khmerDragActive) return; e2.preventDefault(); const cx = e2.clientX ?? (e2.touches ? e2.touches[0].clientX : 0); const cy = e2.clientY ?? (e2.touches ? e2.touches[0].clientY : 0); const dx = cx - khmerStartMouseX, dy = cy - khmerStartMouseY; if (!khmerMoved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) khmerMoved = true; const canvasRect = canvas.getBoundingClientRect(); let originalPxX = (khmerStartLeft / 100) * canvasRect.width; let originalPxY = (khmerStartTop / 100) * canvasRect.height; let newPxX = originalPxX + dx, newPxY = originalPxY + dy; khmerX = (newPxX / canvasRect.width) * 100; khmerY = (newPxY / canvasRect.height) * 100; khmerElement.style.left = khmerX + '%'; khmerElement.style.top = khmerY + '%'; }; const onEnd = () => { khmerDragActive = false; khmerElement.style.cursor = 'grab'; if (!khmerMoved) { speakKhmerFromMain(); } saveAllDragPositions(); window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onEnd); window.removeEventListener('touchmove', onMove); window.removeEventListener('touchend', onEnd); forceShrink(); }; window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); }; khmerElement.addEventListener('mousedown', onStart); khmerElement.addEventListener('touchstart', onStart, { passive: false }); khmerElement.addEventListener('mousedown', onKhmerPointerDown); khmerElement.addEventListener('touchstart', onKhmerPointerDown, { passive: false }); }
+    function initChineseDrag() { 
+        chineseElement = document.getElementById('chineseWord'); 
+        if (!chineseElement) return; 
+        chineseElement.style.position = 'absolute'; 
+        chineseElement.style.left = chineseX + '%'; 
+        chineseElement.style.top = chineseY + '%'; 
+        chineseElement.style.transform = 'translate(-50%, -50%)'; 
+        chineseElement.style.cursor = 'grab'; 
+        chineseElement.addEventListener('click', (e) => { e.stopPropagation(); speakChineseFromMain(); }); 
+        chineseElement.addEventListener('mousedown', onChinesePointerDown); 
+        chineseElement.addEventListener('touchstart', onChinesePointerDown, { passive: false }); 
+        chineseElement.addEventListener('touchstart', (e) => handlePinchStart(e, 'chinese'), { passive: false }); 
+        chineseElement.addEventListener('touchmove', (e) => handlePinchMove(e, 'chinese'), { passive: false }); 
+        chineseElement.addEventListener('touchend', handlePinchEnd);
+        // Ctrl + Mouse Wheel resize for Chinese font
+        chineseElement.addEventListener('wheel', function(e) { 
+            if (e.ctrlKey) { 
+                e.preventDefault(); 
+                const delta = e.deltaY > 0 ? -1 : 1; 
+                let newSize = userSetChineseFontSize + delta; 
+                newSize = Math.max(10, Math.min(150, newSize)); 
+                setChineseFontSize(newSize); 
+            } 
+        }, { passive: false });
+    }
+    function initKhmerDrag() { 
+        khmerElement = document.getElementById('khmerWord'); 
+        if (!khmerElement) return; 
+        khmerElement.style.position = 'absolute'; 
+        khmerElement.style.left = khmerX + '%'; 
+        khmerElement.style.top = khmerY + '%'; 
+        khmerElement.style.transform = 'translate(-50%, -50%)'; 
+        khmerElement.style.cursor = 'grab'; 
+        khmerElement.addEventListener('click', (e) => { e.stopPropagation(); speakKhmerFromMain(); }); 
+        khmerElement.addEventListener('touchstart', (e) => handlePinchStart(e, 'khmer'), { passive: false }); 
+        khmerElement.addEventListener('touchmove', (e) => handlePinchMove(e, 'khmer'), { passive: false }); 
+        khmerElement.addEventListener('touchend', handlePinchEnd);
+        // Ctrl + Mouse Wheel resize for Khmer font
+        khmerElement.addEventListener('wheel', function(e) { 
+            if (e.ctrlKey) { 
+                e.preventDefault(); 
+                const delta = e.deltaY > 0 ? -1 : 1; 
+                let newSize = userSetKhmerFontSize + delta; 
+                newSize = Math.max(10, Math.min(150, newSize)); 
+                setKhmerFontSize(newSize); 
+            } 
+        }, { passive: false });
+        
+        let khmerDragActive = false, khmerStartMouseX, khmerStartMouseY, khmerStartLeft, khmerStartTop, khmerMoved = false; 
+        const onStart = (e) => { 
+            e.preventDefault(); e.stopPropagation(); 
+            khmerDragActive = true; khmerMoved = false; 
+            const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); 
+            const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); 
+            khmerStartMouseX = clientX; khmerStartMouseY = clientY; 
+            khmerStartLeft = khmerX; khmerStartTop = khmerY; 
+            khmerElement.style.cursor = 'grabbing'; 
+            const onMove = (e2) => { 
+                if (!khmerDragActive) return; 
+                e2.preventDefault(); 
+                const cx = e2.clientX ?? (e2.touches ? e2.touches[0].clientX : 0); 
+                const cy = e2.clientY ?? (e2.touches ? e2.touches[0].clientY : 0); 
+                const dx = cx - khmerStartMouseX, dy = cy - khmerStartMouseY; 
+                if (!khmerMoved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) khmerMoved = true; 
+                const canvasRect = canvas.getBoundingClientRect(); 
+                let originalPxX = (khmerStartLeft / 100) * canvasRect.width; 
+                let originalPxY = (khmerStartTop / 100) * canvasRect.height; 
+                let newPxX = originalPxX + dx, newPxY = originalPxY + dy; 
+                khmerX = (newPxX / canvasRect.width) * 100; 
+                khmerY = (newPxY / canvasRect.height) * 100; 
+                khmerElement.style.left = khmerX + '%'; 
+                khmerElement.style.top = khmerY + '%'; 
+            }; 
+            const onEnd = () => { 
+                khmerDragActive = false; 
+                khmerElement.style.cursor = 'grab'; 
+                if (!khmerMoved) { speakKhmerFromMain(); } 
+                saveAllDragPositions(); 
+                window.removeEventListener('mousemove', onMove); 
+                window.removeEventListener('mouseup', onEnd); 
+                window.removeEventListener('touchmove', onMove); 
+                window.removeEventListener('touchend', onEnd); 
+                forceShrink(); 
+            }; 
+            window.addEventListener('mousemove', onMove); 
+            window.addEventListener('mouseup', onEnd); 
+            window.addEventListener('touchmove', onMove, { passive: false }); 
+            window.addEventListener('touchend', onEnd); 
+        }; 
+        khmerElement.addEventListener('mousedown', onStart); 
+        khmerElement.addEventListener('touchstart', onStart, { passive: false }); 
+        khmerElement.addEventListener('mousedown', onKhmerPointerDown); 
+        khmerElement.addEventListener('touchstart', onKhmerPointerDown, { passive: false }); 
+    }
     
     // ========== FLOATING MENU DRAG ==========
     function initFloatingMenuDrag() { const dragHandle = document.getElementById('dragHandle'); const floatingMenu = document.getElementById('floatingMenu'); if (!dragHandle || !floatingMenu) return; let isDraggingMenu = false; let startX = 0, startY = 0; let startLeft = 0, startTop = 0; const onStart = (e) => { e.preventDefault(); e.stopPropagation(); isDraggingMenu = true; const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); startX = clientX; startY = clientY; const rect = floatingMenu.getBoundingClientRect(); startLeft = rect.left; startTop = rect.top; floatingMenu.style.transition = 'none'; }; const onMove = (e) => { if (!isDraggingMenu) return; e.preventDefault(); const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); let newLeft = startLeft + (clientX - startX); let newTop = startTop + (clientY - startY); newLeft = Math.max(0, Math.min(window.innerWidth - floatingMenu.offsetWidth, newLeft)); newTop = Math.max(0, Math.min(window.innerHeight - floatingMenu.offsetHeight, newTop)); floatingMenu.style.left = newLeft + 'px'; floatingMenu.style.top = newTop + 'px'; floatingMenu.style.right = 'auto'; floatingMenu.style.bottom = 'auto'; }; const onEnd = () => { if (!isDraggingMenu) return; isDraggingMenu = false; floatingMenu.style.transition = ''; const left = parseFloat(floatingMenu.style.left); const top = parseFloat(floatingMenu.style.top); if (!isNaN(left) && !isNaN(top)) { localStorage.setItem('floatingMenuLeft', left); localStorage.setItem('floatingMenuTop', top); } }; const applyStoredPosition = () => { const savedLeft = localStorage.getItem('floatingMenuLeft'); const savedTop = localStorage.getItem('floatingMenuTop'); if (savedLeft !== null && savedTop !== null) { const left = Math.max(0, Math.min(window.innerWidth - floatingMenu.offsetWidth, parseFloat(savedLeft))); const top = Math.max(0, Math.min(window.innerHeight - floatingMenu.offsetHeight, parseFloat(savedTop))); floatingMenu.style.left = left + 'px'; floatingMenu.style.top = top + 'px'; floatingMenu.style.right = 'auto'; floatingMenu.style.bottom = 'auto'; } else { floatingMenu.style.left = '20px'; floatingMenu.style.top = '20px'; } }; dragHandle.addEventListener('mousedown', onStart); dragHandle.addEventListener('touchstart', onStart, { passive: false }); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); applyStoredPosition(); window.addEventListener('resize', () => applyStoredPosition()); }
@@ -1860,7 +1973,7 @@
         const sidebar = document.getElementById('rightSide');
         const closeBtn = document.getElementById('sidebarCloseBtn');
         let startX = 0, startWidth = 0, isResizing = false;
-        let longPressTimer = null;
+        let isDraggingResize = false;
         const updateSidebarWidth = (newWidth) => {
             const finalWidth = Math.min(window.innerWidth * 0.7, Math.max(200, newWidth));
             document.documentElement.style.setProperty('--sidebar-width', finalWidth + 'px');
@@ -1886,11 +1999,13 @@
         };
         const onResizeEnd = () => {
             isResizing = false;
+            isDraggingResize = false;
             window.removeEventListener('mousemove', onResizeMove);
             window.removeEventListener('mouseup', onResizeEnd);
             window.removeEventListener('touchmove', onResizeMove);
             window.removeEventListener('touchend', onResizeEnd);
         };
+        // Resizer itself: start resize on mouse/touch down
         resizer.addEventListener('mousedown', (e) => { e.preventDefault(); startResize(e.clientX); });
         resizer.addEventListener('touchstart', (e) => { e.preventDefault(); startResize(e.touches[0].clientX); }, { passive: false });
         
@@ -1898,6 +2013,7 @@
         if (savedWidth && !sidebar.classList.contains('hidden')) updateSidebarWidth(parseFloat(savedWidth));
         else updateSidebarWidth(400);
         
+        // Hold on button to resize
         if (closeBtn) {
             let pressTimer = null;
             const onBtnStart = (e) => {
@@ -1905,11 +2021,13 @@
                 e.stopPropagation();
                 const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
                 pressTimer = setTimeout(() => {
+                    // Long press detected -> start resizing
                     startResize(clientX);
+                    isDraggingResize = true;
                     pressTimer = null;
                     closeBtn.style.transform = 'translate(-50%, -50%) scale(0.9)';
                     setTimeout(() => { closeBtn.style.transform = ''; }, 150);
-                }, 500);
+                }, 400);
                 const onMove = (moveEvent) => {
                     const moveX = moveEvent.clientX ?? (moveEvent.touches ? moveEvent.touches[0].clientX : 0);
                     if (Math.abs(moveX - clientX) > 10) {
@@ -1937,14 +2055,34 @@
             closeBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                toggleSidebar();
+                if (!isDraggingResize) {
+                    toggleSidebar();
+                }
+                isDraggingResize = false;
             });
         }
     }
     
-    // ========== SWIPE / TOUCH NAVIGATION ==========
+    // ========== SWIPE / TOUCH NAVIGATION with Mouse Wheel for Sidebar Focus ==========
     let touchStartY = 0, touchStartX = 0, touchMoved = false;
-    function initSwipeNavigation() { const displayArea = document.getElementById('displayArea'); if (!displayArea) return; displayArea.addEventListener('touchstart', (e) => { touchStartY = e.touches[0].clientY; touchStartX = e.touches[0].clientX; touchMoved = false; }, { passive: false }); displayArea.addEventListener('touchmove', (e) => { if (!touchStartY) return; const deltaY = e.touches[0].clientY - touchStartY; const deltaX = e.touches[0].clientX - touchStartX; if (Math.abs(deltaY) > 30 && !touchMoved) { touchMoved = true; if (deltaY > 0) { if (appMode === 'random') historyNext(); else goNextNormal(); } else if (deltaY < 0) { if (appMode === 'random') historyPrev(); else goPrevNormal(); } e.preventDefault(); } else if (Math.abs(deltaX) > 30 && !touchMoved && Math.abs(deltaX) > Math.abs(deltaY)) { touchMoved = true; if (deltaX > 0) { moveSidebarFocus(1); } else if (deltaX < 0) { moveSidebarFocus(-1); } e.preventDefault(); } }, { passive: false }); displayArea.addEventListener('touchend', () => { touchStartY = 0; touchStartX = 0; touchMoved = false; }); displayArea.addEventListener('wheel', (e) => { if (e.deltaY < 0) { if (appMode === 'random') historyPrev(); else goPrevNormal(); } else if (e.deltaY > 0) { if (appMode === 'random') historyNext(); else goNextNormal(); } e.preventDefault(); }, { passive: false }); }
+    function initSwipeNavigation() { 
+        const displayArea = document.getElementById('displayArea'); 
+        if (!displayArea) return; 
+        displayArea.addEventListener('touchstart', (e) => { touchStartY = e.touches[0].clientY; touchStartX = e.touches[0].clientX; touchMoved = false; }, { passive: false }); 
+        displayArea.addEventListener('touchmove', (e) => { if (!touchStartY) return; const deltaY = e.touches[0].clientY - touchStartY; const deltaX = e.touches[0].clientX - touchStartX; if (Math.abs(deltaY) > 30 && !touchMoved) { touchMoved = true; if (deltaY > 0) { if (appMode === 'random') historyNext(); else goNextNormal(); } else if (deltaY < 0) { if (appMode === 'random') historyPrev(); else goPrevNormal(); } e.preventDefault(); } else if (Math.abs(deltaX) > 30 && !touchMoved && Math.abs(deltaX) > Math.abs(deltaY)) { touchMoved = true; if (deltaX > 0) { moveSidebarFocus(1); } else if (deltaX < 0) { moveSidebarFocus(-1); } e.preventDefault(); } }, { passive: false }); 
+        displayArea.addEventListener('touchend', () => { touchStartY = 0; touchStartX = 0; touchMoved = false; }); 
+        // Mouse wheel on display area: up -> sidebar focus up, down -> sidebar focus down (only if not ctrl)
+        displayArea.addEventListener('wheel', function(e) {
+            if (e.ctrlKey) return; // let ctrl+wheel resize fonts
+            if (e.deltaY < 0) {
+                moveSidebarFocus(-1);
+                e.preventDefault();
+            } else if (e.deltaY > 0) {
+                moveSidebarFocus(1);
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
     
     function addLog(message, isError = false) { console.log(message); if (isError) showToast(`⚠️ ${message.substring(0, 80)}`); }
     
@@ -1984,7 +2122,7 @@
         loadSettings(); 
         const savedList = localStorage.getItem('vocabMaster_List'); 
         if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) { if (appMode === 'random') pickRandom(); else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } } }
-        initNightMode(); applyStyles(); initGearDrag(); setupQRPopup(); setupBackgroundClick(); initChineseDrag(); initKhmerDrag(); loadAllDragPositions(); initCtrlWheelResize(); initFloatingMenuDrag(); initSidebarResizer(); initSwipeNavigation();
+        initNightMode(); applyStyles(); initGearDrag(); setupQRPopup(); setupBackgroundClick(); initChineseDrag(); initKhmerDrag(); loadAllDragPositions(); initFloatingMenuDrag(); initSidebarResizer(); initSwipeNavigation();
         await initializeSheet();
         const gearIcon = document.getElementById('minimizedTrigger');
         if (gearIcon) { gearIcon.addEventListener('click', (e) => e.stopPropagation()); gearIcon.addEventListener('touchstart', (e) => e.stopPropagation()); gearIcon.addEventListener('mousedown', (e) => e.stopPropagation()); }
@@ -1999,6 +2137,7 @@
         const topHidden = localStorage.getItem('topPinyinSectionHidden') === 'true', bottomHidden = localStorage.getItem('bottomSectionHidden') === 'true';
         if (topHidden) { topSection.classList.add('hidden'); topToggleBtn.innerText = '🙈'; topPinyinVisible = false; }
         if (bottomHidden) { bottomSection.classList.add('hidden'); bottomToggleBtn.innerText = '🙈'; bottomCharVisible = false; }
+        else { bottomCharVisible = false; bottomSection.classList.add('hidden'); bottomToggleBtn.innerText = '🙈'; }
         applyTextVisibility();
         topToggleBtn.addEventListener('click', () => { topSection.classList.toggle('hidden'); const isHidden = topSection.classList.contains('hidden'); topToggleBtn.innerText = isHidden ? '🙈' : '👁️'; topPinyinVisible = !isHidden; applyTextVisibility(); localStorage.setItem('topPinyinSectionHidden', isHidden); saveAllData(); });
         bottomToggleBtn.addEventListener('click', () => { bottomSection.classList.toggle('hidden'); const isHidden = bottomSection.classList.contains('hidden'); bottomToggleBtn.innerText = isHidden ? '🙈' : '👁️'; bottomCharVisible = !isHidden; applyTextVisibility(); localStorage.setItem('bottomSectionHidden', isHidden); saveAllData(); });
@@ -2031,7 +2170,7 @@
     function saveMenuPosition() { localStorage.setItem('menuPosX', currentMenuTransform.x); localStorage.setItem('menuPosY', currentMenuTransform.y); }
     function saveGearPosition() { if (gearElemDrag) { const left = gearElemDrag.offsetLeft, top = gearElemDrag.offsetTop; if (!isNaN(left) && !isNaN(top)) { localStorage.setItem('gearPosLeft', left); localStorage.setItem('gearPosTop', top); } } }
     function applyStoredGearPosition() { let left = parseFloat(localStorage.getItem('gearPosLeft')), top = parseFloat(localStorage.getItem('gearPosTop')); if (isNaN(left)) left = window.innerWidth - 80; if (isNaN(top)) top = 30; left = Math.min(Math.max(5, left), window.innerWidth - 65); top = Math.min(Math.max(5, top), window.innerHeight - 75); gearLeft = left; gearTop = top; gearElemDrag.style.left = left + 'px'; gearElemDrag.style.top = top + 'px'; }
-    function initCtrlWheelResize() { const chineseWord = document.getElementById('chineseWord'); const khmerWord = document.getElementById('khmerWord'); if (chineseWord) chineseWord.addEventListener('wheel', function(e) { if (e.ctrlKey) { e.preventDefault(); const delta = e.deltaY > 0 ? -1 : 1; let newSize = userSetChineseFontSize + delta; newSize = Math.max(10, Math.min(150, newSize)); setChineseFontSize(newSize); } }); if (khmerWord) khmerWord.addEventListener('wheel', function(e) { if (e.ctrlKey) { e.preventDefault(); const delta = e.deltaY > 0 ? -1 : 1; let newSize = userSetKhmerFontSize + delta; newSize = Math.max(10, Math.min(150, newSize)); setKhmerFontSize(newSize); } }); }
+    function initCtrlWheelResize() { /* already handled in initChineseDrag and initKhmerDrag */ }
     function initNightMode() { if(localStorage.getItem('vocabMaster_NightMode')==='true') document.body.classList.add('night-mode'); const btn = document.getElementById('dragDarkModeBtn'); if(btn && btn.innerHTML) btn.innerHTML = document.body.classList.contains('night-mode') ? '☀️' : '🌙'; }
     function toggleNightMode(){ document.body.classList.toggle('night-mode'); localStorage.setItem('vocabMaster_NightMode',document.body.classList.contains('night-mode')); const btn = document.getElementById('dragDarkModeBtn'); if(btn) btn.innerHTML = document.body.classList.contains('night-mode') ? '☀️' : '🌙'; applyStyles(); renderSidebarUI(); }
     function setupQRPopup() { const overlay = document.getElementById('qrPopupOverlay'); const closeBtn = document.getElementById('qrCloseBtn'); if (closeBtn) closeBtn.addEventListener('click', () => overlay.style.display = 'none'); overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; }); }
