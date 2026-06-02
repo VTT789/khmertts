@@ -422,7 +422,7 @@
         .shadow-style-grid { 
             display: flex; 
             align-items: center; 
-            gap: 12px; 
+            gap: 10px; 
             margin-top: 8px; 
             padding-top: 8px; 
             border-top: 1px solid var(--border);
@@ -431,13 +431,12 @@
         .shadow-style-grid label {
             font-size: 0.65rem;
             font-weight: bold;
-            width: 50px;
+            width: 110px;
             flex-shrink: 0;
             color: var(--text-secondary);
         }
         .shadow-style-grid .size-slider {
             flex: 1;
-            max-width: 150px;
         }
         .shadow-style-grid span {
             flex-shrink: 0;
@@ -1298,7 +1297,7 @@
         }, 2000);
     }
     
-    // ========== PASSWORD PROTECTION (FIXED CLOSE BUTTON) ==========
+    // ========== PASSWORD PROTECTION ==========
     function showPasswordModal(callback) {
         if (activePasswordModal) return;
         const modalDiv = document.createElement('div');
@@ -1309,7 +1308,7 @@
                 <input type="password" id="passwordInput" placeholder="Enter password to unlock edit" autocomplete="off">
                 <div class="edit-group-buttons" style="margin-top: 10px;">
                     <button id="unlockBtn" style="background:#10b981;">UNLOCK</button>
-                    <button id="cancelPasswordBtn" style="background:#475569;">CLOSE</button>
+                    <button id="closePasswordBtn" style="background:#475569;">CLOSE</button>
                 </div>
             </div>
         `;
@@ -1317,7 +1316,7 @@
         activePasswordModal = modalDiv;
         const input = modalDiv.querySelector('#passwordInput');
         const unlockBtn = modalDiv.querySelector('#unlockBtn');
-        const cancelBtn = modalDiv.querySelector('#cancelPasswordBtn');
+        const closeBtn = modalDiv.querySelector('#closePasswordBtn');
         const closeModal = () => { 
             if (activePasswordModal) { 
                 activePasswordModal.remove(); 
@@ -1337,8 +1336,8 @@
                 input.focus();
             }
         };
-        cancelBtn.onclick = (e) => { 
-            e.stopPropagation();   // Prevent bubbling to overlay
+        closeBtn.onclick = (e) => { 
+            e.stopPropagation();   
             closeModal(); 
             if (callback) callback(false); 
         };
@@ -1491,11 +1490,11 @@
     function showLoadVocabularyModal() {
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
-        modalDiv.innerHTML = `<div class="file-source-card"><h3>📥 Load Vocabulary</h3><div class="url-input-area"><input type="text" id="sheetUrlInputModal" placeholder="Google Sheet URL or ID" value="${currentSheetId || DEFAULT_SHEET_ID}"><button id="confirmUrlLoad" class="confirm-url-btn">Load Sheet</button></div><button class="close-modal" id="closeModalBtn">Cancel</button></div>`;
+        modalDiv.innerHTML = `<div class="file-source-card"><h3>📥 Load Vocabulary</h3><div class="url-input-area"><input type="text" id="sheetUrlInputModal" placeholder="Google Sheet URL or ID" value="${currentSheetId || DEFAULT_SHEET_ID}"><button id="confirmUrlLoad" class="confirm-url-btn">Load Sheet</button></div><button class="close-modal" id="closeLoadSheetBtn">Cancel</button></div>`;
         document.body.appendChild(modalDiv);
         const urlInput = modalDiv.querySelector('#sheetUrlInputModal');
         const loadBtn = modalDiv.querySelector('#confirmUrlLoad');
-        const closeBtn = modalDiv.querySelector('#closeModalBtn');
+        const closeBtn = modalDiv.querySelector('#closeLoadSheetBtn');
         loadBtn.onclick = async () => {
             const url = urlInput.value.trim();
             if (!url) { showToast("❌ Please enter a Google Sheet URL or ID", true); return; }
@@ -1606,8 +1605,14 @@
     
     let searchDebounceTimer = null;
     let currentSearchInputElement = null;
-    let previousWordBeforeSearch = null; // Store previous word index when search starts
-    let isComposing = false; // For IME (pinyin) composition
+    let previousWordBeforeSearch = null;
+    let isComposing = false;
+    
+    function blurSearchInput() {
+        if (currentSearchInputElement && document.activeElement === currentSearchInputElement) {
+            currentSearchInputElement.blur();
+        }
+    }
     
     function renderSidebarUI(preserveFocus = true) { 
         const list = document.getElementById('sidebarList'); 
@@ -1651,29 +1656,27 @@
                 renderSidebarUI(true);
             }
             searchInput.focus();
+            searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
         });
         
-        // Store original word index before search starts (if not already stored)
         const storeOriginalWord = () => {
             if (previousWordBeforeSearch === null && sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
                 previousWordBeforeSearch = sidebarIndices[sidebarFocusIdx];
             }
         };
         
-        // --- IME composition handling: do not trigger search during composition ---
         searchInput.addEventListener('compositionstart', () => {
             isComposing = true;
             if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
         });
         searchInput.addEventListener('compositionend', () => {
             isComposing = false;
-            // After composition ends, manually trigger the search logic with current value
             const currentValue = searchInput.value;
             if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
             searchDebounceTimer = setTimeout(() => { 
                 performSearch(currentValue);
                 searchDebounceTimer = null; 
-            }, 800);
+            }, 200);
         });
         
         const performSearch = (currentValue) => {
@@ -1716,8 +1719,9 @@
             const newInput = document.getElementById('choiceSearchInput');
             if (newInput) {
                 newInput.value = searchTerm;
-                newInput.focus();
-                newInput.setSelectionRange(newInput.value.length, newInput.value.length);
+                if (document.activeElement === newInput) {
+                    newInput.setSelectionRange(newInput.value.length, newInput.value.length);
+                }
             }
         };
         
@@ -1728,20 +1732,18 @@
                 storeOriginalWord();
             }
             if (isComposing) {
-                // Do nothing while composing pinyin
                 return;
             }
             searchDebounceTimer = setTimeout(() => { 
                 performSearch(currentValue);
                 searchDebounceTimer = null; 
-            }, 800); // 0.8 seconds delay
+            }, 200);
         };
         searchInput.addEventListener('input', handleSearchInput);
         
         if (preserveFocus && oldSearchValue === searchTerm) {
             setTimeout(() => { 
-                if (searchInput) {
-                    searchInput.focus();
+                if (searchInput && document.activeElement === searchInput) {
                     searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
                 }
             }, 10);
@@ -1789,16 +1791,98 @@
             container.innerHTML = `<div class="pagination-bar"><button id="prevPageBtnSide" class="pagination-btn">◀ Prev</button><span class="pagination-info">Page ${normalCurrentPage+1} / ${totalPages}</span><button id="nextPageBtnSide" class="pagination-btn">Next ▶</button></div>`; 
             const prevBtn = document.getElementById('prevPageBtnSide');
             const nextBtn = document.getElementById('nextPageBtnSide');
+            
+            // Hold to go to first/last word (500ms)
             let prevHoldTimer = null, nextHoldTimer = null;
-            const goToFirstPage = () => { if (normalCurrentPage !== 0) { normalCurrentPage = 0; const filtered = filterVocabBySearch(vocabList); if (filtered.length) normalCurrentIdx = vocabList.findIndex(v => v === filtered[0]); renderNormalSidebar(); showToast("📖 Jumped to FIRST page"); } };
-            const goToLastPage = () => { const filtered = filterVocabBySearch(vocabList); const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE); if (normalCurrentPage !== totalPages - 1) { normalCurrentPage = totalPages - 1; const lastIdx = (totalPages - 1) * ITEMS_PER_PAGE; if (filtered[lastIdx]) normalCurrentIdx = vocabList.findIndex(v => v === filtered[lastIdx]); renderNormalSidebar(); showToast("📖 Jumped to LAST page"); } };
+            let prevHoldTriggered = false, nextHoldTriggered = false;
+            
+            const goToFirstWord = () => {
+                const filtered = filterVocabBySearch(vocabList);
+                if (filtered.length) {
+                    const firstIdx = vocabList.findIndex(v => v === filtered[0]);
+                    loadWordByMode(firstIdx, true);
+                    showToast("📖 Jumped to FIRST word");
+                }
+            };
+            
+            const goToLastWord = () => {
+                const filtered = filterVocabBySearch(vocabList);
+                if (filtered.length) {
+                    const lastIdx = vocabList.findIndex(v => v === filtered[filtered.length - 1]);
+                    loadWordByMode(lastIdx, true);
+                    showToast("📖 Jumped to LAST word");
+                }
+            };
+            
             if (prevBtn) { 
-                prevBtn.onclick = (e) => { e.preventDefault(); if (normalCurrentPage > 0) { normalCurrentPage--; renderNormalSidebar(); } };
-                prevBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if (normalCurrentPage > 0) { normalCurrentPage--; renderNormalSidebar(); } }, { passive: false });
+                prevBtn.onclick = (e) => { 
+                    e.preventDefault(); 
+                    if (normalCurrentPage > 0) { 
+                        normalCurrentPage--; 
+                        renderNormalSidebar(); 
+                    } 
+                };
+                prevBtn.addEventListener('mousedown', () => {
+                    prevHoldTriggered = false;
+                    prevHoldTimer = setTimeout(() => {
+                        prevHoldTriggered = true;
+                        goToFirstWord();
+                        prevHoldTimer = null;
+                    }, 500);
+                });
+                prevBtn.addEventListener('mouseup', () => {
+                    if (prevHoldTimer) clearTimeout(prevHoldTimer);
+                    prevHoldTimer = null;
+                });
+                prevBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    prevHoldTriggered = false;
+                    prevHoldTimer = setTimeout(() => {
+                        prevHoldTriggered = true;
+                        goToFirstWord();
+                        prevHoldTimer = null;
+                    }, 500);
+                }, { passive: false });
+                prevBtn.addEventListener('touchend', () => {
+                    if (prevHoldTimer) clearTimeout(prevHoldTimer);
+                    prevHoldTimer = null;
+                });
             }
             if (nextBtn) { 
-                nextBtn.onclick = (e) => { e.preventDefault(); const filtered = filterVocabBySearch(vocabList); const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE); if (normalCurrentPage + 1 < totalPages) { normalCurrentPage++; renderNormalSidebar(); } };
-                nextBtn.addEventListener('touchstart', (e) => { e.preventDefault(); const filtered = filterVocabBySearch(vocabList); const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE); if (normalCurrentPage + 1 < totalPages) { normalCurrentPage++; renderNormalSidebar(); } }, { passive: false });
+                nextBtn.onclick = (e) => { 
+                    e.preventDefault(); 
+                    const filtered = filterVocabBySearch(vocabList); 
+                    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE); 
+                    if (normalCurrentPage + 1 < totalPages) { 
+                        normalCurrentPage++; 
+                        renderNormalSidebar(); 
+                    } 
+                };
+                nextBtn.addEventListener('mousedown', () => {
+                    nextHoldTriggered = false;
+                    nextHoldTimer = setTimeout(() => {
+                        nextHoldTriggered = true;
+                        goToLastWord();
+                        nextHoldTimer = null;
+                    }, 500);
+                });
+                nextBtn.addEventListener('mouseup', () => {
+                    if (nextHoldTimer) clearTimeout(nextHoldTimer);
+                    nextHoldTimer = null;
+                });
+                nextBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    nextHoldTriggered = false;
+                    nextHoldTimer = setTimeout(() => {
+                        nextHoldTriggered = true;
+                        goToLastWord();
+                        nextHoldTimer = null;
+                    }, 500);
+                }, { passive: false });
+                nextBtn.addEventListener('touchend', () => {
+                    if (nextHoldTimer) clearTimeout(nextHoldTimer);
+                    nextHoldTimer = null;
+                });
             }
         } else { container.style.display = 'none'; container.innerHTML = ''; } 
     }
@@ -1808,7 +1892,7 @@
         const displayNumber = getDisplayNumberFromArrayIndex(displayRowIdx);
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
-        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>✏️ EDIT Display #${displayNumber}</h3><div style="margin-bottom:16px;"><input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(currentChinese)}" class="big-edit-input"><input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input"></div><div class="edit-group-buttons"><button id="confirmUpdateBtn">💾 UPDATE SHEET</button><button id="openSheetRowBtn" style="background:#3b82f6;">📊 OPEN SHEET</button></div><div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${displayNumber}</button></div><button id="cancelEditBtn" class="cancel-icon">✕</button></div>`;
+        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>✏️ EDIT Display #${displayNumber}</h3><div style="margin-bottom:16px;"><input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(currentChinese)}" class="big-edit-input"><input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input"></div><div class="edit-group-buttons"><button id="confirmUpdateBtn">💾 UPDATE SHEET</button><button id="openSheetRowBtn" style="background:#3b82f6;">📊 OPEN SHEET</button></div><div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${displayNumber}</button></div><button id="closeEditModalBtn" class="cancel-icon">✕</button></div>`;
         document.body.appendChild(modalDiv);
         
         const preventShortcuts = (e) => {
@@ -1852,15 +1936,16 @@
                         document.getElementById('khmerWord').innerText = "";
                         showToast("All vocabulary deleted");
                     } else {
+                        // Find appropriate next word
                         let newIdx = deletedIdx;
                         if (newIdx >= vocabList.length) newIdx = vocabList.length - 1;
-                        if (newIdx < 0) newIdx = 0;
+                        if (newIdx < 0 && vocabList.length > 0) newIdx = 0;
                         if (appMode === 'normal') {
                             normalCurrentIdx = newIdx;
                             normalCurrentPage = getNormalPageForIndex(newIdx);
                             renderNormalSidebar();
                         } else {
-                            if (newIdx >= 0) {
+                            if (newIdx >= 0 && vocabList[newIdx]) {
                                 history = [newIdx];
                                 historyIndex = 0;
                                 renderRandomSidebar(newIdx);
@@ -1877,14 +1962,14 @@
                 modalDiv.remove();
             }
         };
-        document.getElementById('cancelEditBtn').onclick = () => modalDiv.remove();
+        document.getElementById('closeEditModalBtn').onclick = () => modalDiv.remove();
     };
     
     function showAddNewModal() {
         if (!editUnlocked) { showPasswordModal(() => { showAddNewModal(); }); return; }
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
-        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>➕ ADD NEW VOCABULARY (appends at the end)</h3><div style="margin-bottom:16px;"><input id="addChineseInput" placeholder="Chinese word" class="big-edit-input"><input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input"></div><div class="choice-search-area"><input type="text" id="vocabSearchInput" placeholder="🔍 Search vocabulary..."><div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div></div><div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#10b981;">✅ ADD TO SHEET (last row)</button></div><button id="cancelAddBtn" class="cancel-icon">✕</button></div>`;
+        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>➕ ADD NEW VOCABULARY (appends at the end)</h3><div style="margin-bottom:16px;"><input id="addChineseInput" placeholder="Chinese word" class="big-edit-input"><input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input"></div><div class="choice-search-area"><input type="text" id="vocabSearchInput" placeholder="🔍 Search vocabulary..."><div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div></div><div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#10b981;">✅ ADD TO SHEET (last row)</button></div><button id="closeAddModalBtn" class="cancel-icon">✕</button></div>`;
         document.body.appendChild(modalDiv);
         const addChinese = document.getElementById('addChineseInput');
         const addKhmer = document.getElementById('addKhmerInput');
@@ -1914,7 +1999,6 @@
             modalDiv.remove();
             const success = await addVocabToSheet(khmer, chinese);
             if (success) {
-                // Instead of reloading whole sheet, we add locally and update sidebar
                 const newSheetRow = (vocabList.length > 0 ? vocabList[vocabList.length-1].sheetRow : 1) + 1;
                 const newWord = { khmer: khmer || "", chinese: chinese || "", sheetRow: newSheetRow };
                 vocabList.push(newWord);
@@ -1936,10 +2020,10 @@
                 scrollToSidebarItem();
             }
         };
-        document.getElementById('cancelAddBtn').onclick = () => modalDiv.remove();
+        document.getElementById('closeAddModalBtn').onclick = () => modalDiv.remove();
     }
     
-    // ========== LAYER RESET FUNCTIONS (FIXED) ==========
+    // ========== LAYER RESET FUNCTIONS ==========
     function resetTopLayer() {
         topLayerX = 0;
         topLayerY = 0;
@@ -1955,7 +2039,6 @@
         showToast("🔷 Bottom Character layer reset");
     }
     
-    // ========== MODIFIED LAYER CHOICE MODAL with fixed reset buttons ==========
     function showLayerChoiceModal() { 
         return new Promise((resolve) => { 
             const modalDiv = document.createElement('div'); 
@@ -1983,7 +2066,7 @@
                                 <button id="resetBothLayersBtn" class="reset-icon" style="background:transparent; box-shadow:none; font-size:1.2rem; width:auto; padding:8px;">⟳</button>
                             </div>
                         </div>
-                        <button class="choice-cancel">✕ Cancel</button>
+                        <button class="choice-cancel" id="closeLayerChoiceBtn">✕ Cancel</button>
                     </div>
                 </div>
             `; 
@@ -2002,7 +2085,7 @@
             const bottomBtn = modalDiv.querySelector('.choice-bottom'); 
             const editBtn = modalDiv.querySelector('#editVocabBtn'); 
             const addBtn = modalDiv.querySelector('#addVocabBtn'); 
-            const cancelBtn = modalDiv.querySelector('.choice-cancel'); 
+            const cancelBtn = modalDiv.querySelector('#closeLayerChoiceBtn'); 
             const resetTopBtn = modalDiv.querySelector('#resetTopBtn');
             const resetBottomBtn = modalDiv.querySelector('#resetBottomBtn');
             const resetBothLayersBtn = modalDiv.querySelector('#resetBothLayersBtn');
@@ -2102,6 +2185,8 @@
     function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings){ const s = JSON.parse(savedSettings); userSetChineseFontSize = s.mZhSize || 42; userSetKhmerFontSize = s.mKmSize || 42; document.getElementById('mZhSize').value = userSetChineseFontSize; document.getElementById('mKmSize').value = userSetKhmerFontSize; document.getElementById('mZhColor').value = s.mZhColor || "#ffffff"; document.getElementById('mKmColor').value = s.mKmColor || "#ffffff"; document.getElementById('zhReps').value = s.zhReps || 1; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor || "#ffffff"; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor || "#ffffff"; document.getElementById('sVocabSpacing').value = s.vocabSpacing || 8; document.body.style.setProperty('--vocab-spacing', (s.vocabSpacing || 8) + 'px'); document.getElementById('vocabSpacingVal').innerText = (s.vocabSpacing || 8) + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.pinyinFont) document.getElementById('pinyinFont').value = s.pinyinFont; if(s.pinyinColor) document.getElementById('pinyinColor').value = s.pinyinColor || "#ffffff"; if(s.pinyinBold !== undefined) { const btn = document.getElementById('pinyinBold'); if(s.pinyinBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.pinyinSizePx) { document.getElementById('pinyinSizePx').value = s.pinyinSizePx; userSetPinyinFontSize = parseInt(s.pinyinSizePx); } if(s.pinyinSpacing) document.getElementById('pinyinSpacing').value = s.pinyinSpacing; if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont; if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor || "#ffffff"; if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomFontSize = parseInt(s.bottomSizePx); } if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible; if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible; if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; } normalCurrentIdx = s.normalCurrentIdx || 0; normalCurrentPage = s.normalCurrentPage || 0; sidebarVisible = s.sidebarVisible !== undefined ? s.sidebarVisible : false; if(!sidebarVisible) { document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; } } else { document.getElementById('pinyinFont').value = "'Baguette Simplified'"; document.getElementById('pinyinColor').value = "#ffffff"; document.getElementById('pinyinSizePx').value = "55"; userSetPinyinFontSize = 55; document.getElementById('pinyinSpacing').value = "0"; document.getElementById('bottomSizePx').value = "55"; userSetBottomFontSize = 55; document.getElementById('mKmColor').value = "#ffffff"; document.getElementById('bottomCharColor').value = "#ffffff"; document.getElementById('shadowSlider').value = "3"; sidebarVisible = false; document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; applyPinyinStyles(); applyBottomStyles(); } applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility(); setKhmerFontSize(userSetKhmerFontSize); applyShadow(); applyBottomAutoScale(); }
     function toggleBold(btnId, applyCallback) { const btn = document.getElementById(btnId); if (btn) { btn.classList.toggle('active'); if (applyCallback && typeof applyCallback === 'function') { applyCallback(); } else { applyStyles(); } } }
     function switchTab(tab) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active'); document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab))); if (tab === 'side' && !sidebarVisible) { toggleSidebar(); } }
+    
+    // Mouse wheel on background: up = next, down = previous
     function setupBackgroundClick() { 
         const bgArea = document.getElementById('bgClickArea');
         bgArea.addEventListener('click', function(e) { 
@@ -2112,6 +2197,7 @@
                 document.activeElement.blur();
             }
             pickRandom(); 
+            blurSearchInput();
         }); 
         bgArea.addEventListener('touchstart', function(e) {
             if (e.target.closest('#floatingMenu')) return;
@@ -2120,21 +2206,43 @@
             if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
                 document.activeElement.blur();
             }
+            blurSearchInput();
         }, { passive: false });
-        // Mouse wheel on background: up = previous, down = next
+        // Mouse wheel on background: up = next word, down = previous word
         bgArea.addEventListener('wheel', function(e) {
             if (e.ctrlKey) return;
             if (e.deltaY < 0) {
                 e.preventDefault();
-                if (appMode === 'random') historyPrev();
-                else goPrevNormal();
-            } else if (e.deltaY > 0) {
-                e.preventDefault();
+                // Up scroll = next word
                 if (appMode === 'random') historyNext();
                 else goNextNormal();
+            } else if (e.deltaY > 0) {
+                e.preventDefault();
+                // Down scroll = previous word
+                if (appMode === 'random') historyPrev();
+                else goPrevNormal();
             }
+            blurSearchInput();
         }, { passive: false });
     }
+    
+    // Ctrl + Mouse Wheel in sidebar to move selection
+    function setupSidebarWheelNavigation() {
+        const sidebarList = document.getElementById('sidebarList');
+        if (sidebarList) {
+            sidebarList.addEventListener('wheel', function(e) {
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    if (e.deltaY < 0) {
+                        moveSidebarFocus(-1);
+                    } else if (e.deltaY > 0) {
+                        moveSidebarFocus(1);
+                    }
+                }
+            }, { passive: false });
+        }
+    }
+    
     function toggleMenu(hide) { if (hide) { document.getElementById("floatingMenu").style.display = "none"; document.getElementById("minimizedTrigger").style.display = "flex"; } else { document.getElementById("floatingMenu").style.display = "block"; document.getElementById("minimizedTrigger").style.display = "none"; } if (hide) applyStoredGearPosition(); }
     
     // ========== DRAG & LAYER ==========
@@ -2157,8 +2265,61 @@
     function resetChinesePosition() { chineseX = 50; chineseY = 40; if (chineseElement) { chineseElement.style.left = '50%'; chineseElement.style.top = '40%'; } saveAllDragPositions(); forceShrink(); }
     function resetKhmerPosition() { khmerX = 50; khmerY = 70; if (khmerElement) { khmerElement.style.left = '50%'; khmerElement.style.top = '70%'; } saveAllDragPositions(); forceShrink(); }
     function resetLayerOffsets() { topLayerX = 0; topLayerY = 0; bottomLayerX = 0; bottomLayerY = 0; applyLayerTransforms(); saveAllDragPositions(); showToast("Both layers reset"); }
-    function onChinesePointerDown(e) { e.preventDefault(); e.stopPropagation(); const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); pressStartX = clientX; pressStartY = clientY; hasMovedDuringPress = false; longPressTimer = setTimeout(async () => { if (!hasMovedDuringPress && !dragActive && !copyLocked) { const plainText = chineseElement.getAttribute('data-plain') || ''; if (plainText) { if (isIOS) { showCopyPopupWithButton(plainText, "Chinese"); } else { await copyTextDirectly(plainText, "Chinese"); } } const choice = await showLayerChoiceModal(); if (choice === 'top') startLayerDrag('top', pressStartX, pressStartY); else if (choice === 'bottom') startLayerDrag('bottom', pressStartX, pressStartY); } longPressTimer = null; }, 1000); window.addEventListener('mousemove', onPressMove); window.addEventListener('touchmove', onPressMove); window.addEventListener('mouseup', onPressEnd); window.addEventListener('touchend', onPressEnd); }
-    function onKhmerPointerDown(e) { e.preventDefault(); e.stopPropagation(); let khmerLongPressTimer = null; let khmerHasMoved = false; const onMove = () => { khmerHasMoved = true; if (khmerLongPressTimer) clearTimeout(khmerLongPressTimer); }; const onUp = () => { if (khmerLongPressTimer) clearTimeout(khmerLongPressTimer); window.removeEventListener('mousemove', onMove); window.removeEventListener('touchmove', onMove); window.removeEventListener('mouseup', onUp); window.removeEventListener('touchend', onUp); }; khmerLongPressTimer = setTimeout(async () => { if (!khmerHasMoved && !copyLocked) { const khmerText = khmerElement.innerText; if (khmerText) { if (isIOS) { showCopyPopupWithButton(khmerText, "Khmer"); } else { await copyTextDirectly(khmerText, "Khmer"); } } } onUp(); }, 1000); window.addEventListener('mousemove', onMove); window.addEventListener('touchmove', onMove); window.addEventListener('mouseup', onUp); window.addEventListener('touchend', onUp); }
+    
+    // Hold durations: Chinese 500ms, Khmer 500ms
+    function onChinesePointerDown(e) { 
+        e.preventDefault(); e.stopPropagation(); 
+        const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); 
+        const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); 
+        pressStartX = clientX; pressStartY = clientY; 
+        hasMovedDuringPress = false; 
+        longPressTimer = setTimeout(async () => { 
+            if (!hasMovedDuringPress && !dragActive && !copyLocked) { 
+                const plainText = chineseElement.getAttribute('data-plain') || ''; 
+                if (plainText) { 
+                    if (isIOS) { 
+                        showCopyPopupWithButton(plainText, "Chinese"); 
+                    } else { 
+                        await copyTextDirectly(plainText, "Chinese"); 
+                    } 
+                } 
+                const choice = await showLayerChoiceModal(); 
+                if (choice === 'top') startLayerDrag('top', pressStartX, pressStartY); 
+                else if (choice === 'bottom') startLayerDrag('bottom', pressStartX, pressStartY); 
+            } 
+            longPressTimer = null; 
+        }, 500); // 500ms for Chinese word
+        window.addEventListener('mousemove', onPressMove); 
+        window.addEventListener('touchmove', onPressMove); 
+        window.addEventListener('mouseup', onPressEnd); 
+        window.addEventListener('touchend', onPressEnd); 
+    }
+    
+    function onKhmerPointerDown(e) { 
+        e.preventDefault(); e.stopPropagation(); 
+        let khmerLongPressTimer = null; 
+        let khmerHasMoved = false; 
+        const onMove = () => { khmerHasMoved = true; if (khmerLongPressTimer) clearTimeout(khmerLongPressTimer); }; 
+        const onUp = () => { if (khmerLongPressTimer) clearTimeout(khmerLongPressTimer); window.removeEventListener('mousemove', onMove); window.removeEventListener('touchmove', onMove); window.removeEventListener('mouseup', onUp); window.removeEventListener('touchend', onUp); }; 
+        khmerLongPressTimer = setTimeout(async () => { 
+            if (!khmerHasMoved && !copyLocked) { 
+                const khmerText = khmerElement.innerText; 
+                if (khmerText) { 
+                    if (isIOS) { 
+                        showCopyPopupWithButton(khmerText, "Khmer"); 
+                    } else { 
+                        await copyTextDirectly(khmerText, "Khmer"); 
+                    } 
+                } 
+            } 
+            onUp(); 
+        }, 500); // 500ms for Khmer word
+        window.addEventListener('mousemove', onMove); 
+        window.addEventListener('touchmove', onMove); 
+        window.addEventListener('mouseup', onUp); 
+        window.addEventListener('touchend', onUp); 
+    }
+    
     function onPressMove(e) { const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); if (Math.abs(clientX - pressStartX) > 8 || Math.abs(clientY - pressStartY) > 8) { hasMovedDuringPress = true; if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } startWordDrag(pressStartX, pressStartY); } }
     function onPressEnd() { if (longPressTimer !== null && !dragActive && !hasMovedDuringPress) { speakChineseFromMain(); } if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } window.removeEventListener('mousemove', onPressMove); window.removeEventListener('touchmove', onPressMove); window.removeEventListener('mouseup', onPressEnd); window.removeEventListener('touchend', onPressEnd); }
     function startWordDrag(startX, startY) { if (dragActive) return; dragActive = true; dragType = 'word'; dragStartMouseX = startX; dragStartMouseY = startY; dragStartLeft = chineseX; dragStartTop = chineseY; chineseElement.style.cursor = 'grabbing'; window.addEventListener('mousemove', onGlobalDragMove); window.addEventListener('mouseup', onGlobalDragEnd); window.addEventListener('touchmove', onGlobalDragMove, { passive: false }); window.addEventListener('touchend', onGlobalDragEnd); }
@@ -2261,7 +2422,7 @@
     // ========== FLOATING MENU DRAG ==========
     function initFloatingMenuDrag() { const dragHandle = document.getElementById('dragHandle'); const floatingMenu = document.getElementById('floatingMenu'); if (!dragHandle || !floatingMenu) return; let isDraggingMenu = false; let startX = 0, startY = 0; let startLeft = 0, startTop = 0; const onStart = (e) => { e.preventDefault(); e.stopPropagation(); isDraggingMenu = true; const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); startX = clientX; startY = clientY; const rect = floatingMenu.getBoundingClientRect(); startLeft = rect.left; startTop = rect.top; floatingMenu.style.transition = 'none'; }; const onMove = (e) => { if (!isDraggingMenu) return; e.preventDefault(); const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); let newLeft = startLeft + (clientX - startX); let newTop = startTop + (clientY - startY); newLeft = Math.max(0, Math.min(window.innerWidth - floatingMenu.offsetWidth, newLeft)); newTop = Math.max(0, Math.min(window.innerHeight - floatingMenu.offsetHeight, newTop)); floatingMenu.style.left = newLeft + 'px'; floatingMenu.style.top = newTop + 'px'; floatingMenu.style.right = 'auto'; floatingMenu.style.bottom = 'auto'; }; const onEnd = () => { if (!isDraggingMenu) return; isDraggingMenu = false; floatingMenu.style.transition = ''; const left = parseFloat(floatingMenu.style.left); const top = parseFloat(floatingMenu.style.top); if (!isNaN(left) && !isNaN(top)) { localStorage.setItem('floatingMenuLeft', left); localStorage.setItem('floatingMenuTop', top); } }; const applyStoredPosition = () => { const savedLeft = localStorage.getItem('floatingMenuLeft'); const savedTop = localStorage.getItem('floatingMenuTop'); if (savedLeft !== null && savedTop !== null) { const left = Math.max(0, Math.min(window.innerWidth - floatingMenu.offsetWidth, parseFloat(savedLeft))); const top = Math.max(0, Math.min(window.innerHeight - floatingMenu.offsetHeight, parseFloat(savedTop))); floatingMenu.style.left = left + 'px'; floatingMenu.style.top = top + 'px'; floatingMenu.style.right = 'auto'; floatingMenu.style.bottom = 'auto'; } else { floatingMenu.style.left = '20px'; floatingMenu.style.top = '20px'; } }; dragHandle.addEventListener('mousedown', onStart); dragHandle.addEventListener('touchstart', onStart, { passive: false }); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); applyStoredPosition(); window.addEventListener('resize', () => applyStoredPosition()); }
     
-    // ========== SIDEBAR RESIZER DRAG (SMOOTH TOUCH) ==========
+    // ========== SIDEBAR RESIZER DRAG ==========
     function initSidebarResizer() {
         const resizer = document.getElementById('dragResizer');
         const sidebar = document.getElementById('rightSide');
@@ -2299,7 +2460,6 @@
             window.removeEventListener('touchmove', onResizeMove);
             window.removeEventListener('touchend', onResizeEnd);
         };
-        // Thin resizer bar (for mouse)
         resizer.addEventListener('mousedown', (e) => { e.preventDefault(); startResize(e.clientX); });
         resizer.addEventListener('touchstart', (e) => { e.preventDefault(); startResize(e.touches[0].clientX); }, { passive: false });
         
@@ -2307,7 +2467,6 @@
         if (savedWidth && !sidebar.classList.contains('hidden')) updateSidebarWidth(parseFloat(savedWidth));
         else updateSidebarWidth(400);
         
-        // Improved touch-friendly button: short tap toggles sidebar, drag to resize
         if (closeBtn) {
             let pressTimer = null;
             let startXBtn = 0, startWidthBtn = 0;
@@ -2349,13 +2508,12 @@
                     window.removeEventListener('mouseup', onBtnEnd);
                     window.removeEventListener('touchend', onBtnEnd);
                     if (!hasMoved && !isDraggingResizeBtn) {
-                        // Short tap: toggle sidebar
                         toggleSidebar();
                     }
                     isDraggingResizeBtn = false;
                     setTimeout(() => { closeBtn.style.transform = ''; }, 100);
                 };
-                // Long press fallback (not needed for resize, but keep)
+                // Hold duration 200ms for resizer button
                 pressTimer = setTimeout(() => {
                     if (!hasMoved) {
                         isDraggingResizeBtn = true;
@@ -2369,7 +2527,7 @@
                         closeBtn.style.transform = 'translate(-50%, -50%) scale(0.9)';
                         pressTimer = null;
                     }
-                }, 300);
+                }, 200);
                 window.addEventListener('mousemove', onBtnMove);
                 window.addEventListener('touchmove', onBtnMove, { passive: false });
                 window.addEventListener('mouseup', onBtnEnd);
@@ -2388,21 +2546,12 @@
         displayArea.addEventListener('touchstart', (e) => { touchStartY = e.touches[0].clientY; touchStartX = e.touches[0].clientX; touchMoved = false; }, { passive: false }); 
         displayArea.addEventListener('touchmove', (e) => { if (!touchStartY) return; const deltaY = e.touches[0].clientY - touchStartY; const deltaX = e.touches[0].clientX - touchStartX; if (Math.abs(deltaY) > 30 && !touchMoved) { touchMoved = true; if (deltaY > 0) { if (appMode === 'random') historyNext(); else goNextNormal(); } else if (deltaY < 0) { if (appMode === 'random') historyPrev(); else goPrevNormal(); } e.preventDefault(); } else if (Math.abs(deltaX) > 30 && !touchMoved && Math.abs(deltaX) > Math.abs(deltaY)) { touchMoved = true; if (deltaX > 0) { moveSidebarFocus(1); } else if (deltaX < 0) { moveSidebarFocus(-1); } e.preventDefault(); } }, { passive: false }); 
         displayArea.addEventListener('touchend', () => { touchStartY = 0; touchStartX = 0; touchMoved = false; }); 
-        displayArea.addEventListener('wheel', function(e) {
-            if (e.ctrlKey) return;
-            if (e.deltaY < 0) {
-                moveSidebarFocus(-1);
-                e.preventDefault();
-            } else if (e.deltaY > 0) {
-                moveSidebarFocus(1);
-                e.preventDefault();
-            }
-        }, { passive: false });
     }
     
     function addLog(message, isError = false) { console.log(message); if (isError) showToast(`⚠️ ${message.substring(0, 80)}`); }
     
-    // ========== LONG PRESS ON GEAR TO TOGGLE SIDEBAR ==========
+    // ========== LONG PRESS ON GEAR: TOGGLE SIDEBAR (300ms) ==========
+    let longPressTriggered = false;
     function initGearLongPress() {
         const gear = document.getElementById('minimizedTrigger');
         if (!gear) return;
@@ -2420,12 +2569,13 @@
             e.preventDefault();
             e.stopPropagation();
             hasMoved = false;
+            longPressTriggered = false;
             pressTimer = setTimeout(() => {
-                // Long press: toggle the right sidebar (vocab list)
+                longPressTriggered = true;
                 toggleSidebar();
                 showToast("📚 Sidebar toggled");
                 pressTimer = null;
-            }, 800); // 0.8 seconds hold
+            }, 300); // 300ms for gear button
         };
         
         const onMove = () => {
@@ -2436,6 +2586,7 @@
         const onEnd = () => {
             cancelTimer();
             hasMoved = false;
+            setTimeout(() => { longPressTriggered = false; }, 100);
         };
         
         gear.addEventListener('mousedown', onStart);
@@ -2446,11 +2597,70 @@
         window.addEventListener('touchend', onEnd);
     }
     
+    // Modify gear drag to respect long press flag
+    function initGearDrag() { 
+        applyStoredGearPosition(); 
+        let gearDragActive = false, startMouseX = 0, startMouseY = 0, startLeft = 0, startTop = 0, gearDragOccurred = false; 
+        function onStart(e) { 
+            e.preventDefault(); e.stopPropagation(); 
+            gearDragActive = true; gearDragOccurred = false; 
+            const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); 
+            const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); 
+            startMouseX = cx; startMouseY = cy; 
+            startLeft = gearLeft; startTop = gearTop; 
+        } 
+        function onMove(e) { 
+            if (!gearDragActive) return; 
+            e.preventDefault(); 
+            const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); 
+            const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); 
+            if (Math.abs(cx - startMouseX) > 5 || Math.abs(cy - startMouseY) > 5) gearDragOccurred = true; 
+            let newLeft = startLeft + (cx - startMouseX); 
+            let newTop = startTop + (cy - startMouseY); 
+            newLeft = Math.min(Math.max(5, newLeft), window.innerWidth - 65); 
+            newTop = Math.min(Math.max(5, newTop), window.innerHeight - 75); 
+            gearLeft = newLeft; gearTop = newTop; 
+            gearElemDrag.style.left = newLeft + 'px'; 
+            gearElemDrag.style.top = newTop + 'px'; 
+        } 
+        function onEnd() { 
+            if (!gearDragActive) return; 
+            gearDragActive = false; 
+            if (!gearDragOccurred && !longPressTriggered) { 
+                const isMenuVisible = document.getElementById('floatingMenu').style.display !== 'none'; 
+                if (isMenuVisible) toggleMenu(true); 
+                else { toggleMenu(false); currentMenuTransform = { x: 0, y: 0 }; floatingMenuDiv.style.transform = `translate3d(0px, 0px, 0)`; saveMenuPosition(); } 
+            } 
+            saveGearPosition(); 
+        } 
+        const gearElemDrag = document.getElementById('minimizedTrigger');
+        gearElemDrag.addEventListener('mousedown', onStart); 
+        window.addEventListener('mousemove', onMove); 
+        window.addEventListener('mouseup', onEnd); 
+        gearElemDrag.addEventListener('touchstart', onStart, { passive: false }); 
+        window.addEventListener('touchmove', onMove, { passive: false }); 
+        window.addEventListener('touchend', onEnd); 
+    }
+    
+    let gearLeft = 20, gearTop = 20; 
+    let currentMenuTransform = { x: 0, y: 0 }; 
+    const floatingMenuDiv = document.getElementById('floatingMenu');
+    const gearElemDrag = document.getElementById('minimizedTrigger');
+    function applyStoredMenuPosition() { const storedX = parseFloat(localStorage.getItem('menuPosX')) || 0; const storedY = parseFloat(localStorage.getItem('menuPosY')) || 0; if (!isNaN(storedX) && !isNaN(storedY)) { currentMenuTransform.x = storedX; currentMenuTransform.y = storedY; floatingMenuDiv.style.transform = `translate3d(${storedX}px, ${storedY}px, 0)`; } }
+    function saveMenuPosition() { localStorage.setItem('menuPosX', currentMenuTransform.x); localStorage.setItem('menuPosY', currentMenuTransform.y); }
+    function saveGearPosition() { if (gearElemDrag) { const left = gearElemDrag.offsetLeft, top = gearElemDrag.offsetTop; if (!isNaN(left) && !isNaN(top)) { localStorage.setItem('gearPosLeft', left); localStorage.setItem('gearPosTop', top); } } }
+    function applyStoredGearPosition() { let left = parseFloat(localStorage.getItem('gearPosLeft')), top = parseFloat(localStorage.getItem('gearPosTop')); if (isNaN(left)) left = window.innerWidth - 80; if (isNaN(top)) top = 30; left = Math.min(Math.max(5, left), window.innerWidth - 65); top = Math.min(Math.max(5, top), window.innerHeight - 75); gearLeft = left; gearTop = top; gearElemDrag.style.left = left + 'px'; gearElemDrag.style.top = top + 'px'; }
+    function initCtrlWheelResize() { /* already handled */ }
+    function initNightMode() { if(localStorage.getItem('vocabMaster_NightMode')==='true') document.body.classList.add('night-mode'); const btn = document.getElementById('dragDarkModeBtn'); if(btn && btn.innerHTML) btn.innerHTML = document.body.classList.contains('night-mode') ? '☀️' : '🌙'; }
+    function toggleNightMode(){ document.body.classList.toggle('night-mode'); localStorage.setItem('vocabMaster_NightMode',document.body.classList.contains('night-mode')); const btn = document.getElementById('dragDarkModeBtn'); if(btn) btn.innerHTML = document.body.classList.contains('night-mode') ? '☀️' : '🌙'; applyStyles(); renderSidebarUI(); }
+    function setupQRPopup() { const overlay = document.getElementById('qrPopupOverlay'); const closeBtn = document.getElementById('qrCloseBtn'); if (closeBtn) closeBtn.addEventListener('click', () => overlay.style.display = 'none'); overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; }); }
+    function applyRateDisplay() { const rateSlider = document.getElementById('zhRateSlider'); const rateSpan = document.getElementById('zhRateVal'); if(rateSlider && rateSpan) rateSpan.innerText = (parseInt(rateSlider.value) > 0 ? '+' : '') + rateSlider.value + '%'; saveAllData(); }
+    function moveSidebarFocus(delta) { if (!sidebarIndices.length) return; let newFocus = sidebarFocusIdx + delta; if (newFocus < 0) newFocus = sidebarIndices.length - 1; if (newFocus >= sidebarIndices.length) newFocus = 0; sidebarFocusIdx = newFocus; updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); }
+    function extractSheetIdFromUrl(url) { if (!url) return null; if (url.match(/^[a-zA-Z0-9_-]{30,50}$/)) return url; const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/); if (match) return match[1]; const pubMatch = url.match(/\/d\/e\/([a-zA-Z0-9_-]+)/); if (pubMatch) return pubMatch[1]; return null; }
+    window.historyPrev = historyPrev; window.historyNext = historyNext; window.moveSidebarFocus = moveSidebarFocus; window.toggleAuto = toggleAuto; window.toggleSidebar = toggleSidebar; window.switchTab = switchTab; window.toggleMenu = toggleMenu; window.pickRandom = pickRandom; window.loadWordByMode = loadWordByMode; window.toggleBold = toggleBold; window.openSheetAndActivateCell = openSheetAndActivateCell; window.showPasswordModal = showPasswordModal; window.goPrevNormal = goPrevNormal; window.goNextNormal = goNextNormal;
+    
     // ========== INITIALIZATION ==========
     async function initializeSheet() { currentSheetId = DEFAULT_SHEET_ID; currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`; await loadSheetData(); }
-    const gearTrigger = document.getElementById('minimizedTrigger');
-    if (gearTrigger) gearTrigger.addEventListener('click', function(e) { e.stopPropagation(); });
-    
     window.addEventListener('keydown', function(e) {
         const activeEl = document.activeElement;
         if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
@@ -2482,7 +2692,7 @@
         loadSettings(); 
         const savedList = localStorage.getItem('vocabMaster_List'); 
         if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) { if (appMode === 'random') pickRandom(); else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } } }
-        initNightMode(); applyStyles(); initGearDrag(); setupQRPopup(); setupBackgroundClick(); initChineseDrag(); initKhmerDrag(); loadAllDragPositions(); initFloatingMenuDrag(); initSidebarResizer(); initSwipeNavigation(); initGearLongPress();
+        initNightMode(); applyStyles(); initGearDrag(); setupQRPopup(); setupBackgroundClick(); initChineseDrag(); initKhmerDrag(); loadAllDragPositions(); initFloatingMenuDrag(); initSidebarResizer(); initSwipeNavigation(); initGearLongPress(); setupSidebarWheelNavigation();
         await initializeSheet();
         const gearIcon = document.getElementById('minimizedTrigger');
         if (gearIcon) { gearIcon.addEventListener('click', (e) => e.stopPropagation()); gearIcon.addEventListener('touchstart', (e) => e.stopPropagation()); gearIcon.addEventListener('mousedown', (e) => e.stopPropagation()); }
@@ -2523,21 +2733,6 @@
         setTimeout(() => { loadAllDragPositions(); forceShrink(); applyBottomAutoScale(); }, 100);
         document.getElementById('insertDataBtn').onclick = () => { showLoadVocabularyModal(); };
     };
-    
-    function initGearDrag() { applyStoredGearPosition(); let gearDragActive = false, startMouseX = 0, startMouseY = 0, startLeft = 0, startTop = 0, gearDragOccurred = false; function onStart(e) { e.preventDefault(); e.stopPropagation(); gearDragActive = true; gearDragOccurred = false; const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); startMouseX = cx; startMouseY = cy; startLeft = gearLeft; startTop = gearTop; } function onMove(e) { if (!gearDragActive) return; e.preventDefault(); const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); if (Math.abs(cx - startMouseX) > 5 || Math.abs(cy - startMouseY) > 5) gearDragOccurred = true; let newLeft = startLeft + (cx - startMouseX); let newTop = startTop + (cy - startMouseY); newLeft = Math.min(Math.max(5, newLeft), window.innerWidth - 65); newTop = Math.min(Math.max(5, newTop), window.innerHeight - 75); gearLeft = newLeft; gearTop = newTop; gearElemDrag.style.left = newLeft + 'px'; gearElemDrag.style.top = newTop + 'px'; } function onEnd() { if (!gearDragActive) return; gearDragActive = false; if (!gearDragOccurred) { const isMenuVisible = document.getElementById('floatingMenu').style.display !== 'none'; if (isMenuVisible) toggleMenu(true); else { toggleMenu(false); currentMenuTransform = { x: 0, y: 0 }; floatingMenuDiv.style.transform = `translate3d(0px, 0px, 0)`; saveMenuPosition(); } } saveGearPosition(); } gearElemDrag.addEventListener('mousedown', onStart); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); gearElemDrag.addEventListener('touchstart', onStart, { passive: false }); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); }
-    let gearLeft = 20, gearTop = 20; const gearElemDrag = document.getElementById('minimizedTrigger'); let currentMenuTransform = { x: 0, y: 0 }; const floatingMenuDiv = document.getElementById('floatingMenu');
-    function applyStoredMenuPosition() { const storedX = parseFloat(localStorage.getItem('menuPosX')) || 0; const storedY = parseFloat(localStorage.getItem('menuPosY')) || 0; if (!isNaN(storedX) && !isNaN(storedY)) { currentMenuTransform.x = storedX; currentMenuTransform.y = storedY; floatingMenuDiv.style.transform = `translate3d(${storedX}px, ${storedY}px, 0)`; } }
-    function saveMenuPosition() { localStorage.setItem('menuPosX', currentMenuTransform.x); localStorage.setItem('menuPosY', currentMenuTransform.y); }
-    function saveGearPosition() { if (gearElemDrag) { const left = gearElemDrag.offsetLeft, top = gearElemDrag.offsetTop; if (!isNaN(left) && !isNaN(top)) { localStorage.setItem('gearPosLeft', left); localStorage.setItem('gearPosTop', top); } } }
-    function applyStoredGearPosition() { let left = parseFloat(localStorage.getItem('gearPosLeft')), top = parseFloat(localStorage.getItem('gearPosTop')); if (isNaN(left)) left = window.innerWidth - 80; if (isNaN(top)) top = 30; left = Math.min(Math.max(5, left), window.innerWidth - 65); top = Math.min(Math.max(5, top), window.innerHeight - 75); gearLeft = left; gearTop = top; gearElemDrag.style.left = left + 'px'; gearElemDrag.style.top = top + 'px'; }
-    function initCtrlWheelResize() { /* already handled */ }
-    function initNightMode() { if(localStorage.getItem('vocabMaster_NightMode')==='true') document.body.classList.add('night-mode'); const btn = document.getElementById('dragDarkModeBtn'); if(btn && btn.innerHTML) btn.innerHTML = document.body.classList.contains('night-mode') ? '☀️' : '🌙'; }
-    function toggleNightMode(){ document.body.classList.toggle('night-mode'); localStorage.setItem('vocabMaster_NightMode',document.body.classList.contains('night-mode')); const btn = document.getElementById('dragDarkModeBtn'); if(btn) btn.innerHTML = document.body.classList.contains('night-mode') ? '☀️' : '🌙'; applyStyles(); renderSidebarUI(); }
-    function setupQRPopup() { const overlay = document.getElementById('qrPopupOverlay'); const closeBtn = document.getElementById('qrCloseBtn'); if (closeBtn) closeBtn.addEventListener('click', () => overlay.style.display = 'none'); overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; }); }
-    function applyRateDisplay() { const rateSlider = document.getElementById('zhRateSlider'); const rateSpan = document.getElementById('zhRateVal'); if(rateSlider && rateSpan) rateSpan.innerText = (parseInt(rateSlider.value) > 0 ? '+' : '') + rateSlider.value + '%'; saveAllData(); }
-    function moveSidebarFocus(delta) { if (!sidebarIndices.length) return; let newFocus = sidebarFocusIdx + delta; if (newFocus < 0) newFocus = sidebarIndices.length - 1; if (newFocus >= sidebarIndices.length) newFocus = 0; sidebarFocusIdx = newFocus; updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); }
-    function extractSheetIdFromUrl(url) { if (!url) return null; if (url.match(/^[a-zA-Z0-9_-]{30,50}$/)) return url; const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/); if (match) return match[1]; const pubMatch = url.match(/\/d\/e\/([a-zA-Z0-9_-]+)/); if (pubMatch) return pubMatch[1]; return null; }
-    window.historyPrev = historyPrev; window.historyNext = historyNext; window.moveSidebarFocus = moveSidebarFocus; window.toggleAuto = toggleAuto; window.toggleSidebar = toggleSidebar; window.switchTab = switchTab; window.toggleMenu = toggleMenu; window.pickRandom = pickRandom; window.loadWordByMode = loadWordByMode; window.toggleBold = toggleBold; window.openSheetAndActivateCell = openSheetAndActivateCell; window.showPasswordModal = showPasswordModal; window.goPrevNormal = goPrevNormal; window.goNextNormal = goNextNormal;
 </script>
 </body>
 </html>
