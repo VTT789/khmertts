@@ -419,7 +419,6 @@
         .side-style-grid { display: grid; grid-template-columns: 35px 1fr 40px; gap: 6px; align-items: center; margin-bottom: 6px; }
         .pinyin-style-grid { display: grid; grid-template-columns: 35px 1fr 40px 40px; gap: 6px; align-items: center; margin-bottom: 6px; }
         
-        /* FIXED: shadow slider alignment */
         .shadow-style-grid { 
             display: flex; 
             align-items: center; 
@@ -639,14 +638,14 @@
         .resizer:hover { background: var(--accent); }
         .resizer-btn {
             position: absolute;
-            width: 40px;
-            height: 40px;
-            background: transparent;
+            width: 44px;
+            height: 44px;
+            background: rgba(128,128,128,0.5);
             color: var(--text-primary);
             border: none;
             border-radius: 50%;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             display: flex;
             align-items: center;
@@ -658,8 +657,7 @@
             top: 50%;
             padding: 0;
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            background: rgba(128,128,128,0.4);
-            touch-action: none;
+            touch-action: pan-y pinch-zoom;
         }
         .resizer-btn:active {
             transform: translate(-50%, -50%) scale(0.95);
@@ -711,6 +709,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            position: relative;
         }
         body.night-mode .choice-search-area { background: rgba(255,255,255,0.1); }
         .choice-search-area input {
@@ -722,8 +721,30 @@
             background: rgba(255,255,255,0.9);
             color: #0f172a;
             outline: none;
+            padding-right: 36px;
         }
         body.night-mode .choice-search-area input { background: #334155; color: white; }
+        .search-clear-btn {
+            position: absolute;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: #64748b;
+            padding: 4px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+        .search-clear-btn:hover {
+            background: rgba(0,0,0,0.1);
+            transform: scale(1.05);
+        }
+        body.night-mode .search-clear-btn { color: #94a3b8; }
         .mode-icons-container {
             display: flex;
             gap: 12px;
@@ -1316,7 +1337,6 @@
                 input.focus();
             }
         };
-        // FIXED: prevent event bubbling so it doesn't close parent choice-modal
         cancelBtn.onclick = (e) => { 
             e.stopPropagation();   // Prevent bubbling to overlay
             closeModal(); 
@@ -1585,13 +1605,20 @@
     function scrollToActiveSidebarItem() { setTimeout(() => { const activeItem = document.querySelector('.vocab-item.active'); if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50); }
     
     let searchDebounceTimer = null;
-    function renderSidebarUI() { 
-        const list = document.getElementById('sidebarList'); list.innerHTML = ''; 
+    let currentSearchInputElement = null;
+    let previousWordBeforeSearch = null; // Store previous word index when search starts
+    let isComposing = false; // For IME (pinyin) composition
+    
+    function renderSidebarUI(preserveFocus = true) { 
+        const list = document.getElementById('sidebarList'); 
+        const oldSearchValue = currentSearchInputElement ? currentSearchInputElement.value : searchTerm;
+        list.innerHTML = ''; 
         const headerDiv = document.createElement('div');
         headerDiv.className = 'vocab-header';
         headerDiv.innerHTML = `
             <div class="choice-search-area">
-                <input type="text" id="choiceSearchInput" placeholder="🔍 Search vocabulary..." value="${escapeHtml(searchTerm)}">
+                <input type="text" id="choiceSearchInput" placeholder="🔍 Search vocabulary..." value="${escapeHtml(oldSearchValue)}">
+                <button class="search-clear-btn" id="searchClearBtn" title="Clear search">✕</button>
             </div>
             <div class="mode-icons-container" id="modeIconsContainer"></div>
             <div id="paginationContainer"></div>
@@ -1599,52 +1626,126 @@
         list.appendChild(headerDiv);
         
         const searchInput = headerDiv.querySelector('#choiceSearchInput');
-        const handleSearch = (e) => {
+        const clearBtn = headerDiv.querySelector('#searchClearBtn');
+        currentSearchInputElement = searchInput;
+        
+        // Clear button handler
+        clearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            searchInput.value = '';
+            searchTerm = '';
+            // Restore previous word
+            if (previousWordBeforeSearch !== null && vocabList[previousWordBeforeSearch]) {
+                loadWordByMode(previousWordBeforeSearch, true);
+                previousWordBeforeSearch = null;
+            } else if (appMode === 'normal') {
+                normalCurrentPage = 0;
+                normalCurrentIdx = 0;
+                renderNormalSidebar();
+            } else if (sidebarIndices.length && sidebarIndices[sidebarFocusIdx] !== undefined) {
+                renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
+            } else if (vocabList.length) {
+                pickRandom();
+            } else {
+                renderSidebarUI(true);
+            }
+            searchInput.focus();
+        });
+        
+        // Store original word index before search starts (if not already stored)
+        const storeOriginalWord = () => {
+            if (previousWordBeforeSearch === null && sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
+                previousWordBeforeSearch = sidebarIndices[sidebarFocusIdx];
+            }
+        };
+        
+        // --- IME composition handling: do not trigger search during composition ---
+        searchInput.addEventListener('compositionstart', () => {
+            isComposing = true;
+            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+        });
+        searchInput.addEventListener('compositionend', () => {
+            isComposing = false;
+            // After composition ends, manually trigger the search logic with current value
+            const currentValue = searchInput.value;
             if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
             searchDebounceTimer = setTimeout(() => { 
-                searchTerm = e.target.value; 
-                if (appMode === 'normal') { 
-                    normalCurrentPage = 0; 
-                    normalCurrentIdx = 0; 
-                    renderNormalSidebar(); 
-                } else { 
-                    // For random mode, recompute the filtered list and render
-                    if (searchTerm.trim() === "") {
-                        // if search cleared, revert to original random side list based on current focus index
-                        if (sidebarIndices.length && sidebarIndices[sidebarFocusIdx] !== undefined) {
-                            renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
-                        } else if (vocabList.length) {
-                            pickRandom();
-                        } else {
-                            renderSidebarUI();
+                performSearch(currentValue);
+                searchDebounceTimer = null; 
+            }, 800);
+        });
+        
+        const performSearch = (currentValue) => {
+            searchTerm = currentValue; 
+            if (appMode === 'normal') { 
+                normalCurrentPage = 0; 
+                normalCurrentIdx = 0; 
+                renderNormalSidebar(); 
+            } else { 
+                if (searchTerm.trim() === "") {
+                    if (previousWordBeforeSearch !== null && vocabList[previousWordBeforeSearch]) {
+                        loadWordByMode(previousWordBeforeSearch, true);
+                        previousWordBeforeSearch = null;
+                    } else if (sidebarIndices.length && sidebarIndices[sidebarFocusIdx] !== undefined) {
+                        renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
+                    } else if (vocabList.length) {
+                        pickRandom();
+                    } else {
+                        renderSidebarUI(true);
+                    }
+                } else {
+                    const filtered = filterVocabBySearch(vocabList);
+                    const filteredIndices = filtered.map(item => vocabList.findIndex(v => v === item));
+                    if (filteredIndices.length) {
+                        sidebarIndices = filteredIndices;
+                        sidebarFocusIdx = 0;
+                        renderSidebarUI(true);
+                        if (sidebarIndices.length > 0) {
+                            const firstIdx = sidebarIndices[0];
+                            loadWordByMode(firstIdx, true);
                         }
                     } else {
-                        // Filter the entire vocabulary and create a new sidebarIndices with filtered items
-                        const filtered = filterVocabBySearch(vocabList);
-                        const filteredIndices = filtered.map(item => vocabList.findIndex(v => v === item));
-                        if (filteredIndices.length) {
-                            sidebarIndices = filteredIndices;
-                            sidebarFocusIdx = 0;
-                            renderSidebarUI();
-                            updateDisplay();
-                            if (vocabList[sidebarIndices[0]]) speakAutoSequence(vocabList[sidebarIndices[0]].chinese, vocabList[sidebarIndices[0]].khmer);
-                        } else {
-                            sidebarIndices = [];
-                            renderSidebarUI();
-                            updateChineseDisplay("");
-                            document.getElementById('khmerWord').innerText = "";
-                        }
+                        sidebarIndices = [];
+                        renderSidebarUI(true);
+                        updateChineseDisplay("");
+                        document.getElementById('khmerWord').innerText = "";
                     }
-                } 
-                const newSearchInput = document.getElementById('choiceSearchInput');
-                if (newSearchInput) {
-                    newSearchInput.value = searchTerm;
-                    newSearchInput.focus();
                 }
-                searchDebounceTimer = null; 
-            }, 400);
+            } 
+            const newInput = document.getElementById('choiceSearchInput');
+            if (newInput) {
+                newInput.value = searchTerm;
+                newInput.focus();
+                newInput.setSelectionRange(newInput.value.length, newInput.value.length);
+            }
         };
-        searchInput.addEventListener('input', handleSearch);
+        
+        const handleSearchInput = (e) => {
+            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+            const currentValue = e.target.value;
+            if (previousWordBeforeSearch === null && searchTerm === "" && currentValue !== "") {
+                storeOriginalWord();
+            }
+            if (isComposing) {
+                // Do nothing while composing pinyin
+                return;
+            }
+            searchDebounceTimer = setTimeout(() => { 
+                performSearch(currentValue);
+                searchDebounceTimer = null; 
+            }, 800); // 0.8 seconds delay
+        };
+        searchInput.addEventListener('input', handleSearchInput);
+        
+        if (preserveFocus && oldSearchValue === searchTerm) {
+            setTimeout(() => { 
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+                }
+            }, 10);
+        }
         
         const modeIconsContainer = headerDiv.querySelector('#modeIconsContainer');
         modeIconsContainer.innerHTML = `
@@ -1662,7 +1763,6 @@
             const filtered = filterVocabBySearch(vocabList); 
             itemsToShow = filtered.map(item => vocabList.findIndex(v => v === item)); 
         } else if (appMode === 'random' && searchTerm && searchTerm.trim() !== "") {
-            // Already filtered in the random branch above, but ensure itemsToShow is set correctly
             itemsToShow = sidebarIndices;
         }
         for (let sIdx = 0; sIdx < itemsToShow.length; sIdx++) { 
@@ -1814,7 +1914,11 @@
             modalDiv.remove();
             const success = await addVocabToSheet(khmer, chinese);
             if (success) {
-                await loadSheetData();
+                // Instead of reloading whole sheet, we add locally and update sidebar
+                const newSheetRow = (vocabList.length > 0 ? vocabList[vocabList.length-1].sheetRow : 1) + 1;
+                const newWord = { khmer: khmer || "", chinese: chinese || "", sheetRow: newSheetRow };
+                vocabList.push(newWord);
+                saveAllData();
                 const newIdx = vocabList.length - 1;
                 if (appMode === 'random') {
                     history = [newIdx];
@@ -1822,9 +1926,12 @@
                     renderRandomSidebar(newIdx);
                 } else {
                     normalCurrentIdx = newIdx;
-                    normalCurrentPage = getNormalPageForIndex(newIdx);
+                    const filtered = filterVocabBySearch(vocabList);
+                    const newPage = Math.floor(filtered.findIndex(v => v === vocabList[newIdx]) / ITEMS_PER_PAGE);
+                    if (newPage >= 0) normalCurrentPage = newPage;
                     renderNormalSidebar();
                 }
+                updateDisplay();
                 showToast(`✅ Added "${chinese || khmer}" as new #${getDisplayNumberFromArrayIndex(newIdx)}`);
                 scrollToSidebarItem();
             }
@@ -2154,7 +2261,7 @@
     // ========== FLOATING MENU DRAG ==========
     function initFloatingMenuDrag() { const dragHandle = document.getElementById('dragHandle'); const floatingMenu = document.getElementById('floatingMenu'); if (!dragHandle || !floatingMenu) return; let isDraggingMenu = false; let startX = 0, startY = 0; let startLeft = 0, startTop = 0; const onStart = (e) => { e.preventDefault(); e.stopPropagation(); isDraggingMenu = true; const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); startX = clientX; startY = clientY; const rect = floatingMenu.getBoundingClientRect(); startLeft = rect.left; startTop = rect.top; floatingMenu.style.transition = 'none'; }; const onMove = (e) => { if (!isDraggingMenu) return; e.preventDefault(); const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); let newLeft = startLeft + (clientX - startX); let newTop = startTop + (clientY - startY); newLeft = Math.max(0, Math.min(window.innerWidth - floatingMenu.offsetWidth, newLeft)); newTop = Math.max(0, Math.min(window.innerHeight - floatingMenu.offsetHeight, newTop)); floatingMenu.style.left = newLeft + 'px'; floatingMenu.style.top = newTop + 'px'; floatingMenu.style.right = 'auto'; floatingMenu.style.bottom = 'auto'; }; const onEnd = () => { if (!isDraggingMenu) return; isDraggingMenu = false; floatingMenu.style.transition = ''; const left = parseFloat(floatingMenu.style.left); const top = parseFloat(floatingMenu.style.top); if (!isNaN(left) && !isNaN(top)) { localStorage.setItem('floatingMenuLeft', left); localStorage.setItem('floatingMenuTop', top); } }; const applyStoredPosition = () => { const savedLeft = localStorage.getItem('floatingMenuLeft'); const savedTop = localStorage.getItem('floatingMenuTop'); if (savedLeft !== null && savedTop !== null) { const left = Math.max(0, Math.min(window.innerWidth - floatingMenu.offsetWidth, parseFloat(savedLeft))); const top = Math.max(0, Math.min(window.innerHeight - floatingMenu.offsetHeight, parseFloat(savedTop))); floatingMenu.style.left = left + 'px'; floatingMenu.style.top = top + 'px'; floatingMenu.style.right = 'auto'; floatingMenu.style.bottom = 'auto'; } else { floatingMenu.style.left = '20px'; floatingMenu.style.top = '20px'; } }; dragHandle.addEventListener('mousedown', onStart); dragHandle.addEventListener('touchstart', onStart, { passive: false }); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); applyStoredPosition(); window.addEventListener('resize', () => applyStoredPosition()); }
     
-    // ========== SIDEBAR RESIZER DRAG & INTEGRATED CLOSE BUTTON ==========
+    // ========== SIDEBAR RESIZER DRAG (SMOOTH TOUCH) ==========
     function initSidebarResizer() {
         const resizer = document.getElementById('dragResizer');
         const sidebar = document.getElementById('rightSide');
@@ -2192,6 +2299,7 @@
             window.removeEventListener('touchmove', onResizeMove);
             window.removeEventListener('touchend', onResizeEnd);
         };
+        // Thin resizer bar (for mouse)
         resizer.addEventListener('mousedown', (e) => { e.preventDefault(); startResize(e.clientX); });
         resizer.addEventListener('touchstart', (e) => { e.preventDefault(); startResize(e.touches[0].clientX); }, { passive: false });
         
@@ -2199,51 +2307,76 @@
         if (savedWidth && !sidebar.classList.contains('hidden')) updateSidebarWidth(parseFloat(savedWidth));
         else updateSidebarWidth(400);
         
+        // Improved touch-friendly button: short tap toggles sidebar, drag to resize
         if (closeBtn) {
             let pressTimer = null;
+            let startXBtn = 0, startWidthBtn = 0;
+            let hasMoved = false;
+            let isDraggingResizeBtn = false;
+            
             const onBtnStart = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
-                pressTimer = setTimeout(() => {
-                    startResize(clientX);
-                    isDraggingResize = true;
-                    pressTimer = null;
-                    closeBtn.style.transform = 'translate(-50%, -50%) scale(0.9)';
-                    setTimeout(() => { closeBtn.style.transform = ''; }, 150);
-                }, 400);
-                const onMove = (moveEvent) => {
+                startXBtn = clientX;
+                startWidthBtn = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width'));
+                hasMoved = false;
+                isDraggingResizeBtn = false;
+                
+                const onBtnMove = (moveEvent) => {
                     const moveX = moveEvent.clientX ?? (moveEvent.touches ? moveEvent.touches[0].clientX : 0);
-                    if (Math.abs(moveX - clientX) > 10) {
+                    const delta = startXBtn - moveX;
+                    if (Math.abs(delta) > 5 && !hasMoved) {
+                        hasMoved = true;
+                        isDraggingResizeBtn = true;
                         if (pressTimer) clearTimeout(pressTimer);
                         pressTimer = null;
-                        window.removeEventListener('mousemove', onMove);
-                        window.removeEventListener('touchmove', onMove);
+                        isResizing = true;
+                        startX = startXBtn;
+                        startWidth = startWidthBtn;
+                        window.addEventListener('mousemove', onResizeMove);
+                        window.addEventListener('mouseup', onResizeEnd);
+                        window.addEventListener('touchmove', onResizeMove, { passive: false });
+                        window.addEventListener('touchend', onResizeEnd);
+                        closeBtn.style.transform = 'translate(-50%, -50%) scale(0.95)';
                     }
                 };
-                window.addEventListener('mousemove', onMove);
-                window.addEventListener('touchmove', onMove, { passive: false });
-                const cleanup = () => {
+                const onBtnEnd = () => {
                     if (pressTimer) clearTimeout(pressTimer);
                     pressTimer = null;
-                    window.removeEventListener('mousemove', onMove);
-                    window.removeEventListener('touchmove', onMove);
-                    window.removeEventListener('mouseup', cleanup);
-                    window.removeEventListener('touchend', cleanup);
+                    window.removeEventListener('mousemove', onBtnMove);
+                    window.removeEventListener('touchmove', onBtnMove);
+                    window.removeEventListener('mouseup', onBtnEnd);
+                    window.removeEventListener('touchend', onBtnEnd);
+                    if (!hasMoved && !isDraggingResizeBtn) {
+                        // Short tap: toggle sidebar
+                        toggleSidebar();
+                    }
+                    isDraggingResizeBtn = false;
+                    setTimeout(() => { closeBtn.style.transform = ''; }, 100);
                 };
-                window.addEventListener('mouseup', cleanup);
-                window.addEventListener('touchend', cleanup);
+                // Long press fallback (not needed for resize, but keep)
+                pressTimer = setTimeout(() => {
+                    if (!hasMoved) {
+                        isDraggingResizeBtn = true;
+                        isResizing = true;
+                        startX = startXBtn;
+                        startWidth = startWidthBtn;
+                        window.addEventListener('mousemove', onResizeMove);
+                        window.addEventListener('mouseup', onResizeEnd);
+                        window.addEventListener('touchmove', onResizeMove, { passive: false });
+                        window.addEventListener('touchend', onResizeEnd);
+                        closeBtn.style.transform = 'translate(-50%, -50%) scale(0.9)';
+                        pressTimer = null;
+                    }
+                }, 300);
+                window.addEventListener('mousemove', onBtnMove);
+                window.addEventListener('touchmove', onBtnMove, { passive: false });
+                window.addEventListener('mouseup', onBtnEnd);
+                window.addEventListener('touchend', onBtnEnd);
             };
             closeBtn.addEventListener('mousedown', onBtnStart);
             closeBtn.addEventListener('touchstart', onBtnStart, { passive: false });
-            closeBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!isDraggingResize) {
-                    toggleSidebar();
-                }
-                isDraggingResize = false;
-            });
         }
     }
     
@@ -2268,6 +2401,50 @@
     }
     
     function addLog(message, isError = false) { console.log(message); if (isError) showToast(`⚠️ ${message.substring(0, 80)}`); }
+    
+    // ========== LONG PRESS ON GEAR TO TOGGLE SIDEBAR ==========
+    function initGearLongPress() {
+        const gear = document.getElementById('minimizedTrigger');
+        if (!gear) return;
+        let pressTimer = null;
+        let hasMoved = false;
+        
+        const cancelTimer = () => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+        };
+        
+        const onStart = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            hasMoved = false;
+            pressTimer = setTimeout(() => {
+                // Long press: toggle the right sidebar (vocab list)
+                toggleSidebar();
+                showToast("📚 Sidebar toggled");
+                pressTimer = null;
+            }, 800); // 0.8 seconds hold
+        };
+        
+        const onMove = () => {
+            hasMoved = true;
+            cancelTimer();
+        };
+        
+        const onEnd = () => {
+            cancelTimer();
+            hasMoved = false;
+        };
+        
+        gear.addEventListener('mousedown', onStart);
+        gear.addEventListener('touchstart', onStart, { passive: false });
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('touchmove', onMove, { passive: false });
+        window.addEventListener('mouseup', onEnd);
+        window.addEventListener('touchend', onEnd);
+    }
     
     // ========== INITIALIZATION ==========
     async function initializeSheet() { currentSheetId = DEFAULT_SHEET_ID; currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`; await loadSheetData(); }
@@ -2305,7 +2482,7 @@
         loadSettings(); 
         const savedList = localStorage.getItem('vocabMaster_List'); 
         if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) { if (appMode === 'random') pickRandom(); else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } } }
-        initNightMode(); applyStyles(); initGearDrag(); setupQRPopup(); setupBackgroundClick(); initChineseDrag(); initKhmerDrag(); loadAllDragPositions(); initFloatingMenuDrag(); initSidebarResizer(); initSwipeNavigation();
+        initNightMode(); applyStyles(); initGearDrag(); setupQRPopup(); setupBackgroundClick(); initChineseDrag(); initKhmerDrag(); loadAllDragPositions(); initFloatingMenuDrag(); initSidebarResizer(); initSwipeNavigation(); initGearLongPress();
         await initializeSheet();
         const gearIcon = document.getElementById('minimizedTrigger');
         if (gearIcon) { gearIcon.addEventListener('click', (e) => e.stopPropagation()); gearIcon.addEventListener('touchstart', (e) => e.stopPropagation()); gearIcon.addEventListener('mousedown', (e) => e.stopPropagation()); }
