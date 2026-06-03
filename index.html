@@ -744,6 +744,38 @@
             transform: scale(1.05);
         }
         body.night-mode .search-clear-btn { color: #94a3b8; }
+        
+        /* Search results dropdown (like choiceSearchResults) */
+        .sidebar-search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            margin-top: 8px;
+            border: 1px solid var(--border);
+            display: none;
+        }
+        .sidebar-search-results .result-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-search-results .result-item:last-child { border-bottom: none; }
+        .sidebar-search-results .result-item:hover { background: var(--accent); color: white; }
+        .sidebar-search-results .result-item .result-chinese { font-weight: bold; }
+        .sidebar-search-results .result-item .result-khmer { font-size: 0.8rem; opacity: 0.8; }
+        body.night-mode .sidebar-search-results { background: #1e293b; color: white; }
+        body.night-mode .sidebar-search-results .result-item { border-color: #334155; }
+        
         .mode-icons-container {
             display: flex;
             gap: 12px;
@@ -971,6 +1003,80 @@
         .delete-group-btn { margin-top: 16px; }
         .delete-group-btn button { background: #dc2626; color: white; padding: 16px 12px; font-size: 1.2rem; font-weight: bold; border-radius: 60px; transition: all 0.2s; cursor: pointer; border: none; width: 100%; }
         .delete-group-btn button:hover { background: #b91c1c; transform: scale(0.98); }
+        
+        /* === ADDITIONAL MODERN CHOICE MODAL STYLES (appended as requested) === */
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+        }
+        .choice-modal {
+            background: transparent !important;
+            border-radius: 32px;
+            padding: 30px;
+            text-align: center;
+            max-width: 90vw;
+            width: 500px;
+            animation: fadeIn 0.2s ease;
+        }
+        .choice-modal h3 {
+            color: white;
+            margin-bottom: 24px;
+            font-size: 1.6rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 12px 24px;
+            border-radius: 60px;
+            backdrop-filter: blur(4px);
+        }
+        .choice-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .choice-item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 60px;
+            padding: 6px 12px 6px 20px;
+            backdrop-filter: blur(8px);
+        }
+        .choice-item-row button {
+            margin: 0;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+        }
+        .reset-icon {
+            background: transparent !important;
+            font-size: 1.2rem;
+            padding: 8px;
+            width: auto;
+        }
+        .edit-group-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        .edit-group-buttons button {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+        }
+        .choice-cancel {
+            background: #475569;
+            color: white;
+            border: none;
+            margin-top: 12px;
+            padding: 12px 20px;
+            border-radius: 40px;
+        }
     </style>
 </head>
 <body>
@@ -1139,7 +1245,7 @@
     let dynamicPassword = "012891556";
     let editUnlocked = false;
     let activePasswordModal = null;
-    let searchTerm = "";  // changed from headerSearchTerm
+    let searchTerm = "";
     
     // ========== GLOBAL COPY SYSTEM ==========
     let copyLocked = false;
@@ -1294,10 +1400,10 @@
                 popupMessageSpan.innerText = "📋 Ready to copy";
                 copyBtn.innerText = "Copy";
             }
-        }, 2000);
+        }, 1200);
     }
     
-    // ========== PASSWORD PROTECTION ==========
+    // ========== PASSWORD PROTECTION (FIXED CLOSE) ==========
     function showPasswordModal(callback) {
         if (activePasswordModal) return;
         const modalDiv = document.createElement('div');
@@ -1317,12 +1423,14 @@
         const input = modalDiv.querySelector('#passwordInput');
         const unlockBtn = modalDiv.querySelector('#unlockBtn');
         const closeBtn = modalDiv.querySelector('#closePasswordBtn');
-        const closeModal = () => { 
-            if (activePasswordModal) { 
-                activePasswordModal.remove(); 
-                activePasswordModal = null; 
-            } 
+        
+        const closeModal = () => {
+            if (activePasswordModal) {
+                activePasswordModal.remove();
+                activePasswordModal = null;
+            }
         };
+        
         unlockBtn.onclick = () => {
             if (input.value === dynamicPassword) {
                 editUnlocked = true;
@@ -1336,18 +1444,24 @@
                 input.focus();
             }
         };
-        closeBtn.onclick = (e) => { 
-            e.stopPropagation();   
-            closeModal(); 
-            if (callback) callback(false); 
+        
+        closeBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeModal();
+            if (callback) callback(false);
         };
-        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') unlockBtn.click(); });
+        
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') unlockBtn.click();
+        });
         input.focus();
-        modalDiv.addEventListener('click', (e) => { 
-            if (e.target === modalDiv) { 
-                closeModal(); 
-                if (callback) callback(false); 
-            } 
+        
+        modalDiv.addEventListener('click', (e) => {
+            if (e.target === modalDiv) {
+                closeModal();
+                if (callback) callback(false);
+            }
         });
     }
     
@@ -1417,12 +1531,10 @@
             if (khmerColIndex === -1 && columnNames.length > 3) khmerColIndex = 3;
             if (chineseColIndex === -1 && columnNames.length > 4) chineseColIndex = 4;
             const newVocabList = [];
-            // Header row (row1) becomes display #2, sheetRow = 2
             const headerValues = Object.values(headerRow);
             let headerKhmer = (khmerColIndex !== -1 && headerValues.length > khmerColIndex) ? (headerValues[khmerColIndex] || '') : '';
             let headerChinese = (chineseColIndex !== -1 && headerValues.length > chineseColIndex) ? (headerValues[chineseColIndex] || '') : '';
             newVocabList.push({ khmer: headerKhmer.toString().trim(), chinese: headerChinese.toString().trim(), sheetRow: 2 });
-            // Data rows (sheet rows 2,3,4...) become display #3, #4, #5... sheetRow = i+2
             for (let i = 1; i < data.length; i++) {
                 const row = data[i];
                 const rowValues = Object.values(row);
@@ -1571,7 +1683,6 @@
             const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; if (idx !== -1) { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); } else if (vocabList.length) pickRandom(); 
         } 
         saveAllData(); 
-        // Update mode icons in header
         const randomIcon = document.getElementById('modeRandomIconHeader');
         const normalIcon = document.getElementById('modeNormalIconHeader');
         if (randomIcon && normalIcon) {
@@ -1621,9 +1732,10 @@
         const headerDiv = document.createElement('div');
         headerDiv.className = 'vocab-header';
         headerDiv.innerHTML = `
-            <div class="choice-search-area">
+            <div class="choice-search-area" style="position: relative;">
                 <input type="text" id="choiceSearchInput" placeholder="🔍 Search vocabulary..." value="${escapeHtml(oldSearchValue)}">
                 <button class="search-clear-btn" id="searchClearBtn" title="Clear search">✕</button>
+                <div class="sidebar-search-results" id="sidebarSearchResults"></div>
             </div>
             <div class="mode-icons-container" id="modeIconsContainer"></div>
             <div id="paginationContainer"></div>
@@ -1632,15 +1744,195 @@
         
         const searchInput = headerDiv.querySelector('#choiceSearchInput');
         const clearBtn = headerDiv.querySelector('#searchClearBtn');
+        const resultsContainer = headerDiv.querySelector('#sidebarSearchResults');
         currentSearchInputElement = searchInput;
         
-        // Clear button handler
+        // Update search results dropdown
+        const updateSearchResults = () => {
+            const term = searchInput.value.trim().toLowerCase();
+            if (!term) {
+                resultsContainer.style.display = 'none';
+                resultsContainer.innerHTML = '';
+                return;
+            }
+            const filtered = vocabList.filter(item => item.chinese.toLowerCase().includes(term) || item.khmer.toLowerCase().includes(term)).slice(0, 10);
+            if (filtered.length === 0) {
+                resultsContainer.innerHTML = '<div class="result-item" style="opacity:0.7;">No matches</div>';
+                resultsContainer.style.display = 'block';
+                return;
+            }
+            resultsContainer.innerHTML = filtered.map(item => {
+                const idx = vocabList.findIndex(v => v === item);
+                return `<div class="result-item" data-index="${idx}">
+                    <div class="result-chinese">${escapeHtml(item.chinese)}</div>
+                    <div class="result-khmer">${escapeHtml(item.khmer)}</div>
+                </div>`;
+            }).join('');
+            resultsContainer.style.display = 'block';
+            
+            resultsContainer.querySelectorAll('.result-item').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(el.dataset.index);
+                    if (!isNaN(idx) && vocabList[idx]) {
+                        loadWordByMode(idx, true);
+                        searchInput.value = '';
+                        resultsContainer.style.display = 'none';
+                        searchTerm = '';
+                        if (appMode === 'normal') {
+                            normalCurrentPage = 0;
+                            normalCurrentIdx = idx;
+                            renderNormalSidebar();
+                        } else {
+                            renderRandomSidebar(idx);
+                        }
+                        blurSearchInput();
+                    }
+                });
+            });
+        };
+        
+        const hideResults = () => {
+            setTimeout(() => {
+                resultsContainer.style.display = 'none';
+            }, 200);
+        };
+        
+        // MAIN SEARCH HANDLER with proper debounce and IME support
+        let searchInputTimer = null;
+        
+        const performDelayedSearch = () => {
+            if (searchInputTimer) clearTimeout(searchInputTimer);
+            searchInputTimer = setTimeout(() => {
+                const currentValue = searchInput.value;
+                searchTerm = currentValue;
+                
+                if (appMode === 'normal') {
+                    normalCurrentPage = 0;
+                    normalCurrentIdx = 0;
+                    renderNormalSidebar();
+                } else {
+                    if (searchTerm.trim() === "") {
+                        if (previousWordBeforeSearch !== null && vocabList[previousWordBeforeSearch]) {
+                            loadWordByMode(previousWordBeforeSearch, true);
+                            previousWordBeforeSearch = null;
+                        } else if (sidebarIndices.length && sidebarIndices[sidebarFocusIdx] !== undefined) {
+                            renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
+                        } else if (vocabList.length) {
+                            pickRandom();
+                        } else {
+                            renderSidebarUI(true);
+                        }
+                    } else {
+                        const filtered = filterVocabBySearch(vocabList);
+                        const filteredIndices = filtered.map(item => vocabList.findIndex(v => v === item));
+                        if (filteredIndices.length) {
+                            sidebarIndices = filteredIndices;
+                            sidebarFocusIdx = 0;
+                            renderSidebarUI(true);
+                            if (sidebarIndices.length > 0) {
+                                const firstIdx = sidebarIndices[0];
+                                loadWordByMode(firstIdx, true);
+                            }
+                        } else {
+                            sidebarIndices = [];
+                            renderSidebarUI(true);
+                            updateChineseDisplay("");
+                            document.getElementById('khmerWord').innerText = "";
+                        }
+                    }
+                }
+                searchInputTimer = null;
+            }, 300); // 300ms debounce delay
+        };
+        
+        const storeOriginalWord = () => {
+            if (previousWordBeforeSearch === null && sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
+                previousWordBeforeSearch = sidebarIndices[sidebarFocusIdx];
+            }
+        };
+        
+        searchInput.addEventListener('compositionstart', () => {
+            isComposing = true;
+            if (searchInputTimer) clearTimeout(searchInputTimer);
+        });
+        
+        searchInput.addEventListener('compositionend', () => {
+            isComposing = false;
+            // After IME composition ends, perform search with current value
+            if (searchInputTimer) clearTimeout(searchInputTimer);
+            searchInputTimer = setTimeout(() => {
+                const currentValue = searchInput.value;
+                if (previousWordBeforeSearch === null && searchTerm === "" && currentValue !== "") {
+                    storeOriginalWord();
+                }
+                searchTerm = currentValue;
+                
+                if (appMode === 'normal') {
+                    normalCurrentPage = 0;
+                    normalCurrentIdx = 0;
+                    renderNormalSidebar();
+                } else {
+                    if (searchTerm.trim() === "") {
+                        if (previousWordBeforeSearch !== null && vocabList[previousWordBeforeSearch]) {
+                            loadWordByMode(previousWordBeforeSearch, true);
+                            previousWordBeforeSearch = null;
+                        } else if (sidebarIndices.length && sidebarIndices[sidebarFocusIdx] !== undefined) {
+                            renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
+                        } else if (vocabList.length) {
+                            pickRandom();
+                        } else {
+                            renderSidebarUI(true);
+                        }
+                    } else {
+                        const filtered = filterVocabBySearch(vocabList);
+                        const filteredIndices = filtered.map(item => vocabList.findIndex(v => v === item));
+                        if (filteredIndices.length) {
+                            sidebarIndices = filteredIndices;
+                            sidebarFocusIdx = 0;
+                            renderSidebarUI(true);
+                            if (sidebarIndices.length > 0) {
+                                const firstIdx = sidebarIndices[0];
+                                loadWordByMode(firstIdx, true);
+                            }
+                        } else {
+                            sidebarIndices = [];
+                            renderSidebarUI(true);
+                            updateChineseDisplay("");
+                            document.getElementById('khmerWord').innerText = "";
+                        }
+                    }
+                }
+                searchInputTimer = null;
+            }, 300);
+        });
+        
+        searchInput.addEventListener('input', (e) => {
+            // Update dropdown results immediately (no delay for visual feedback)
+            updateSearchResults();
+            
+            // For the actual list filtering, wait for composition to end or use debounce
+            if (!isComposing) {
+                const currentValue = e.target.value;
+                if (previousWordBeforeSearch === null && searchTerm === "" && currentValue !== "") {
+                    storeOriginalWord();
+                }
+                performDelayedSearch();
+            }
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!resultsContainer.contains(e.target) && e.target !== searchInput) {
+                resultsContainer.style.display = 'none';
+            }
+        });
+        
         clearBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             searchInput.value = '';
             searchTerm = '';
-            // Restore previous word
+            resultsContainer.style.display = 'none';
             if (previousWordBeforeSearch !== null && vocabList[previousWordBeforeSearch]) {
                 loadWordByMode(previousWordBeforeSearch, true);
                 previousWordBeforeSearch = null;
@@ -1658,88 +1950,6 @@
             searchInput.focus();
             searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
         });
-        
-        const storeOriginalWord = () => {
-            if (previousWordBeforeSearch === null && sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
-                previousWordBeforeSearch = sidebarIndices[sidebarFocusIdx];
-            }
-        };
-        
-        searchInput.addEventListener('compositionstart', () => {
-            isComposing = true;
-            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
-        });
-        searchInput.addEventListener('compositionend', () => {
-            isComposing = false;
-            const currentValue = searchInput.value;
-            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
-            searchDebounceTimer = setTimeout(() => { 
-                performSearch(currentValue);
-                searchDebounceTimer = null; 
-            }, 200);
-        });
-        
-        const performSearch = (currentValue) => {
-            searchTerm = currentValue; 
-            if (appMode === 'normal') { 
-                normalCurrentPage = 0; 
-                normalCurrentIdx = 0; 
-                renderNormalSidebar(); 
-            } else { 
-                if (searchTerm.trim() === "") {
-                    if (previousWordBeforeSearch !== null && vocabList[previousWordBeforeSearch]) {
-                        loadWordByMode(previousWordBeforeSearch, true);
-                        previousWordBeforeSearch = null;
-                    } else if (sidebarIndices.length && sidebarIndices[sidebarFocusIdx] !== undefined) {
-                        renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
-                    } else if (vocabList.length) {
-                        pickRandom();
-                    } else {
-                        renderSidebarUI(true);
-                    }
-                } else {
-                    const filtered = filterVocabBySearch(vocabList);
-                    const filteredIndices = filtered.map(item => vocabList.findIndex(v => v === item));
-                    if (filteredIndices.length) {
-                        sidebarIndices = filteredIndices;
-                        sidebarFocusIdx = 0;
-                        renderSidebarUI(true);
-                        if (sidebarIndices.length > 0) {
-                            const firstIdx = sidebarIndices[0];
-                            loadWordByMode(firstIdx, true);
-                        }
-                    } else {
-                        sidebarIndices = [];
-                        renderSidebarUI(true);
-                        updateChineseDisplay("");
-                        document.getElementById('khmerWord').innerText = "";
-                    }
-                }
-            } 
-            const newInput = document.getElementById('choiceSearchInput');
-            if (newInput) {
-                newInput.value = searchTerm;
-                if (document.activeElement === newInput) {
-                    newInput.setSelectionRange(newInput.value.length, newInput.value.length);
-                }
-            }
-        };
-        
-        const handleSearchInput = (e) => {
-            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
-            const currentValue = e.target.value;
-            if (previousWordBeforeSearch === null && searchTerm === "" && currentValue !== "") {
-                storeOriginalWord();
-            }
-            if (isComposing) {
-                return;
-            }
-            searchDebounceTimer = setTimeout(() => { 
-                performSearch(currentValue);
-                searchDebounceTimer = null; 
-            }, 200);
-        };
-        searchInput.addEventListener('input', handleSearchInput);
         
         if (preserveFocus && oldSearchValue === searchTerm) {
             setTimeout(() => { 
@@ -1792,7 +2002,6 @@
             const prevBtn = document.getElementById('prevPageBtnSide');
             const nextBtn = document.getElementById('nextPageBtnSide');
             
-            // Hold to go to first/last word (500ms)
             let prevHoldTimer = null, nextHoldTimer = null;
             let prevHoldTriggered = false, nextHoldTriggered = false;
             
@@ -1926,6 +2135,9 @@
                 const success = await deleteVocabByRow(sheetRowNumber);
                 if (success) {
                     const deletedIdx = displayRowIdx;
+                    const currentSidebarList = [...sidebarIndices];
+                    const currentFocusIdx = sidebarFocusIdx;
+                    
                     vocabList.splice(deletedIdx, 1);
                     saveAllData();
                     
@@ -1936,19 +2148,35 @@
                         document.getElementById('khmerWord').innerText = "";
                         showToast("All vocabulary deleted");
                     } else {
-                        // Find appropriate next word
-                        let newIdx = deletedIdx;
-                        if (newIdx >= vocabList.length) newIdx = vocabList.length - 1;
-                        if (newIdx < 0 && vocabList.length > 0) newIdx = 0;
+                        let newWordIdx = -1;
+                        if (currentSidebarList.length > 0) {
+                            const posInSidebar = currentSidebarList.indexOf(deletedIdx);
+                            if (posInSidebar !== -1) {
+                                if (posInSidebar + 1 < currentSidebarList.length) {
+                                    let nextCandidate = currentSidebarList[posInSidebar + 1];
+                                    if (nextCandidate > deletedIdx) nextCandidate--;
+                                    if (nextCandidate >= 0 && nextCandidate < vocabList.length) newWordIdx = nextCandidate;
+                                }
+                                if (newWordIdx === -1 && posInSidebar - 1 >= 0) {
+                                    let prevCandidate = currentSidebarList[posInSidebar - 1];
+                                    if (prevCandidate > deletedIdx) prevCandidate--;
+                                    if (prevCandidate >= 0 && prevCandidate < vocabList.length) newWordIdx = prevCandidate;
+                                }
+                            }
+                        }
+                        if (newWordIdx === -1 && vocabList.length > 0) newWordIdx = 0;
+                        
                         if (appMode === 'normal') {
-                            normalCurrentIdx = newIdx;
-                            normalCurrentPage = getNormalPageForIndex(newIdx);
+                            normalCurrentIdx = newWordIdx;
+                            normalCurrentPage = getNormalPageForIndex(newWordIdx);
                             renderNormalSidebar();
                         } else {
-                            if (newIdx >= 0 && vocabList[newIdx]) {
-                                history = [newIdx];
+                            if (newWordIdx >= 0 && vocabList[newWordIdx]) {
+                                history = [newWordIdx];
                                 historyIndex = 0;
-                                renderRandomSidebar(newIdx);
+                                renderRandomSidebar(newWordIdx);
+                            } else if (vocabList.length) {
+                                pickRandom();
                             } else {
                                 renderSidebarUI();
                                 updateChineseDisplay("");
@@ -2166,7 +2394,7 @@
     function shrinkChineseToFit() { const element = document.getElementById('chineseWord'); if (!element) return; const parentRect = document.getElementById('displayArea').getBoundingClientRect(); const maxWidth = parentRect.width * 0.85; if (maxWidth <= 0) return; const originalTransform = element.style.transform; const originalPosition = element.style.position; const originalLeft = element.style.left; const originalTop = element.style.top; element.style.position = 'absolute'; element.style.left = '0'; element.style.top = '0'; element.style.transform = 'none'; element.style.fontSize = userSetChineseFontSize + 'vh'; void element.offsetHeight; let finalSize = userSetChineseFontSize; if (element.scrollWidth > maxWidth) { let low = 2, high = userSetChineseFontSize, bestSize = low; for (let i = 0; i < 12; i++) { if (low > high) break; const mid = (low + high) / 2; element.style.fontSize = mid + 'vh'; void element.offsetHeight; if (element.scrollWidth <= maxWidth) { bestSize = mid; low = mid + 0.5; } else high = mid - 0.5; } finalSize = bestSize; } element.style.fontSize = finalSize + 'vh'; element.style.position = originalPosition || 'absolute'; element.style.left = originalLeft || chineseX + '%'; element.style.top = originalTop || chineseY + '%'; element.style.transform = originalTransform || 'translate(-50%, -50%)'; document.getElementById('mZhSizeVal').innerText = Math.round(finalSize) + 'vh'; const chineseText = element.getAttribute('data-plain') || ''; const charCount = chineseText.length; let targetScale = 1.0; if (charCount >= 14) targetScale = 0.10; else if (charCount >= 11) targetScale = 0.15; else if (charCount >= 8) targetScale = 0.20; else if (charCount >= 6) targetScale = 0.30; else if (charCount >= 5) targetScale = 0.40; else if (charCount >= 4) targetScale = 0.60; else if (charCount >= 3) targetScale = 0.80; else targetScale = 1.0; const appliedSize = Math.max(10, Math.min(120, Math.round(userSetPinyinFontSize * targetScale))); const pinyinFont = document.getElementById('pinyinFont').value; const pinyinColor = document.getElementById('pinyinColor').value; const isPinyinBold = document.getElementById('pinyinBold').classList.contains('active'); document.querySelectorAll('.pinyin-top').forEach(el => { if(pinyinFont !== 'inherit') el.style.fontFamily = pinyinFont; el.style.color = pinyinColor; el.style.fontWeight = isPinyinBold ? 'bold' : 'normal'; el.style.fontSize = appliedSize + 'px'; }); applyBottomAutoScale(); }
     function shrinkKhmerToFit() { const element = document.getElementById('khmerWord'); if (!element) return; const parentRect = document.getElementById('displayArea').getBoundingClientRect(); const maxWidth = parentRect.width * 0.85; if (maxWidth <= 0) return; const originalTransform = element.style.transform; const originalPosition = element.style.position; const originalLeft = element.style.left; const originalTop = element.style.top; element.style.position = 'absolute'; element.style.left = '0'; element.style.top = '0'; element.style.transform = 'none'; element.style.fontSize = userSetKhmerFontSize + 'vh'; void element.offsetHeight; let finalSize = userSetKhmerFontSize; if (element.scrollWidth > maxWidth) { let low = 2, high = userSetKhmerFontSize, bestSize = low; for (let i = 0; i < 12; i++) { if (low > high) break; const mid = (low + high) / 2; element.style.fontSize = mid + 'vh'; void element.offsetHeight; if (element.scrollWidth <= maxWidth) { bestSize = mid; low = mid + 0.5; } else high = mid - 0.5; } finalSize = bestSize; } element.style.fontSize = finalSize + 'vh'; element.style.position = originalPosition || 'absolute'; element.style.left = originalLeft || khmerX + '%'; element.style.top = originalTop || khmerY + '%'; element.style.transform = originalTransform || 'translate(-50%, -50%)'; document.getElementById('mKmSizeVal').innerText = Math.round(finalSize) + 'vh'; }
     function forceShrink() { setTimeout(() => { shrinkChineseToFit(); shrinkKhmerToFit(); }, 50); }
-    let topPinyinVisible = true, bottomCharVisible = false;
+    let topPinyinVisible = true, bottomCharVisible = true;
     function updateChineseDisplay(text) { const container = document.getElementById('chineseWord'); if (!container) return; container.innerHTML = getTripleHTML(text); container.setAttribute('data-plain', text); applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyLayerTransforms(); applyTextVisibility(); forceShrink(); applyBottomAutoScale(); }
     function applyTextVisibility() { const container = document.getElementById('chineseWord'); if (!container) return; container.querySelectorAll('.pinyin-top').forEach(el => el.style.display = topPinyinVisible ? '' : 'none'); container.querySelectorAll('.chinese-bottom').forEach(el => el.style.display = bottomCharVisible ? '' : 'none'); }
     function applyChineseMainStyle() { const container = document.getElementById('chineseWord'); if (!container) return; const mainFont = document.getElementById('mZhFont').value; const mainColor = document.getElementById('mZhColor').value; const isBold = document.getElementById('mZhBold').classList.contains('active'); const newSize = parseFloat(document.getElementById('mZhSize').value); userSetChineseFontSize = newSize; container.style.fontSize = userSetChineseFontSize + 'vh'; container.querySelectorAll('.chinese-main').forEach(el => { el.style.fontFamily = mainFont; el.style.color = mainColor; el.style.fontWeight = isBold ? 'bold' : '500'; }); document.getElementById('mZhSizeVal').innerText = userSetChineseFontSize + 'vh'; applyShadow(); forceShrink(); }
@@ -2182,11 +2410,11 @@
     function applyStyles() { const mKm = document.getElementById('khmerWord'); if(mKm){ mKm.style.fontFamily = document.getElementById('mKmFont').value; mKm.style.color = document.getElementById('mKmColor').value; mKm.style.fontWeight = document.getElementById('mKmBold').classList.contains('active') ? 'bold' : '500'; } applySidebarStyles(); document.getElementById('delayVal').innerText = document.getElementById('autoDelay').value+'s'; document.getElementById('repVal').innerText = document.getElementById('zhReps').value; document.getElementById('kmRepVal').innerText = document.getElementById('kmReps').value; applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyShadow(); saveAllData(); forceShrink(); }
     function applyShadow() { const shadowValue = document.getElementById('shadowSlider').value; const percent = Math.round(shadowValue); document.getElementById('shadowVal').innerText = percent + '%'; const shadowBlur = percent * 0.4; const shadowOffset = percent * 0.2; const shadowOpacity = Math.min(0.5, percent / 40); const shadowStyle = `${shadowOffset}px ${shadowOffset}px ${shadowBlur}px rgba(0,0,0,${shadowOpacity})`; document.querySelectorAll('.chinese-main').forEach(el => el.style.textShadow = shadowStyle); const khmerElementW = document.getElementById('khmerWord'); if (khmerElementW) khmerElementW.style.textShadow = shadowStyle; saveAllData(); }
     function saveAllData() { const settings = { mZhSize: userSetChineseFontSize, mKmSize: userSetKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: userSetBottomFontSize, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage, shadow: document.getElementById('shadowSlider').value }; localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList)); localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings)); }
-    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings){ const s = JSON.parse(savedSettings); userSetChineseFontSize = s.mZhSize || 42; userSetKhmerFontSize = s.mKmSize || 42; document.getElementById('mZhSize').value = userSetChineseFontSize; document.getElementById('mKmSize').value = userSetKhmerFontSize; document.getElementById('mZhColor').value = s.mZhColor || "#ffffff"; document.getElementById('mKmColor').value = s.mKmColor || "#ffffff"; document.getElementById('zhReps').value = s.zhReps || 1; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor || "#ffffff"; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor || "#ffffff"; document.getElementById('sVocabSpacing').value = s.vocabSpacing || 8; document.body.style.setProperty('--vocab-spacing', (s.vocabSpacing || 8) + 'px'); document.getElementById('vocabSpacingVal').innerText = (s.vocabSpacing || 8) + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.pinyinFont) document.getElementById('pinyinFont').value = s.pinyinFont; if(s.pinyinColor) document.getElementById('pinyinColor').value = s.pinyinColor || "#ffffff"; if(s.pinyinBold !== undefined) { const btn = document.getElementById('pinyinBold'); if(s.pinyinBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.pinyinSizePx) { document.getElementById('pinyinSizePx').value = s.pinyinSizePx; userSetPinyinFontSize = parseInt(s.pinyinSizePx); } if(s.pinyinSpacing) document.getElementById('pinyinSpacing').value = s.pinyinSpacing; if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont; if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor || "#ffffff"; if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomFontSize = parseInt(s.bottomSizePx); } if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible; if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible; if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; } normalCurrentIdx = s.normalCurrentIdx || 0; normalCurrentPage = s.normalCurrentPage || 0; sidebarVisible = s.sidebarVisible !== undefined ? s.sidebarVisible : false; if(!sidebarVisible) { document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; } } else { document.getElementById('pinyinFont').value = "'Baguette Simplified'"; document.getElementById('pinyinColor').value = "#ffffff"; document.getElementById('pinyinSizePx').value = "55"; userSetPinyinFontSize = 55; document.getElementById('pinyinSpacing').value = "0"; document.getElementById('bottomSizePx').value = "55"; userSetBottomFontSize = 55; document.getElementById('mKmColor').value = "#ffffff"; document.getElementById('bottomCharColor').value = "#ffffff"; document.getElementById('shadowSlider').value = "3"; sidebarVisible = false; document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; applyPinyinStyles(); applyBottomStyles(); } applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility(); setKhmerFontSize(userSetKhmerFontSize); applyShadow(); applyBottomAutoScale(); }
+    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings){ const s = JSON.parse(savedSettings); userSetChineseFontSize = s.mZhSize || 42; userSetKhmerFontSize = s.mKmSize || 42; document.getElementById('mZhSize').value = userSetChineseFontSize; document.getElementById('mKmSize').value = userSetKhmerFontSize; document.getElementById('mZhColor').value = s.mZhColor || "#ffffff"; document.getElementById('mKmColor').value = s.mKmColor || "#ffffff"; document.getElementById('zhReps').value = s.zhReps || 1; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor || "#ffffff"; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor || "#ffffff"; document.getElementById('sVocabSpacing').value = s.vocabSpacing || 8; document.body.style.setProperty('--vocab-spacing', (s.vocabSpacing || 8) + 'px'); document.getElementById('vocabSpacingVal').innerText = (s.vocabSpacing || 8) + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.pinyinFont) document.getElementById('pinyinFont').value = s.pinyinFont; if(s.pinyinColor) document.getElementById('pinyinColor').value = s.pinyinColor || "#ffffff"; if(s.pinyinBold !== undefined) { const btn = document.getElementById('pinyinBold'); if(s.pinyinBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.pinyinSizePx) { document.getElementById('pinyinSizePx').value = s.pinyinSizePx; userSetPinyinFontSize = parseInt(s.pinyinSizePx); } if(s.pinyinSpacing) document.getElementById('pinyinSpacing').value = s.pinyinSpacing; if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont; if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor || "#ffffff"; if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomFontSize = parseInt(s.bottomSizePx); } if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible; if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible; else bottomCharVisible = true;
+            if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; } normalCurrentIdx = s.normalCurrentIdx || 0; normalCurrentPage = s.normalCurrentPage || 0; sidebarVisible = s.sidebarVisible !== undefined ? s.sidebarVisible : false; if(!sidebarVisible) { document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; } } else { document.getElementById('pinyinFont').value = "'Baguette Simplified'"; document.getElementById('pinyinColor').value = "#ffffff"; document.getElementById('pinyinSizePx').value = "55"; userSetPinyinFontSize = 55; document.getElementById('pinyinSpacing').value = "0"; document.getElementById('bottomSizePx').value = "55"; userSetBottomFontSize = 55; document.getElementById('mKmColor').value = "#ffffff"; document.getElementById('bottomCharColor').value = "#ffffff"; document.getElementById('shadowSlider').value = "3"; sidebarVisible = false; document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; bottomCharVisible = true; applyPinyinStyles(); applyBottomStyles(); } applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility(); setKhmerFontSize(userSetKhmerFontSize); applyShadow(); applyBottomAutoScale(); }
     function toggleBold(btnId, applyCallback) { const btn = document.getElementById(btnId); if (btn) { btn.classList.toggle('active'); if (applyCallback && typeof applyCallback === 'function') { applyCallback(); } else { applyStyles(); } } }
     function switchTab(tab) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active'); document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab))); if (tab === 'side' && !sidebarVisible) { toggleSidebar(); } }
     
-    // Mouse wheel on background: up = next, down = previous
     function setupBackgroundClick() { 
         const bgArea = document.getElementById('bgClickArea');
         bgArea.addEventListener('click', function(e) { 
@@ -2208,17 +2436,14 @@
             }
             blurSearchInput();
         }, { passive: false });
-        // Mouse wheel on background: up = next word, down = previous word
         bgArea.addEventListener('wheel', function(e) {
             if (e.ctrlKey) return;
             if (e.deltaY < 0) {
                 e.preventDefault();
-                // Up scroll = next word
                 if (appMode === 'random') historyNext();
                 else goNextNormal();
             } else if (e.deltaY > 0) {
                 e.preventDefault();
-                // Down scroll = previous word
                 if (appMode === 'random') historyPrev();
                 else goPrevNormal();
             }
@@ -2226,7 +2451,6 @@
         }, { passive: false });
     }
     
-    // Ctrl + Mouse Wheel in sidebar to move selection
     function setupSidebarWheelNavigation() {
         const sidebarList = document.getElementById('sidebarList');
         if (sidebarList) {
@@ -2266,7 +2490,6 @@
     function resetKhmerPosition() { khmerX = 50; khmerY = 70; if (khmerElement) { khmerElement.style.left = '50%'; khmerElement.style.top = '70%'; } saveAllDragPositions(); forceShrink(); }
     function resetLayerOffsets() { topLayerX = 0; topLayerY = 0; bottomLayerX = 0; bottomLayerY = 0; applyLayerTransforms(); saveAllDragPositions(); showToast("Both layers reset"); }
     
-    // Hold durations: Chinese 500ms, Khmer 500ms
     function onChinesePointerDown(e) { 
         e.preventDefault(); e.stopPropagation(); 
         const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); 
@@ -2288,7 +2511,7 @@
                 else if (choice === 'bottom') startLayerDrag('bottom', pressStartX, pressStartY); 
             } 
             longPressTimer = null; 
-        }, 500); // 500ms for Chinese word
+        }, 500);
         window.addEventListener('mousemove', onPressMove); 
         window.addEventListener('touchmove', onPressMove); 
         window.addEventListener('mouseup', onPressEnd); 
@@ -2313,7 +2536,7 @@
                 } 
             } 
             onUp(); 
-        }, 500); // 500ms for Khmer word
+        }, 500);
         window.addEventListener('mousemove', onMove); 
         window.addEventListener('touchmove', onMove); 
         window.addEventListener('mouseup', onUp); 
@@ -2419,10 +2642,8 @@
         khmerElement.addEventListener('touchstart', onKhmerPointerDown, { passive: false }); 
     }
     
-    // ========== FLOATING MENU DRAG ==========
     function initFloatingMenuDrag() { const dragHandle = document.getElementById('dragHandle'); const floatingMenu = document.getElementById('floatingMenu'); if (!dragHandle || !floatingMenu) return; let isDraggingMenu = false; let startX = 0, startY = 0; let startLeft = 0, startTop = 0; const onStart = (e) => { e.preventDefault(); e.stopPropagation(); isDraggingMenu = true; const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); startX = clientX; startY = clientY; const rect = floatingMenu.getBoundingClientRect(); startLeft = rect.left; startTop = rect.top; floatingMenu.style.transition = 'none'; }; const onMove = (e) => { if (!isDraggingMenu) return; e.preventDefault(); const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0); const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); let newLeft = startLeft + (clientX - startX); let newTop = startTop + (clientY - startY); newLeft = Math.max(0, Math.min(window.innerWidth - floatingMenu.offsetWidth, newLeft)); newTop = Math.max(0, Math.min(window.innerHeight - floatingMenu.offsetHeight, newTop)); floatingMenu.style.left = newLeft + 'px'; floatingMenu.style.top = newTop + 'px'; floatingMenu.style.right = 'auto'; floatingMenu.style.bottom = 'auto'; }; const onEnd = () => { if (!isDraggingMenu) return; isDraggingMenu = false; floatingMenu.style.transition = ''; const left = parseFloat(floatingMenu.style.left); const top = parseFloat(floatingMenu.style.top); if (!isNaN(left) && !isNaN(top)) { localStorage.setItem('floatingMenuLeft', left); localStorage.setItem('floatingMenuTop', top); } }; const applyStoredPosition = () => { const savedLeft = localStorage.getItem('floatingMenuLeft'); const savedTop = localStorage.getItem('floatingMenuTop'); if (savedLeft !== null && savedTop !== null) { const left = Math.max(0, Math.min(window.innerWidth - floatingMenu.offsetWidth, parseFloat(savedLeft))); const top = Math.max(0, Math.min(window.innerHeight - floatingMenu.offsetHeight, parseFloat(savedTop))); floatingMenu.style.left = left + 'px'; floatingMenu.style.top = top + 'px'; floatingMenu.style.right = 'auto'; floatingMenu.style.bottom = 'auto'; } else { floatingMenu.style.left = '20px'; floatingMenu.style.top = '20px'; } }; dragHandle.addEventListener('mousedown', onStart); dragHandle.addEventListener('touchstart', onStart, { passive: false }); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd); window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onEnd); applyStoredPosition(); window.addEventListener('resize', () => applyStoredPosition()); }
     
-    // ========== SIDEBAR RESIZER DRAG ==========
     function initSidebarResizer() {
         const resizer = document.getElementById('dragResizer');
         const sidebar = document.getElementById('rightSide');
@@ -2513,7 +2734,6 @@
                     isDraggingResizeBtn = false;
                     setTimeout(() => { closeBtn.style.transform = ''; }, 100);
                 };
-                // Hold duration 200ms for resizer button
                 pressTimer = setTimeout(() => {
                     if (!hasMoved) {
                         isDraggingResizeBtn = true;
@@ -2538,8 +2758,6 @@
         }
     }
     
-    // ========== SWIPE / TOUCH NAVIGATION ==========
-    let touchStartY = 0, touchStartX = 0, touchMoved = false;
     function initSwipeNavigation() { 
         const displayArea = document.getElementById('displayArea'); 
         if (!displayArea) return; 
@@ -2550,7 +2768,6 @@
     
     function addLog(message, isError = false) { console.log(message); if (isError) showToast(`⚠️ ${message.substring(0, 80)}`); }
     
-    // ========== LONG PRESS ON GEAR: TOGGLE SIDEBAR (300ms) ==========
     let longPressTriggered = false;
     function initGearLongPress() {
         const gear = document.getElementById('minimizedTrigger');
@@ -2575,7 +2792,7 @@
                 toggleSidebar();
                 showToast("📚 Sidebar toggled");
                 pressTimer = null;
-            }, 300); // 300ms for gear button
+            }, 300);
         };
         
         const onMove = () => {
@@ -2597,7 +2814,6 @@
         window.addEventListener('touchend', onEnd);
     }
     
-    // Modify gear drag to respect long press flag
     function initGearDrag() { 
         applyStoredGearPosition(); 
         let gearDragActive = false, startMouseX = 0, startMouseY = 0, startLeft = 0, startTop = 0, gearDragOccurred = false; 
@@ -2659,7 +2875,6 @@
     function extractSheetIdFromUrl(url) { if (!url) return null; if (url.match(/^[a-zA-Z0-9_-]{30,50}$/)) return url; const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/); if (match) return match[1]; const pubMatch = url.match(/\/d\/e\/([a-zA-Z0-9_-]+)/); if (pubMatch) return pubMatch[1]; return null; }
     window.historyPrev = historyPrev; window.historyNext = historyNext; window.moveSidebarFocus = moveSidebarFocus; window.toggleAuto = toggleAuto; window.toggleSidebar = toggleSidebar; window.switchTab = switchTab; window.toggleMenu = toggleMenu; window.pickRandom = pickRandom; window.loadWordByMode = loadWordByMode; window.toggleBold = toggleBold; window.openSheetAndActivateCell = openSheetAndActivateCell; window.showPasswordModal = showPasswordModal; window.goPrevNormal = goPrevNormal; window.goNextNormal = goNextNormal;
     
-    // ========== INITIALIZATION ==========
     async function initializeSheet() { currentSheetId = DEFAULT_SHEET_ID; currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`; await loadSheetData(); }
     window.addEventListener('keydown', function(e) {
         const activeEl = document.activeElement;
@@ -2707,7 +2922,7 @@
         const topHidden = localStorage.getItem('topPinyinSectionHidden') === 'true', bottomHidden = localStorage.getItem('bottomSectionHidden') === 'true';
         if (topHidden) { topSection.classList.add('hidden'); topToggleBtn.innerText = '🙈'; topPinyinVisible = false; }
         if (bottomHidden) { bottomSection.classList.add('hidden'); bottomToggleBtn.innerText = '🙈'; bottomCharVisible = false; }
-        else { bottomCharVisible = false; bottomSection.classList.add('hidden'); bottomToggleBtn.innerText = '🙈'; }
+        else { bottomCharVisible = true; }
         applyTextVisibility();
         topToggleBtn.addEventListener('click', () => { topSection.classList.toggle('hidden'); const isHidden = topSection.classList.contains('hidden'); topToggleBtn.innerText = isHidden ? '🙈' : '👁️'; topPinyinVisible = !isHidden; applyTextVisibility(); localStorage.setItem('topPinyinSectionHidden', isHidden); saveAllData(); });
         bottomToggleBtn.addEventListener('click', () => { bottomSection.classList.toggle('hidden'); const isHidden = bottomSection.classList.contains('hidden'); bottomToggleBtn.innerText = isHidden ? '🙈' : '👁️'; bottomCharVisible = !isHidden; applyTextVisibility(); localStorage.setItem('bottomSectionHidden', isHidden); saveAllData(); });
