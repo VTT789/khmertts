@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>📖 Vocab Master – Final (Clean UI)</title>
+    <title>📖 Vocab Master – Fixed Auto Timer</title>
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
     <style>
         /* ========== CUSTOM WEB FONTS ========== */
@@ -745,7 +745,6 @@
         }
         body.night-mode .search-clear-btn { color: #94a3b8; }
         
-        /* Search results dropdown (like choiceSearchResults) */
         .sidebar-search-results {
             position: absolute;
             top: 100%;
@@ -1004,7 +1003,6 @@
         .delete-group-btn button { background: #dc2626; color: white; padding: 16px 12px; font-size: 1.2rem; font-weight: bold; border-radius: 60px; transition: all 0.2s; cursor: pointer; border: none; width: 100%; }
         .delete-group-btn button:hover { background: #b91c1c; transform: scale(0.98); }
         
-        /* === ADDITIONAL MODERN CHOICE MODAL STYLES (appended as requested) === */
         .modal-overlay {
             background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(4px);
@@ -1076,6 +1074,36 @@
             margin-top: 12px;
             padding: 12px 20px;
             border-radius: 40px;
+        }
+        .input-with-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .insert-symbol-icon {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 40px;
+            font-size: 1.2rem;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(4px);
+        }
+        .insert-symbol-icon:hover {
+            background: rgba(255,255,255,0.4);
+            transform: scale(1.02);
+        }
+        .big-edit-input {
+            flex: 1;
         }
     </style>
 </head>
@@ -1655,8 +1683,15 @@
         scrollToActiveSidebarItem(); 
     }
     
+    // ========== TIMER-SAFE NAVIGATION ==========
     function loadWordByMode(idx, addToHistory = true) { 
-        killAllSpeech(); if (!vocabList[idx]) return; 
+        // Critical: clear any pending auto timer BEFORE loading new word
+        if (autoTimer) {
+            clearTimeout(autoTimer);
+            autoTimer = null;
+        }
+        killAllSpeech(); 
+        if (!vocabList[idx]) return; 
         if (appMode === 'random') { 
             if (addToHistory) { if (history[historyIndex] !== idx) { history = history.slice(0, historyIndex + 1); history.push(idx); historyIndex = history.length - 1; } }
             renderRandomSidebar(idx); 
@@ -1669,12 +1704,39 @@
         } 
     }
     
-    function pickRandom() { if (appMode === 'normal') goNextNormal(); else if (vocabList.length) { const idx = Math.floor(Math.random() * vocabList.length); loadWordByMode(idx, true); } }
-    function historyPrev() { if (appMode === 'random') { if (historyIndex > 0) { historyIndex--; loadWordByMode(history[historyIndex], false); } } else goPrevNormal(); }
-    function historyNext() { if (appMode === 'random') { if (historyIndex < history.length - 1) { historyIndex++; loadWordByMode(history[historyIndex], false); } } else goNextNormal(); }
-    function goPrevNormal() { if (!vocabList.length) return; const filtered = filterVocabBySearch(vocabList); const currentFilteredIdx = filtered.findIndex(v => v === vocabList[normalCurrentIdx]); let newFilteredIdx = currentFilteredIdx - 1; if (newFilteredIdx < 0) newFilteredIdx = 0; if (filtered[newFilteredIdx]) { const newIdx = vocabList.findIndex(v => v === filtered[newFilteredIdx]); loadWordByMode(newIdx, true); } }
-    function goNextNormal() { if (!vocabList.length) return; const filtered = filterVocabBySearch(vocabList); const currentFilteredIdx = filtered.findIndex(v => v === vocabList[normalCurrentIdx]); let newFilteredIdx = currentFilteredIdx + 1; if (newFilteredIdx >= filtered.length) newFilteredIdx = filtered.length - 1; if (filtered[newFilteredIdx]) { const newIdx = vocabList.findIndex(v => v === filtered[newFilteredIdx]); loadWordByMode(newIdx, true); } }
+    function pickRandom() { 
+        if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+        if (appMode === 'normal') goNextNormal(); 
+        else if (vocabList.length) { const idx = Math.floor(Math.random() * vocabList.length); loadWordByMode(idx, true); } 
+    }
+    function historyPrev() { 
+        if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+        if (appMode === 'random') { if (historyIndex > 0) { historyIndex--; loadWordByMode(history[historyIndex], false); } } else goPrevNormal(); 
+    }
+    function historyNext() { 
+        if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+        if (appMode === 'random') { if (historyIndex < history.length - 1) { historyIndex++; loadWordByMode(history[historyIndex], false); } } else goNextNormal(); 
+    }
+    function goPrevNormal() { 
+        if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+        if (!vocabList.length) return; 
+        const filtered = filterVocabBySearch(vocabList); 
+        const currentFilteredIdx = filtered.findIndex(v => v === vocabList[normalCurrentIdx]); 
+        let newFilteredIdx = currentFilteredIdx - 1; 
+        if (newFilteredIdx < 0) newFilteredIdx = 0; 
+        if (filtered[newFilteredIdx]) { const newIdx = vocabList.findIndex(v => v === filtered[newFilteredIdx]); loadWordByMode(newIdx, true); } 
+    }
+    function goNextNormal() { 
+        if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+        if (!vocabList.length) return; 
+        const filtered = filterVocabBySearch(vocabList); 
+        const currentFilteredIdx = filtered.findIndex(v => v === vocabList[normalCurrentIdx]); 
+        let newFilteredIdx = currentFilteredIdx + 1; 
+        if (newFilteredIdx >= filtered.length) newFilteredIdx = filtered.length - 1; 
+        if (filtered[newFilteredIdx]) { const newIdx = vocabList.findIndex(v => v === filtered[newFilteredIdx]); loadWordByMode(newIdx, true); } 
+    }
     function toggleAppMode() { 
+        if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
         if (appMode === 'random') { 
             appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; 
             const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; normalCurrentIdx = idx; const filtered = filterVocabBySearch(vocabList); normalCurrentPage = Math.floor(filtered.findIndex(v => v === vocabList[idx]) / ITEMS_PER_PAGE); if (normalCurrentPage < 0) normalCurrentPage = 0; renderNormalSidebar(); 
@@ -1692,8 +1754,32 @@
         renderSidebarUI();
     }
     
-    function toggleAuto() { autoActive = !autoActive; const btn = document.getElementById('autoBtn'); btn.classList.toggle('active', autoActive); btn.classList.toggle('off', !autoActive); btn.innerText = autoActive ? "AUTO: ON" : "AUTO: OFF"; if(autoActive) pickRandom(); else { clearTimeout(autoTimer); killAllSpeech(); } }
-    function startAutoCycle() { clearTimeout(autoTimer); autoTimer = setTimeout(() => { if(autoActive) pickRandom(); }, parseInt(document.getElementById('autoDelay').value)*1000); }
+    function toggleAuto() { 
+        autoActive = !autoActive; 
+        const btn = document.getElementById('autoBtn'); 
+        btn.classList.toggle('active', autoActive); 
+        btn.classList.toggle('off', !autoActive); 
+        btn.innerText = autoActive ? "AUTO: ON" : "AUTO: OFF"; 
+        if(autoActive) { 
+            pickRandom(); 
+        } else { 
+            if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; } 
+            killAllSpeech(); 
+        } 
+    }
+    
+    // Clean timer start: only called from speakAutoSequence after speech finishes
+    function startAutoCycle() { 
+        if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+        if (autoActive) {
+            const delaySec = parseInt(document.getElementById('autoDelay').value) * 1000;
+            autoTimer = setTimeout(() => { 
+                if (autoActive) pickRandom(); 
+                autoTimer = null;
+            }, delaySec);
+        }
+    }
+    
     function toggleSidebar() { 
         sidebarVisible = !sidebarVisible; 
         const sidebar = document.getElementById('rightSide');
@@ -1747,7 +1833,6 @@
         const resultsContainer = headerDiv.querySelector('#sidebarSearchResults');
         currentSearchInputElement = searchInput;
         
-        // Update search results dropdown
         const updateSearchResults = () => {
             const term = searchInput.value.trim().toLowerCase();
             if (!term) {
@@ -1798,7 +1883,6 @@
             }, 200);
         };
         
-        // MAIN SEARCH HANDLER with proper debounce and IME support
         let searchInputTimer = null;
         
         const performDelayedSearch = () => {
@@ -1843,7 +1927,7 @@
                     }
                 }
                 searchInputTimer = null;
-            }, 300); // 300ms debounce delay
+            }, 300);
         };
         
         const storeOriginalWord = () => {
@@ -1859,7 +1943,6 @@
         
         searchInput.addEventListener('compositionend', () => {
             isComposing = false;
-            // After IME composition ends, perform search with current value
             if (searchInputTimer) clearTimeout(searchInputTimer);
             searchInputTimer = setTimeout(() => {
                 const currentValue = searchInput.value;
@@ -1908,10 +1991,7 @@
         });
         
         searchInput.addEventListener('input', (e) => {
-            // Update dropdown results immediately (no delay for visual feedback)
             updateSearchResults();
-            
-            // For the actual list filtering, wait for composition to end or use debounce
             if (!isComposing) {
                 const currentValue = e.target.value;
                 if (previousWordBeforeSearch === null && searchTerm === "" && currentValue !== "") {
@@ -2101,8 +2181,32 @@
         const displayNumber = getDisplayNumberFromArrayIndex(displayRowIdx);
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
-        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>✏️ EDIT Display #${displayNumber}</h3><div style="margin-bottom:16px;"><input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(currentChinese)}" class="big-edit-input"><input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input"></div><div class="edit-group-buttons"><button id="confirmUpdateBtn">💾 UPDATE SHEET</button><button id="openSheetRowBtn" style="background:#3b82f6;">📊 OPEN SHEET</button></div><div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${displayNumber}</button></div><button id="closeEditModalBtn" class="cancel-icon">✕</button></div>`;
+        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>✏️ EDIT Display #${displayNumber}</h3><div style="margin-bottom:16px;"><div class="input-with-icon"><input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(currentChinese)}" class="big-edit-input"><button class="insert-symbol-icon" data-target="editChineseInput" title="Insert ' / '">🔗 /</button></div><div class="input-with-icon"><input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input"><button class="insert-symbol-icon" data-target="editKhmerInput" title="Insert ' / '">🔗 /</button></div></div><div class="edit-group-buttons"><button id="confirmUpdateBtn">💾 UPDATE SHEET</button><button id="openSheetRowBtn" style="background:#3b82f6;">📊 OPEN SHEET</button></div><div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${displayNumber}</button></div><button id="closeEditModalBtn" class="cancel-icon">✕</button></div>`;
         document.body.appendChild(modalDiv);
+        
+        const attachInsertHandler = (btn, targetId) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const inputElem = document.getElementById(targetId);
+                if (!inputElem) return;
+                const start = inputElem.selectionStart || 0;
+                const end = inputElem.selectionEnd || 0;
+                const text = inputElem.value;
+                const insertSymbol = " / ";
+                const newText = text.substring(0, start) + insertSymbol + text.substring(end);
+                inputElem.value = newText;
+                inputElem.focus();
+                const newCursorPos = start + insertSymbol.length;
+                inputElem.setSelectionRange(newCursorPos, newCursorPos);
+                showToast("✓ inserted ' / '");
+            });
+        };
+        const insertBtns = modalDiv.querySelectorAll('.insert-symbol-icon');
+        insertBtns.forEach(btn => {
+            const targetId = btn.getAttribute('data-target');
+            if (targetId) attachInsertHandler(btn, targetId);
+        });
         
         const preventShortcuts = (e) => {
             if (e.key === ' ' || e.key === 'Space' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
@@ -2130,7 +2234,7 @@
         };
         document.getElementById('openSheetRowBtn').onclick = () => { openSheetAndActivateCell(sheetRowNumber); modalDiv.remove(); };
         document.getElementById('deleteRowBtn').onclick = async () => {
-            if (confirm(`⚠️ Delete Display #${displayNumber}?`)) {
+            if (confirm(`⚠️ DELETE Display #${displayNumber}?`)) {
                 modalDiv.remove();
                 const success = await deleteVocabByRow(sheetRowNumber);
                 if (success) {
@@ -2197,8 +2301,33 @@
         if (!editUnlocked) { showPasswordModal(() => { showAddNewModal(); }); return; }
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
-        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>➕ ADD NEW VOCABULARY (appends at the end)</h3><div style="margin-bottom:16px;"><input id="addChineseInput" placeholder="Chinese word" class="big-edit-input"><input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input"></div><div class="choice-search-area"><input type="text" id="vocabSearchInput" placeholder="🔍 Search vocabulary..."><div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div></div><div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#10b981;">✅ ADD TO SHEET (last row)</button></div><button id="closeAddModalBtn" class="cancel-icon">✕</button></div>`;
+        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>➕ ADD NEW VOCABULARY (appends at the end)</h3><div style="margin-bottom:16px;"><div class="input-with-icon"><input id="addChineseInput" placeholder="Chinese word" class="big-edit-input"><button class="insert-symbol-icon" data-target="addChineseInput" title="Insert ' / '">🔗 /</button></div><div class="input-with-icon"><input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input"><button class="insert-symbol-icon" data-target="addKhmerInput" title="Insert ' / '">🔗 /</button></div></div><div class="choice-search-area"><input type="text" id="vocabSearchInput" placeholder="🔍 Search vocabulary..."><div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div></div><div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#10b981;">✅ ADD TO SHEET (last row)</button></div><button id="closeAddModalBtn" class="cancel-icon">✕</button></div>`;
         document.body.appendChild(modalDiv);
+        
+        const attachInsertHandler = (btn, targetId) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const inputElem = document.getElementById(targetId);
+                if (!inputElem) return;
+                const start = inputElem.selectionStart || 0;
+                const end = inputElem.selectionEnd || 0;
+                const text = inputElem.value;
+                const insertSymbol = " / ";
+                const newText = text.substring(0, start) + insertSymbol + text.substring(end);
+                inputElem.value = newText;
+                inputElem.focus();
+                const newCursorPos = start + insertSymbol.length;
+                inputElem.setSelectionRange(newCursorPos, newCursorPos);
+                showToast("✓ inserted ' / '");
+            });
+        };
+        const insertBtns = modalDiv.querySelectorAll('.insert-symbol-icon');
+        insertBtns.forEach(btn => {
+            const targetId = btn.getAttribute('data-target');
+            if (targetId) attachInsertHandler(btn, targetId);
+        });
+        
         const addChinese = document.getElementById('addChineseInput');
         const addKhmer = document.getElementById('addKhmerInput');
         const preventShortcuts = (e) => {
@@ -2386,7 +2515,20 @@
     function speakKhmerEdge(text) { if (!text) return; const voice = document.getElementById('kmVoiceSelect').value; enqueueSpeech(text, voice, null); }
     function speakChineseFromMain() { const container = document.getElementById('chineseWord'); const plainText = container ? container.getAttribute('data-plain') || '' : ''; if(plainText) { killAllSpeech(); speakChineseEdge(plainText); } }
     function speakKhmerFromMain() { const container = document.getElementById('khmerWord'); const plainText = container ? container.innerText : ''; if(plainText) { killAllSpeech(); speakKhmerEdge(plainText); } }
-    async function speakAutoSequence(zhText, kmText) { killAllSpeech(); const zhReps = parseInt(document.getElementById('zhReps').value); const kmReps = parseInt(document.getElementById('kmReps').value); const zhVoice = document.getElementById('zhVoiceSelect').value; const kmVoice = document.getElementById('kmVoiceSelect').value; const rateSlider = document.getElementById('zhRateSlider'); let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); for(let i=0; i<zhReps; i++) { await callEdgeTTS(zhText, zhVoice, rateFormatted); } if(kmText && kmText.trim()) { for(let j=0; j<kmReps; j++) { await callEdgeTTS(kmText, kmVoice, null); } } if(autoActive) startAutoCycle(); }
+    async function speakAutoSequence(zhText, kmText) { 
+        killAllSpeech(); 
+        const zhReps = parseInt(document.getElementById('zhReps').value); 
+        const kmReps = parseInt(document.getElementById('kmReps').value); 
+        const zhVoice = document.getElementById('zhVoiceSelect').value; 
+        const kmVoice = document.getElementById('kmVoiceSelect').value; 
+        const rateSlider = document.getElementById('zhRateSlider'); 
+        let rateValue = rateSlider ? parseInt(rateSlider.value) : 0; 
+        let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); 
+        for(let i=0; i<zhReps; i++) { await callEdgeTTS(zhText, zhVoice, rateFormatted); } 
+        if(kmText && kmText.trim()) { for(let j=0; j<kmReps; j++) { await callEdgeTTS(kmText, kmVoice, null); } } 
+        // CRITICAL: start auto timer ONLY after speech is completely done
+        if(autoActive) startAutoCycle(); 
+    }
     
     // ========== STYLE FUNCTIONS ==========
     function getBottomScaleFactor(charCount) { if (charCount <= 2) return 1.0; if (charCount <= 5) return 0.8; if (charCount <= 7) return 0.5; if (charCount <= 10) return 0.4; if (charCount <= 13) return 0.25; return 0.10; }
@@ -2761,6 +2903,7 @@
     function initSwipeNavigation() { 
         const displayArea = document.getElementById('displayArea'); 
         if (!displayArea) return; 
+        let touchStartY = 0, touchStartX = 0, touchMoved = false;
         displayArea.addEventListener('touchstart', (e) => { touchStartY = e.touches[0].clientY; touchStartX = e.touches[0].clientX; touchMoved = false; }, { passive: false }); 
         displayArea.addEventListener('touchmove', (e) => { if (!touchStartY) return; const deltaY = e.touches[0].clientY - touchStartY; const deltaX = e.touches[0].clientX - touchStartX; if (Math.abs(deltaY) > 30 && !touchMoved) { touchMoved = true; if (deltaY > 0) { if (appMode === 'random') historyNext(); else goNextNormal(); } else if (deltaY < 0) { if (appMode === 'random') historyPrev(); else goPrevNormal(); } e.preventDefault(); } else if (Math.abs(deltaX) > 30 && !touchMoved && Math.abs(deltaX) > Math.abs(deltaY)) { touchMoved = true; if (deltaX > 0) { moveSidebarFocus(1); } else if (deltaX < 0) { moveSidebarFocus(-1); } e.preventDefault(); } }, { passive: false }); 
         displayArea.addEventListener('touchend', () => { touchStartY = 0; touchStartX = 0; touchMoved = false; }); 
