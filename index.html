@@ -847,6 +847,66 @@
         .btn-accent { background: var(--accent); color: white; border: none; }
         .btn-toggle.active { background: var(--success); color: white; }
         .btn-toggle.off { background: #94a3b8; color: white; }
+        
+        /* Mode toggle button dynamic colors */
+        .mode-random-active {
+            background: #22c55e !important;
+            color: white !important;
+            border: none !important;
+        }
+        .mode-normal-active {
+            background: #2563eb !important;
+            color: white !important;
+            border: none !important;
+        }
+
+        /* Input with inner icon */
+        .input-icon-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+        .big-edit-input-icon {
+            width: 100%;
+            padding: 16px 50px 16px 20px !important;
+            font-size: 1.3rem !important;
+            border-radius: 60px !important;
+            border: 1px solid rgba(255,255,255,0.3) !important;
+            background: rgba(51, 65, 85, 0.95) !important;
+            backdrop-filter: blur(8px);
+            color: white !important;
+            text-align: center !important;
+            box-sizing: border-box;
+        }
+        .big-edit-input-icon::placeholder {
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+        }
+        .insert-symbol-icon-inside {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+            font-weight: bold;
+            backdrop-filter: blur(4px);
+            line-height: 1;
+            z-index: 2;
+        }
+        .insert-symbol-icon-inside:hover {
+            background: rgba(255,255,255,0.4);
+            transform: translateY(-50%) scale(1.02);
+        }
+        .insert-symbol-icon-inside:active {
+            transform: translateY(-50%) scale(0.96);
+        }
 
         .file-source-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 20000; }
         .file-source-card { background: white; border-radius: 24px; padding: 24px 28px; width: 340px; max-width: 90%; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.3); animation: fadeInUp 0.2s ease; }
@@ -969,6 +1029,8 @@
             .side-number-col { min-width: 50px; }
             .choice-search-area input { font-size: 0.9rem; padding: 10px; }
             .pagination-btn { padding: 8px 14px; min-width: 60px; font-size: 0.75rem; }
+            .big-edit-input-icon { font-size: 1rem !important; padding: 12px 45px 12px 16px !important; }
+            .insert-symbol-icon-inside { font-size: 0.9rem; padding: 4px 8px; }
         }
         
         .copy-popup {
@@ -1106,6 +1168,109 @@
             flex: 1;
         }
     </style>
+    <style>
+        /* ========== BACKGROUND REMOVAL (floatingMenu & CHOOSE ACTION modal) ========== */
+        #floatingMenu {
+            background: transparent !important;
+            backdrop-filter: blur(14px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2) !important;
+        }
+        #floatingMenu .drag-handle {
+            background: rgba(15, 23, 42, 0.75) !important;
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        #floatingMenu .control-group,
+        #floatingMenu .voice-row,
+        #floatingMenu .tab-row,
+        #floatingMenu .style-grid,
+        #floatingMenu .side-style-grid,
+        #floatingMenu .pinyin-style-grid,
+        #floatingMenu .shadow-style-grid,
+        #floatingMenu .size-row,
+        #floatingMenu .nav-row,
+        #floatingMenu .section-header {
+            background: transparent !important;
+        }
+        #floatingMenu .voice-row {
+            background: rgba(0, 0, 0, 0.4) !important;
+            backdrop-filter: blur(4px);
+            border-color: rgba(255,255,255,0.2);
+        }
+        #floatingMenu .tab-row {
+            background: rgba(0, 0, 0, 0.5) !important;
+            backdrop-filter: blur(4px);
+        }
+        #floatingMenu .tab-btn {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        #floatingMenu .tab-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+        #floatingMenu .btn-main,
+        #floatingMenu .font-select,
+        #floatingMenu .voice-select,
+        #floatingMenu .bold-icon-btn {
+            background: rgba(0, 0, 0, 0.65) !important;
+            backdrop-filter: blur(4px);
+            border-color: rgba(255,255,255,0.25);
+            color: #f1f5f9;
+        }
+        #floatingMenu .btn-accent {
+            background: var(--accent) !important;
+        }
+        #floatingMenu input,
+        #floatingMenu select,
+        #floatingMenu button:not(.drag-dark-toggle):not(.aba-icon-inline) {
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border-color: rgba(255,255,255,0.3);
+        }
+        #floatingMenu .size-slider {
+            background: rgba(255,255,255,0.3);
+        }
+        /* CHOOSE ACTION modal background removal */
+        .choice-modal {
+            background: transparent !important;
+        }
+        .choice-modal h3 {
+            background: rgba(0, 0, 0, 0.5) !important;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .choice-modal .choice-item-row {
+            background: rgba(0, 0, 0, 0.5) !important;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .choice-modal .choice-item-row button,
+        .choice-modal .edit-group-buttons button,
+        .choice-modal .choice-cancel {
+            background: rgba(0, 0, 0, 0.7) !important;
+            backdrop-filter: blur(4px);
+            border: none;
+        }
+        .choice-modal .reset-icon {
+            background: transparent !important;
+            backdrop-filter: none;
+        }
+        .choice-modal .choice-search-area {
+            background: rgba(0, 0, 0, 0.5) !important;
+            backdrop-filter: blur(8px);
+        }
+        .choice-modal .choice-search-area input {
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+        body.night-mode .choice-modal .choice-item-row,
+        body.night-mode .choice-modal h3,
+        body.night-mode .choice-modal .choice-search-area {
+            background: rgba(0, 0, 0, 0.6) !important;
+        }
+    </style>
 </head>
 <body>
 
@@ -1127,7 +1292,7 @@
                 <button id="insertDataBtn" class="btn-main btn-accent" style="background: linear-gradient(135deg, #2563eb, #1e40af); margin-bottom: 12px; width: 100%; font-size: 0.85rem; padding: 10px; cursor: pointer;">➕ INSERT VOCAB</button>
                 
                 <div class="nav-row">
-                    <button id="modeToggleBtn" class="btn-main btn-accent" onclick="toggleAppMode()">RANDOM (Space)</button>
+                    <button id="modeToggleBtn" class="btn-main mode-random-active" onclick="toggleAppMode()">RANDOM (Space)</button>
                     <button id="autoBtn" class="btn-main btn-toggle off" onclick="toggleAuto()">AUTO: OFF</button>
                 </div>
 
@@ -1737,11 +1902,18 @@
     }
     function toggleAppMode() { 
         if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+        const modeBtn = document.getElementById('modeToggleBtn');
         if (appMode === 'random') { 
-            appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; 
+            appMode = 'normal'; 
+            modeBtn.innerText = 'NORMAL (Space)';
+            modeBtn.classList.remove('mode-random-active');
+            modeBtn.classList.add('mode-normal-active');
             const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; normalCurrentIdx = idx; const filtered = filterVocabBySearch(vocabList); normalCurrentPage = Math.floor(filtered.findIndex(v => v === vocabList[idx]) / ITEMS_PER_PAGE); if (normalCurrentPage < 0) normalCurrentPage = 0; renderNormalSidebar(); 
         } else { 
-            appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; 
+            appMode = 'random'; 
+            modeBtn.innerText = 'RANDOM (Space)';
+            modeBtn.classList.remove('mode-normal-active');
+            modeBtn.classList.add('mode-random-active');
             const currentChinese = document.getElementById('chineseWord').getAttribute('data-plain') || ''; let idx = vocabList.findIndex(v => v.chinese === currentChinese); if (idx === -1 && vocabList.length) idx = 0; if (idx !== -1) { history = [idx]; historyIndex = 0; renderRandomSidebar(idx); } else if (vocabList.length) pickRandom(); 
         } 
         saveAllData(); 
@@ -2181,7 +2353,14 @@
         const displayNumber = getDisplayNumberFromArrayIndex(displayRowIdx);
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
-        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>✏️ EDIT Display #${displayNumber}</h3><div style="margin-bottom:16px;"><div class="input-with-icon"><input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(currentChinese)}" class="big-edit-input"><button class="insert-symbol-icon" data-target="editChineseInput" title="Insert ' / '">🔗 /</button></div><div class="input-with-icon"><input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input"><button class="insert-symbol-icon" data-target="editKhmerInput" title="Insert ' / '">🔗 /</button></div></div><div class="edit-group-buttons"><button id="confirmUpdateBtn">💾 UPDATE SHEET</button><button id="openSheetRowBtn" style="background:#3b82f6;">📊 OPEN SHEET</button></div><div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${displayNumber}</button></div><button id="closeEditModalBtn" class="cancel-icon">✕</button></div>`;
+        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>✏️ EDIT Display #${displayNumber}</h3>
+            <div style="margin-bottom:16px;">
+                <div class="input-icon-wrapper"><input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(currentChinese)}" class="big-edit-input-icon"><button class="insert-symbol-icon-inside" data-target="editChineseInput">🔗 /</button></div>
+                <div class="input-icon-wrapper"><input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(currentKhmer)}" class="big-edit-input-icon"><button class="insert-symbol-icon-inside" data-target="editKhmerInput">🔗 /</button></div>
+            </div>
+            <div class="edit-group-buttons"><button id="confirmUpdateBtn">💾 UPDATE SHEET</button><button id="openSheetRowBtn" style="background:#3b82f6;">📊 OPEN SHEET</button></div>
+            <div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${displayNumber}</button></div>
+            <button id="closeEditModalBtn" class="cancel-icon">✕</button></div>`;
         document.body.appendChild(modalDiv);
         
         const attachInsertHandler = (btn, targetId) => {
@@ -2202,7 +2381,7 @@
                 showToast("✓ inserted ' / '");
             });
         };
-        const insertBtns = modalDiv.querySelectorAll('.insert-symbol-icon');
+        const insertBtns = modalDiv.querySelectorAll('.insert-symbol-icon-inside');
         insertBtns.forEach(btn => {
             const targetId = btn.getAttribute('data-target');
             if (targetId) attachInsertHandler(btn, targetId);
@@ -2301,7 +2480,14 @@
         if (!editUnlocked) { showPasswordModal(() => { showAddNewModal(); }); return; }
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal-overlay';
-        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>➕ ADD NEW VOCABULARY (appends at the end)</h3><div style="margin-bottom:16px;"><div class="input-with-icon"><input id="addChineseInput" placeholder="Chinese word" class="big-edit-input"><button class="insert-symbol-icon" data-target="addChineseInput" title="Insert ' / '">🔗 /</button></div><div class="input-with-icon"><input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input"><button class="insert-symbol-icon" data-target="addKhmerInput" title="Insert ' / '">🔗 /</button></div></div><div class="choice-search-area"><input type="text" id="vocabSearchInput" placeholder="🔍 Search vocabulary..."><div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div></div><div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#10b981;">✅ ADD TO SHEET (last row)</button></div><button id="closeAddModalBtn" class="cancel-icon">✕</button></div>`;
+        modalDiv.innerHTML = `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>➕ ADD NEW VOCABULARY (appends at the end)</h3>
+            <div style="margin-bottom:16px;">
+                <div class="input-icon-wrapper"><input id="addChineseInput" placeholder="Chinese word" class="big-edit-input-icon"><button class="insert-symbol-icon-inside" data-target="addChineseInput">🔗 /</button></div>
+                <div class="input-icon-wrapper"><input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input-icon"><button class="insert-symbol-icon-inside" data-target="addKhmerInput">🔗 /</button></div>
+            </div>
+            <div class="choice-search-area"><input type="text" id="vocabSearchInput" placeholder="🔍 Search vocabulary..."><div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div></div>
+            <div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#10b981;">✅ ADD TO SHEET (last row)</button></div>
+            <button id="closeAddModalBtn" class="cancel-icon">✕</button></div>`;
         document.body.appendChild(modalDiv);
         
         const attachInsertHandler = (btn, targetId) => {
@@ -2322,7 +2508,7 @@
                 showToast("✓ inserted ' / '");
             });
         };
-        const insertBtns = modalDiv.querySelectorAll('.insert-symbol-icon');
+        const insertBtns = modalDiv.querySelectorAll('.insert-symbol-icon-inside');
         insertBtns.forEach(btn => {
             const targetId = btn.getAttribute('data-target');
             if (targetId) attachInsertHandler(btn, targetId);
@@ -2553,7 +2739,7 @@
     function applyShadow() { const shadowValue = document.getElementById('shadowSlider').value; const percent = Math.round(shadowValue); document.getElementById('shadowVal').innerText = percent + '%'; const shadowBlur = percent * 0.4; const shadowOffset = percent * 0.2; const shadowOpacity = Math.min(0.5, percent / 40); const shadowStyle = `${shadowOffset}px ${shadowOffset}px ${shadowBlur}px rgba(0,0,0,${shadowOpacity})`; document.querySelectorAll('.chinese-main').forEach(el => el.style.textShadow = shadowStyle); const khmerElementW = document.getElementById('khmerWord'); if (khmerElementW) khmerElementW.style.textShadow = shadowStyle; saveAllData(); }
     function saveAllData() { const settings = { mZhSize: userSetChineseFontSize, mKmSize: userSetKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: userSetBottomFontSize, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage, shadow: document.getElementById('shadowSlider').value }; localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList)); localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings)); }
     function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings){ const s = JSON.parse(savedSettings); userSetChineseFontSize = s.mZhSize || 42; userSetKhmerFontSize = s.mKmSize || 42; document.getElementById('mZhSize').value = userSetChineseFontSize; document.getElementById('mKmSize').value = userSetKhmerFontSize; document.getElementById('mZhColor').value = s.mZhColor || "#ffffff"; document.getElementById('mKmColor').value = s.mKmColor || "#ffffff"; document.getElementById('zhReps').value = s.zhReps || 1; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor || "#ffffff"; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor || "#ffffff"; document.getElementById('sVocabSpacing').value = s.vocabSpacing || 8; document.body.style.setProperty('--vocab-spacing', (s.vocabSpacing || 8) + 'px'); document.getElementById('vocabSpacingVal').innerText = (s.vocabSpacing || 8) + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.pinyinFont) document.getElementById('pinyinFont').value = s.pinyinFont; if(s.pinyinColor) document.getElementById('pinyinColor').value = s.pinyinColor || "#ffffff"; if(s.pinyinBold !== undefined) { const btn = document.getElementById('pinyinBold'); if(s.pinyinBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.pinyinSizePx) { document.getElementById('pinyinSizePx').value = s.pinyinSizePx; userSetPinyinFontSize = parseInt(s.pinyinSizePx); } if(s.pinyinSpacing) document.getElementById('pinyinSpacing').value = s.pinyinSpacing; if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont; if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor || "#ffffff"; if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomFontSize = parseInt(s.bottomSizePx); } if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible; if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible; else bottomCharVisible = true;
-            if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; } normalCurrentIdx = s.normalCurrentIdx || 0; normalCurrentPage = s.normalCurrentPage || 0; sidebarVisible = s.sidebarVisible !== undefined ? s.sidebarVisible : false; if(!sidebarVisible) { document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; } } else { document.getElementById('pinyinFont').value = "'Baguette Simplified'"; document.getElementById('pinyinColor').value = "#ffffff"; document.getElementById('pinyinSizePx').value = "55"; userSetPinyinFontSize = 55; document.getElementById('pinyinSpacing').value = "0"; document.getElementById('bottomSizePx').value = "55"; userSetBottomFontSize = 55; document.getElementById('mKmColor').value = "#ffffff"; document.getElementById('bottomCharColor').value = "#ffffff"; document.getElementById('shadowSlider').value = "3"; sidebarVisible = false; document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; bottomCharVisible = true; applyPinyinStyles(); applyBottomStyles(); } applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility(); setKhmerFontSize(userSetKhmerFontSize); applyShadow(); applyBottomAutoScale(); }
+            if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; document.getElementById('modeToggleBtn').classList.remove('mode-random-active'); document.getElementById('modeToggleBtn').classList.add('mode-normal-active'); } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; document.getElementById('modeToggleBtn').classList.remove('mode-normal-active'); document.getElementById('modeToggleBtn').classList.add('mode-random-active'); } normalCurrentIdx = s.normalCurrentIdx || 0; normalCurrentPage = s.normalCurrentPage || 0; sidebarVisible = s.sidebarVisible !== undefined ? s.sidebarVisible : false; if(!sidebarVisible) { document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; } } else { document.getElementById('pinyinFont').value = "'Baguette Simplified'"; document.getElementById('pinyinColor').value = "#ffffff"; document.getElementById('pinyinSizePx').value = "55"; userSetPinyinFontSize = 55; document.getElementById('pinyinSpacing').value = "0"; document.getElementById('bottomSizePx').value = "55"; userSetBottomFontSize = 55; document.getElementById('mKmColor').value = "#ffffff"; document.getElementById('bottomCharColor').value = "#ffffff"; document.getElementById('shadowSlider').value = "3"; sidebarVisible = false; document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; bottomCharVisible = true; applyPinyinStyles(); applyBottomStyles(); } applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility(); setKhmerFontSize(userSetKhmerFontSize); applyShadow(); applyBottomAutoScale(); }
     function toggleBold(btnId, applyCallback) { const btn = document.getElementById(btnId); if (btn) { btn.classList.toggle('active'); if (applyCallback && typeof applyCallback === 'function') { applyCallback(); } else { applyStyles(); } } }
     function switchTab(tab) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active'); document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab))); if (tab === 'side' && !sidebarVisible) { toggleSidebar(); } }
     
