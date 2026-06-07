@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Test: DRAG / MOVE Floating Menu Close Button</title>
+    <style>
+        * {
+            user-select: none;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1e293b;
+            font-family: system-ui, 'Segoe UI', 'Inter', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .test-container {
+            max-width: 950px;
+            width: 100%;
+            background: #f8fafc;
+            border-radius: 32px;
+            padding: 24px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.2);
+        }
+
+        h2 {
+            margin: 0 0 8px 0;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: #f97316;
+            color: white;
+            font-size: 0.7rem;
+            padding: 4px 12px;
+            border-radius: 40px;
+        }
+
+        .instruction {
+            background: #eef2ff;
+            padding: 12px 18px;
+            border-radius: 20px;
+            margin: 16px 0;
+            font-size: 0.85rem;
+            border-left: 5px solid #f97316;
+        }
+
+        /* ========== EXACT ORIGINAL FLOATING MENU STYLES (SIMULATED) ========== */
+        .floating-menu-sim {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 35px -8px rgba(0,0,0,0.25);
+            width: 340px;
+            margin: 0 auto;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            transition: none;
+            position: relative;
+        }
+
+        /* drag-handle replica from original (with cursor: move) */
+        .drag-handle {
+            height: 44px;
+            background: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            color: #f8fafc;
+            font-weight: 700;
+            font-size: 13px;
+            gap: 12px;
+            cursor: move;
+            touch-action: none;
+        }
+
+        .drag-title-text {
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .close-btn-drag {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 4px 10px;
+            border-radius: 30px;
+            transition: background 0.2s;
+            font-weight: bold;
+        }
+
+        .close-btn-drag:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* special draggable mode for close button itself */
+        .close-btn-drag.draggable-mode {
+            background: #10b981;
+            cursor: grab;
+            animation: pulse 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); background: #059669; }
+            100% { transform: scale(1); }
+        }
+
+        .panel-content {
+            padding: 20px;
+        }
+
+        .demo-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-weight: 600;
+            width: 100%;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .demo-btn.secondary {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .status-area {
+            background: #f1f5f9;
+            border-radius: 20px;
+            padding: 12px 16px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .log-area {
+            background: #0f172a;
+            color: #a5f3fc;
+            padding: 12px;
+            border-radius: 16px;
+            font-family: monospace;
+            font-size: 0.7rem;
+            margin-top: 20px;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+
+        .badge-drag {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            border-radius: 30px;
+            padding: 2px 10px;
+            font-size: 0.65rem;
+            margin-left: 8px;
+        }
+        
+        .flex-btns {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .small-btn {
+            background: #cbd5e1;
+            border: none;
+            border-radius: 30px;
+            padding: 6px 12px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .small-btn.reset {
+            background: #ef4444;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<div class="test-container">
+    <h2>
+        🧩 DRAG / MOVE · Floating Menu Close Button
+        <span class="badge">Long press + Drag</span>
+    </h2>
+    <div class="instruction">
+        ⚡ <strong>Interactive test: Drag the close button (✕) to reposition it anywhere</strong><br>
+        • <strong>Long press (hold for 0.8s)</strong> on the <strong>✕ button</strong> → button turns green (draggable mode)<br>
+        • While in draggable mode, <strong>drag (move finger/mouse)</strong> to reposition the button independently.<br>
+        • Release to save position. Click normally (short tap) still toggles menu visibility.<br>
+        • The close button becomes <strong>fully movable</strong> without affecting the whole menu.<br>
+        ✅ This replicates the original <code>initSidebarCloseBtnDrag</code> but applied to floating menu close button.
+    </div>
+
+    <!-- SIMULATED FLOATING MENU (close button is draggable) -->
+    <div id="floatingMenuDemo" class="floating-menu-sim" style="margin: 0 auto 20px auto;">
+        <div class="drag-handle" id="menuDragHandle">
+            <div class="drag-title-text">
+                <span>⠿</span> ភាសាខ្មែរ | 中文 DRAG TEST
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button id="demoDarkBtn" style="background:none; border:none; color:white; font-size:16px; cursor:pointer;">🌙</button>
+                <button id="draggableCloseBtn" class="close-btn-drag" title="Long press + drag to move | click to close">✕</button>
+            </div>
+        </div>
+        <div class="panel-content">
+            <button class="demo-btn" id="dummyActionBtn">📋 DEMO ACTION</button>
+            <button class="demo-btn secondary" id="dummyRandomBtn">🎲 RANDOM (test)</button>
+            <div style="font-size:0.7rem; text-align:center; margin-top:12px; color:#475569;">
+                🔹 Close button = <strong>long press (800ms)</strong> → drag anywhere<br>
+                🔹 Short click = normal close (hide menu)
+            </div>
+        </div>
+    </div>
+
+    <!-- MINIMIZED GEAR (for menu hide/show) -->
+    <div id="minimizedGear" style="display: none; position: fixed; bottom: 30px; right: 30px; width: 52px; height: 52px; background: #2563eb; border-radius: 50%; align-items: center; justify-content: center; color: white; font-size: 28px; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.3); z-index: 200;">
+        <span style="animation: spinSlow 2s linear infinite; display: inline-block;">⚙️</span>
+    </div>
+
+    <div class="status-area" id="statusPanel">
+        🟢 <strong>Close button mode:</strong> <span id="modeStatus">Normal (click to close)</span>
+        <button id="resetCloseBtnPos" style="float:right; background:#e2e8f0; border:none; border-radius:40px; padding:2px 12px; font-size:0.7rem;">⟳ Reset close btn position</button>
+    </div>
+    <div class="log-area" id="logPanel">
+        📋 Drag/Move events:<br>
+        → Ready. Long press on ✕ to enter drag mode → move freely.
+    </div>
+    <div class="flex-btns">
+        <button id="toggleMenuBtn" class="small-btn">🪄 Toggle Menu (show/hide)</button>
+        <button id="showMenuBtn" class="small-btn">👁️ Show Menu</button>
+    </div>
+    <div style="margin-top: 16px; font-size:0.7rem; text-align:center; color:#334155;">
+        🧪 <strong>Original mechanism</strong>: long-press on close button → drag mode enabled → move anywhere (position stored in localStorage).<br>
+        Short tap = normal close action. Perfect replica of sidebar-close-btn drag, now on floatingMenu close button.
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // DRAGGABLE CLOSE BUTTON (exact same pattern as original sidebarCloseBtn drag)
+    // long press -> draggable mode -> move button independently
+    // ============================================================
+    
+    const closeBtn = document.getElementById('draggableCloseBtn');
+    const floatingMenu = document.getElementById('floatingMenuDemo');
+    const minimizedGear = document.getElementById('minimizedGear');
+    const modeSpan = document.getElementById('modeStatus');
+    const logPanel = document.getElementById('logPanel');
+    const resetPosBtn = document.getElementById('resetCloseBtnPos');
+    const toggleMenuBtn = document.getElementById('toggleMenuBtn');
+    const showMenuBtn = document.getElementById('showMenuBtn');
+    const darkBtn = document.getElementById('demoDarkBtn');
+    
+    let isDragMode = false;
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let startBtnLeft = 0, startBtnTop = 0;
+    let longPressTimer = null;
+    let pressStartTime = 0;
+    let originalCloseAction = true;
+    
+    // position storage keys (same style as original)
+    const STORAGE_KEY_LEFT = 'floatingCloseBtnLeft';
+    const STORAGE_KEY_TOP = 'floatingCloseBtnTop';
+    
+    // helper: add log message
+    function addLog(msg, isError = false) {
+        const logDiv = logPanel;
+        const entry = document.createElement('div');
+        entry.textContent = `→ ${new Date().toLocaleTimeString()} ${msg}`;
+        if (isError) entry.style.color = "#f87171";
+        logDiv.appendChild(entry);
+        entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (logDiv.children.length > 14) {
+            logDiv.removeChild(logDiv.children[0]);
+        }
+    }
+    
+    // save button position to localStorage
+    function saveCloseBtnPosition() {
+        const left = closeBtn.style.left;
+        const top = closeBtn.style.top;
+        if (left && top) {
+            localStorage.setItem(STORAGE_KEY_LEFT, left);
+            localStorage.setItem(STORAGE_KEY_TOP, top);
+            addLog(`💾 Close button position saved: (${left}, ${top})`);
+        }
+    }
+    
+    // load stored position and apply
+    function loadCloseBtnPosition() {
+        const savedLeft = localStorage.getItem(STORAGE_KEY_LEFT);
+        const savedTop = localStorage.getItem(STORAGE_KEY_TOP);
+        if (savedLeft && savedTop) {
+            closeBtn.style.position = 'fixed';
+            closeBtn.style.left = savedLeft;
+            closeBtn.style.top = savedTop;
+            closeBtn.style.right = 'auto';
+            closeBtn.style.bottom = 'auto';
+            closeBtn.style.transform = 'translateY(0)';
+            addLog(`📍 Loaded close button position: (${savedLeft}, ${savedTop})`);
+            return true;
+        } else {
+            // default: align to right side of menu header (original relative position)
+            resetToDefaultPosition();
+            return false;
+        }
+    }
+    
+    function resetToDefaultPosition() {
+        // get the drag-handle relative bounding, place button at right side of header
+        const dragHandle = document.querySelector('.drag-handle');
+        if (dragHandle && floatingMenu) {
+            const handleRect = dragHandle.getBoundingClientRect();
+            const menuRect = floatingMenu.getBoundingClientRect();
+            // default: right side of drag handle, vertically centered
+            const defaultLeft = (handleRect.right - 36) + 'px';
+            const defaultTop = (handleRect.top + 8) + 'px';
+            closeBtn.style.position = 'fixed';
+            closeBtn.style.left = defaultLeft;
+            closeBtn.style.top = defaultTop;
+            closeBtn.style.right = 'auto';
+            closeBtn.style.bottom = 'auto';
+        } else {
+            closeBtn.style.position = 'relative';
+            closeBtn.style.left = 'auto';
+            closeBtn.style.top = 'auto';
+        }
+        saveCloseBtnPosition();
+        addLog(`🔄 Reset close button to default position`);
+    }
+    
+    // Activate drag mode (long press)
+    function activateDragMode() {
+        if (isDragMode) return;
+        isDragMode = true;
+        closeBtn.classList.add('draggable-mode');
+        closeBtn.style.cursor = 'grab';
+        modeSpan.innerText = "DRAG MODE ACTIVE (move freely)";
+        addLog("✋ Drag mode enabled — now you can drag the ✕ button anywhere.");
+        // show helper
+        setTimeout(() => {
+            if (isDragMode) {
+                modeSpan.style.background = "#d1fae5";
+                modeSpan.style.padding = "2px 6px";
+                modeSpan.style.borderRadius = "20px";
+            }
+        }, 10);
+    }
+    
+    function deactivateDragMode() {
+        if (!isDragMode) return;
+        isDragMode = false;
+        isDragging = false;
+        closeBtn.classList.remove('draggable-mode');
+        closeBtn.style.cursor = '';
+        modeSpan.innerText = "Normal (click to close)";
+        modeSpan.style.background = "";
+        saveCloseBtnPosition();
+        addLog("🔒 Drag mode deactivated. Position saved.");
+    }
+    
+    // Pointer/Mouse handlers
+    function onPointerStart(e) {
+        // ignore if drag mode is active we handle separately
+        if (isDragMode) {
+            e.preventDefault();
+            e.stopPropagation();
+            isDragging = true;
+            const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+            const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+            startX = clientX;
+            startY = clientY;
+            const rect = closeBtn.getBoundingClientRect();
+            startBtnLeft = rect.left;
+            startBtnTop = rect.top;
+            closeBtn.style.transition = 'none';
+            closeBtn.style.cursor = 'grabbing';
+            return;
+        }
+        
+        // LONG PRESS detection (original logic)
+        pressStartTime = Date.now();
+        longPressTimer = setTimeout(() => {
+            if (!isDragMode) {
+                activateDragMode();
+                // after activation, we also start drag if movement happens later
+                // but we don't start drag immediately, just enable mode
+                longPressTimer = null;
+                // prevent default click from firing immediately
+                e.preventDefault();
+            }
+        }, 800);
+    }
+    
+    function onPointerMove(e) {
+        if (isDragMode && isDragging) {
+            e.preventDefault();
+            const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+            const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+            let newLeft = startBtnLeft + (clientX - startX);
+            let newTop = startBtnTop + (clientY - startY);
+            // constrain within window
+            newLeft = Math.max(5, Math.min(window.innerWidth - closeBtn.offsetWidth, newLeft));
+            newTop = Math.max(5, Math.min(window.innerHeight - closeBtn.offsetHeight, newTop));
+            closeBtn.style.position = 'fixed';
+            closeBtn.style.left = newLeft + 'px';
+            closeBtn.style.top = newTop + 'px';
+            closeBtn.style.right = 'auto';
+            closeBtn.style.bottom = 'auto';
+            return;
+        }
+        
+        // Cancel long press if moved too much
+        if (longPressTimer && !isDragMode) {
+            const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+            const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+            if (Math.abs(clientX - startX) > 8 || Math.abs(clientY - startY) > 8) {
+                if (longPressTimer) clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+    }
+    
+    function onPointerEnd(e) {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+            // short tap (no drag) → perform normal close action
+            if (!isDragMode && (Date.now() - pressStartTime) < 800) {
+                // normal click: toggle menu hide
+                toggleMenu(true);
+                addLog("🔘 Short click: menu hidden (gear appears)");
+            }
+        }
+        
+        if (isDragMode && isDragging) {
+            isDragging = false;
+            closeBtn.style.transition = '';
+            closeBtn.style.cursor = 'grab';
+            deactivateDragMode();
+            e.preventDefault();
+            e.stopPropagation();
+        } else if (isDragMode && !isDragging) {
+            // if drag mode active but no drag happened, deactivate after timeout (optional)
+            setTimeout(() => {
+                if (isDragMode && !isDragging) {
+                    deactivateDragMode();
+                }
+            }, 1500);
+        }
+    }
+    
+    // Menu toggle mechanism (original style)
+    function toggleMenu(hide) {
+        if (hide) {
+            floatingMenu.style.display = "none";
+            minimizedGear.style.display = "flex";
+            addLog("❌ Floating menu hidden (gear icon appears)");
+        } else {
+            floatingMenu.style.display = "block";
+            minimizedGear.style.display = "none";
+            addLog("✅ Floating menu restored (gear hidden)");
+        }
+    }
+    
+    // Gear click restores menu
+    if (minimizedGear) {
+        minimizedGear.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMenu(false);
+        });
+    }
+    
+    // Additional UI buttons
+    toggleMenuBtn.addEventListener('click', () => {
+        if (floatingMenu.style.display !== 'none') toggleMenu(true);
+        else toggleMenu(false);
+    });
+    showMenuBtn.addEventListener('click', () => {
+        if (floatingMenu.style.display === 'none') toggleMenu(false);
+    });
+    
+    // Reset close button position
+    resetPosBtn.addEventListener('click', () => {
+        resetToDefaultPosition();
+        deactivateDragMode();
+        addLog("🔄 Close button position reset to default.");
+    });
+    
+    // optional dark mode visual (cosmetic)
+    let isDark = false;
+    darkBtn.addEventListener('click', () => {
+        isDark = !isDark;
+        document.body.style.backgroundColor = isDark ? '#0f172a' : '#1e293b';
+        darkBtn.innerHTML = isDark ? '☀️' : '🌙';
+        addLog(`🌓 Theme toggled (${isDark ? 'dark' : 'light'} visual)`);
+    });
+    
+    // dummy buttons
+    document.getElementById('dummyActionBtn')?.addEventListener('click', () => addLog(`📋 DEMO ACTION clicked (no operation)`));
+    document.getElementById('dummyRandomBtn')?.addEventListener('click', () => addLog(`🎲 RANDOM test clicked (simulated)`));
+    
+    // ensure menu initially visible
+    floatingMenu.style.display = "block";
+    minimizedGear.style.display = "none";
+    
+    // Attach drag events to close button
+    closeBtn.addEventListener('mousedown', onPointerStart);
+    closeBtn.addEventListener('touchstart', onPointerStart, { passive: false });
+    window.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('mouseup', onPointerEnd);
+    window.addEventListener('touchmove', onPointerMove, { passive: false });
+    window.addEventListener('touchend', onPointerEnd);
+    
+    // also handle window resize to keep button within bounds
+    window.addEventListener('resize', () => {
+        if (closeBtn.style.position === 'fixed') {
+            let left = parseFloat(closeBtn.style.left);
+            let top = parseFloat(closeBtn.style.top);
+            if (!isNaN(left)) {
+                left = Math.min(Math.max(5, left), window.innerWidth - closeBtn.offsetWidth);
+                closeBtn.style.left = left + 'px';
+            }
+            if (!isNaN(top)) {
+                top = Math.min(Math.max(5, top), window.innerHeight - closeBtn.offsetHeight);
+                closeBtn.style.top = top + 'px';
+            }
+            saveCloseBtnPosition();
+        }
+    });
+    
+    // Additional: original close behavior for standard close button click (only if NOT in drag mode)
+    // we already handled short tap in onPointerEnd (toggleMenu)
+    // but also we need to prevent default when drag mode just activated but no movement.
+    
+    // Load stored position or default
+    loadCloseBtnPosition();
+    
+    // small fix: if close button is moved while menu hidden, position persists correctly
+    addLog("🎯 Drag test ready. Long press (hold) on ✕ to enter drag mode → move anywhere.");
+</script>
+</body>
+</html>
