@@ -889,8 +889,8 @@
         
         .btn-main { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.75rem; flex: 1; transition: all 0.2s; color: var(--text-primary); }
         .btn-accent { background: var(--accent); color: white; border: none; }
-        .btn-toggle.active { background: #2563eb; color: white; }
-        .btn-toggle.off { background: #475569; color: white; border: none; }
+        .btn-toggle.active { background: #2563eb; color: white; border: none; }
+        .btn-toggle.off { background: #000000; color: white; border: none; }
         
         .mode-random-active {
             background: #2563eb !important;
@@ -898,7 +898,7 @@
             border: none !important;
         }
         .mode-normal-active {
-            background: #1e293b !important;
+            background: #000000 !important;
             color: white !important;
             border: none !important;
         }
@@ -2770,7 +2770,7 @@
             const chinese = addChinese.value.trim();
             const khmer = addKhmer.value.trim();
             if (!chinese && !khmer) { showToast("⚠️ Enter at least one value"); return; }
-            // MODAL STAYS OPEN: do not remove modalDiv here
+            // MODAL STAYS OPEN - do not remove
             const success = await addVocabToSheet(khmer, chinese);
             if (success) {
                 const newSheetRow = (vocabList.length > 0 ? vocabList[vocabList.length-1].sheetRow : 1) + 1;
@@ -2792,10 +2792,9 @@
                 updateDisplay();
                 showToast(`✅ Added "${chinese || khmer}" as new #${getDisplayNumberFromArrayIndex(newIdx)}`);
                 scrollToSidebarItem();
-                // Clear input fields for next addition
+                // Clear fields for next addition, keep modal open
                 addChinese.value = "";
                 addKhmer.value = "";
-                // Keep modal open and re-focus on Chinese input
                 addChinese.focus();
             }
         };
@@ -3471,15 +3470,12 @@
     window.onload = async () => {
         initCopyPopup();
         emojiContainer = document.getElementById('emojiContainer');
-        // Add pinch and wheel resize for emoji
         if (emojiContainer) {
             emojiContainer.addEventListener('touchstart', handleEmojiPinchStart, { passive: false });
             emojiContainer.addEventListener('touchmove', handleEmojiPinchMove, { passive: false });
             emojiContainer.addEventListener('touchend', handleEmojiPinchEnd);
             emojiContainer.addEventListener('wheel', handleEmojiWheel, { passive: false });
-            // Initialize drag
             initEmojiDrag();
-            // Load saved position
             loadEmojiPosition();
         }
         loadSettings(); 
