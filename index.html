@@ -114,6 +114,7 @@
             --tab-bg: #f1f5f9;
             --slider-track: #cbd5e1;
             --sidebar-width: 400px;
+            --emoji-font-size: 32px;
         }
 
         body, html {
@@ -609,6 +610,49 @@
         }
         .khmer-text:active { cursor: grabbing; }
 
+        /* Emoji container styles - draggable */
+        .emoji-container {
+            position: fixed;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 8px 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--emoji-font-size, 32px);
+            pointer-events: auto;
+            transition: none;
+            border: 1px solid rgba(255,255,255,0.3);
+            white-space: nowrap;
+            cursor: grab;
+            font-weight: 500;
+            letter-spacing: 2px;
+            touch-action: none;
+        }
+        .emoji-container:active { cursor: grabbing; }
+        .emoji-container.visible {
+            display: flex;
+        }
+        .emoji-container.hidden {
+            display: none;
+        }
+        .emoji-container:hover {
+            background: rgba(0,0,0,0.7);
+        }
+        body.night-mode .emoji-container {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(255,255,255,0.2);
+        }
+        @media (max-width: 700px) {
+            .emoji-container { padding: 6px 16px; }
+        }
+
         .sidebar { 
             width: var(--sidebar-width);
             min-width: 280px; 
@@ -845,22 +889,20 @@
         
         .btn-main { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.75rem; flex: 1; transition: all 0.2s; color: var(--text-primary); }
         .btn-accent { background: var(--accent); color: white; border: none; }
-        .btn-toggle.active { background: var(--success); color: white; }
-        .btn-toggle.off { background: #94a3b8; color: white; }
+        .btn-toggle.active { background: #2563eb; color: white; }
+        .btn-toggle.off { background: #475569; color: white; border: none; }
         
-        /* Mode toggle button dynamic colors */
         .mode-random-active {
-            background: #22c55e !important;
-            color: white !important;
-            border: none !important;
-        }
-        .mode-normal-active {
             background: #2563eb !important;
             color: white !important;
             border: none !important;
         }
+        .mode-normal-active {
+            background: #1e293b !important;
+            color: white !important;
+            border: none !important;
+        }
 
-        /* Input with inner icon */
         .input-icon-wrapper {
             position: relative;
             width: 100%;
@@ -1293,7 +1335,7 @@
                 
                 <div class="nav-row">
                     <button id="modeToggleBtn" class="btn-main mode-random-active" onclick="toggleAppMode()">RANDOM (Space)</button>
-                    <button id="autoBtn" class="btn-main btn-toggle off" onclick="toggleAuto()">AUTO: OFF</button>
+                    <button id="autoBtn" class="btn-main off" onclick="toggleAuto()">AUTO: OFF</button>
                 </div>
 
                 <div class="tab-row" style="margin-top:10px;">
@@ -1304,7 +1346,7 @@
                 </div>
 
                 <div id="mainControls" class="control-group active">
-                    <div class="size-row"><label>Next Word Delay (s)</label><input type="range" id="autoDelay" class="size-slider" min="2" max="15" step="1" value="5"><span id="delayVal" style="font-size:0.7rem; width:20px;">5s</span></div>
+                    <div class="size-row"><label>Next Word Delay (s)</label><input type="range" id="autoDelay" class="size-slider" min="1" max="15" step="1" value="3"><span id="delayVal" style="font-size:0.7rem; width:20px;">3s</span></div>
                     <div id="zhMainControls">
                         <div class="style-grid"><label>ZH Font</label><select id="mZhFont" class="font-select">
                             <option value="'Baguette Simplified'">Baguette Simplified</option>
@@ -1417,6 +1459,7 @@
         <div class="display-area" id="displayArea">
             <div class="chinese-word" id="chineseWord"></div>
             <div class="khmer-text" id="khmerWord">រួចរាល់</div>
+            <div class="emoji-container hidden" id="emojiContainer"></div>
         </div>
     </div>
 
@@ -1440,6 +1483,20 @@
     let activePasswordModal = null;
     let searchTerm = "";
     
+    // ========== EMOJI VARIABLES ==========
+    let currentEmojiText = "";
+    let emojiFontSize = 32;
+    let emojiContainer = null;
+    let isPinchingEmoji = false;
+    let initialEmojiDistance = 0;
+    let initialEmojiFontSize = 32;
+    // Emoji drag variables
+    let emojiDragActive = false;
+    let emojiStartMouseX = 0, emojiStartMouseY = 0;
+    let emojiStartLeft = 0, emojiStartTop = 0;
+    let emojiX = 50, emojiY = 70; // percentage for responsive
+    let emojiLeftPx = null, emojiTopPx = null; // pixel-based for drag
+    
     // ========== GLOBAL COPY SYSTEM ==========
     let copyLocked = false;
     let pendingCopyText = "";
@@ -1450,6 +1507,171 @@
     
     const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM/edit";
     const DEFAULT_SHEET_ID = "14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM";
+    
+    // ========== EMOJI FUNCTIONS ==========
+    function getDistance(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.hypot(dx, dy);
+    }
+    
+    function handleEmojiPinchStart(e) {
+        if (e.touches.length === 2 && emojiContainer && emojiContainer.classList.contains('visible')) {
+            e.preventDefault();
+            isPinchingEmoji = true;
+            initialEmojiDistance = getDistance(e.touches);
+            initialEmojiFontSize = emojiFontSize;
+        }
+    }
+    
+    function handleEmojiPinchMove(e) {
+        if (isPinchingEmoji && e.touches.length === 2 && emojiContainer && emojiContainer.classList.contains('visible')) {
+            e.preventDefault();
+            const newDistance = getDistance(e.touches);
+            if (initialEmojiDistance > 0) {
+                const scale = newDistance / initialEmojiDistance;
+                let newSize = initialEmojiFontSize * scale;
+                newSize = Math.max(16, Math.min(120, newSize));
+                emojiFontSize = Math.round(newSize);
+                document.documentElement.style.setProperty('--emoji-font-size', emojiFontSize + 'px');
+                saveEmojiSize();
+            }
+        }
+    }
+    
+    function handleEmojiPinchEnd() {
+        isPinchingEmoji = false;
+        initialEmojiDistance = 0;
+    }
+    
+    function handleEmojiWheel(e) {
+        if (e.ctrlKey && emojiContainer && emojiContainer.classList.contains('visible')) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -2 : 2;
+            let newSize = emojiFontSize + delta;
+            newSize = Math.max(16, Math.min(120, newSize));
+            emojiFontSize = newSize;
+            document.documentElement.style.setProperty('--emoji-font-size', emojiFontSize + 'px');
+            saveEmojiSize();
+        }
+    }
+    
+    function saveEmojiPosition() {
+        if (emojiContainer) {
+            const left = emojiContainer.offsetLeft;
+            const top = emojiContainer.offsetTop;
+            if (!isNaN(left) && !isNaN(top)) {
+                localStorage.setItem('emojiPosLeft', left);
+                localStorage.setItem('emojiPosTop', top);
+            }
+        }
+        localStorage.setItem('emojiFontSize', emojiFontSize);
+    }
+    
+    function saveEmojiSize() {
+        localStorage.setItem('emojiFontSize', emojiFontSize);
+    }
+    
+    function loadEmojiPosition() {
+        const savedLeft = localStorage.getItem('emojiPosLeft');
+        const savedTop = localStorage.getItem('emojiPosTop');
+        const savedSize = localStorage.getItem('emojiFontSize');
+        if (savedSize) {
+            emojiFontSize = parseInt(savedSize);
+            document.documentElement.style.setProperty('--emoji-font-size', emojiFontSize + 'px');
+        }
+        if (savedLeft !== null && savedTop !== null && emojiContainer) {
+            emojiContainer.style.left = savedLeft + 'px';
+            emojiContainer.style.top = savedTop + 'px';
+            emojiContainer.style.transform = 'none';
+            emojiContainer.style.bottom = 'auto';
+            emojiContainer.style.right = 'auto';
+        }
+    }
+    
+    function initEmojiDrag() {
+        if (!emojiContainer) return;
+        const onStart = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!emojiContainer.classList.contains('visible')) return;
+            emojiDragActive = true;
+            const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+            const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+            emojiStartMouseX = clientX;
+            emojiStartMouseY = clientY;
+            emojiStartLeft = emojiContainer.offsetLeft;
+            emojiStartTop = emojiContainer.offsetTop;
+            emojiContainer.style.cursor = 'grabbing';
+            emojiContainer.style.transition = 'none';
+        };
+        const onMove = (e) => {
+            if (!emojiDragActive) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+            const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+            let newLeft = emojiStartLeft + (clientX - emojiStartMouseX);
+            let newTop = emojiStartTop + (clientY - emojiStartMouseY);
+            newLeft = Math.max(0, Math.min(window.innerWidth - emojiContainer.offsetWidth, newLeft));
+            newTop = Math.max(0, Math.min(window.innerHeight - emojiContainer.offsetHeight, newTop));
+            emojiContainer.style.left = newLeft + 'px';
+            emojiContainer.style.top = newTop + 'px';
+            emojiContainer.style.transform = 'none';
+            emojiContainer.style.bottom = 'auto';
+            emojiContainer.style.right = 'auto';
+        };
+        const onEnd = () => {
+            if (!emojiDragActive) return;
+            emojiDragActive = false;
+            emojiContainer.style.cursor = 'grab';
+            emojiContainer.style.transition = '';
+            saveEmojiPosition();
+        };
+        emojiContainer.addEventListener('mousedown', onStart);
+        emojiContainer.addEventListener('touchstart', onStart, { passive: false });
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+        window.addEventListener('touchmove', onMove, { passive: false });
+        window.addEventListener('touchend', onEnd);
+    }
+    
+    async function fetchEmojiForChinese(chineseText) {
+        if (!chineseText) {
+            emojiContainer.classList.add('hidden');
+            return;
+        }
+        try {
+            const translateUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=en&dt=t&q=${encodeURIComponent(chineseText)}`;
+            const transRes = await fetch(translateUrl);
+            const transData = await transRes.json();
+            const englishWord = transData[0][0][0].toLowerCase();
+            
+            if (!englishWord) {
+                emojiContainer.classList.add('hidden');
+                return;
+            }
+            
+            const emojiUrl = `https://emojihub.yurace.pro/api/search?q=${encodeURIComponent(englishWord)}`;
+            const emojiRes = await fetch(emojiUrl);
+            const emojis = await emojiRes.json();
+            
+            if (emojis && emojis.length > 0) {
+                const emojiCodes = emojis.slice(0, 6).map(e => e.htmlCode ? e.htmlCode[0] : '').filter(c => c);
+                if (emojiCodes.length) {
+                    currentEmojiText = emojiCodes.join(' ');
+                    emojiContainer.innerHTML = currentEmojiText;
+                    emojiContainer.classList.remove('hidden');
+                    emojiContainer.classList.add('visible');
+                    return;
+                }
+            }
+            emojiContainer.classList.add('hidden');
+        } catch (error) {
+            console.error("Emoji fetch error:", error);
+            emojiContainer.classList.add('hidden');
+        }
+    }
     
     // ========== HELPER FUNCTIONS ==========
     function indexToLetter(index) {
@@ -1596,7 +1818,7 @@
         }, 1200);
     }
     
-    // ========== PASSWORD PROTECTION (FIXED CLOSE) ==========
+    // ========== PASSWORD PROTECTION ==========
     function showPasswordModal(callback) {
         if (activePasswordModal) return;
         const modalDiv = document.createElement('div');
@@ -1850,7 +2072,6 @@
     
     // ========== TIMER-SAFE NAVIGATION ==========
     function loadWordByMode(idx, addToHistory = true) { 
-        // Critical: clear any pending auto timer BEFORE loading new word
         if (autoTimer) {
             clearTimeout(autoTimer);
             autoTimer = null;
@@ -1867,6 +2088,12 @@
             if (newPage !== normalCurrentPage && newPage >= 0) { normalCurrentPage = newPage; renderNormalSidebar(); } 
             else { let focusPos = sidebarIndices.indexOf(idx); if (focusPos !== -1) { sidebarFocusIdx = focusPos; renderSidebarUI(); updateDisplay(); const currentItem = vocabList[sidebarIndices[sidebarFocusIdx]]; if (currentItem) speakAutoSequence(currentItem.chinese, currentItem.khmer); scrollToActiveSidebarItem(); } else { renderNormalSidebar(); } } 
         } 
+        const chineseText = vocabList[idx]?.chinese || '';
+        if (chineseText) {
+            fetchEmojiForChinese(chineseText);
+        } else {
+            emojiContainer.classList.add('hidden');
+        }
     }
     
     function pickRandom() { 
@@ -1929,8 +2156,13 @@
     function toggleAuto() { 
         autoActive = !autoActive; 
         const btn = document.getElementById('autoBtn'); 
-        btn.classList.toggle('active', autoActive); 
-        btn.classList.toggle('off', !autoActive); 
+        if(autoActive) {
+            btn.classList.remove('off');
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+            btn.classList.add('off');
+        }
         btn.innerText = autoActive ? "AUTO: ON" : "AUTO: OFF"; 
         if(autoActive) { 
             pickRandom(); 
@@ -1940,7 +2172,6 @@
         } 
     }
     
-    // Clean timer start: only called from speakAutoSequence after speech finishes
     function startAutoCycle() { 
         if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
         if (autoActive) {
@@ -2539,7 +2770,7 @@
             const chinese = addChinese.value.trim();
             const khmer = addKhmer.value.trim();
             if (!chinese && !khmer) { showToast("⚠️ Enter at least one value"); return; }
-            modalDiv.remove();
+            // MODAL STAYS OPEN: do not remove modalDiv here
             const success = await addVocabToSheet(khmer, chinese);
             if (success) {
                 const newSheetRow = (vocabList.length > 0 ? vocabList[vocabList.length-1].sheetRow : 1) + 1;
@@ -2561,6 +2792,11 @@
                 updateDisplay();
                 showToast(`✅ Added "${chinese || khmer}" as new #${getDisplayNumberFromArrayIndex(newIdx)}`);
                 scrollToSidebarItem();
+                // Clear input fields for next addition
+                addChinese.value = "";
+                addKhmer.value = "";
+                // Keep modal open and re-focus on Chinese input
+                addChinese.focus();
             }
         };
         document.getElementById('closeAddModalBtn').onclick = () => modalDiv.remove();
@@ -2712,7 +2948,6 @@
         let rateFormatted = rateValue === 0 ? "0%" : (rateValue > 0 ? "+" + rateValue + "%" : rateValue + "%"); 
         for(let i=0; i<zhReps; i++) { await callEdgeTTS(zhText, zhVoice, rateFormatted); } 
         if(kmText && kmText.trim()) { for(let j=0; j<kmReps; j++) { await callEdgeTTS(kmText, kmVoice, null); } } 
-        // CRITICAL: start auto timer ONLY after speech is completely done
         if(autoActive) startAutoCycle(); 
     }
     
@@ -2738,7 +2973,7 @@
     function applyStyles() { const mKm = document.getElementById('khmerWord'); if(mKm){ mKm.style.fontFamily = document.getElementById('mKmFont').value; mKm.style.color = document.getElementById('mKmColor').value; mKm.style.fontWeight = document.getElementById('mKmBold').classList.contains('active') ? 'bold' : '500'; } applySidebarStyles(); document.getElementById('delayVal').innerText = document.getElementById('autoDelay').value+'s'; document.getElementById('repVal').innerText = document.getElementById('zhReps').value; document.getElementById('kmRepVal').innerText = document.getElementById('kmReps').value; applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyShadow(); saveAllData(); forceShrink(); }
     function applyShadow() { const shadowValue = document.getElementById('shadowSlider').value; const percent = Math.round(shadowValue); document.getElementById('shadowVal').innerText = percent + '%'; const shadowBlur = percent * 0.4; const shadowOffset = percent * 0.2; const shadowOpacity = Math.min(0.5, percent / 40); const shadowStyle = `${shadowOffset}px ${shadowOffset}px ${shadowBlur}px rgba(0,0,0,${shadowOpacity})`; document.querySelectorAll('.chinese-main').forEach(el => el.style.textShadow = shadowStyle); const khmerElementW = document.getElementById('khmerWord'); if (khmerElementW) khmerElementW.style.textShadow = shadowStyle; saveAllData(); }
     function saveAllData() { const settings = { mZhSize: userSetChineseFontSize, mKmSize: userSetKhmerFontSize, mZhColor: document.getElementById('mZhColor').value, mKmColor: document.getElementById('mKmColor').value, zhReps: document.getElementById('zhReps').value, kmReps: document.getElementById('kmReps').value, autoDelay: document.getElementById('autoDelay').value, sidebarVisible: sidebarVisible, sZhFont: document.getElementById('sZhFont').value, sKmFont: document.getElementById('sKmFont').value, sZhSize: document.getElementById('sZhSize').value, sKmSize: document.getElementById('sKmSize').value, sZhColor: document.getElementById('sZhColor').value, sKmColor: document.getElementById('sKmColor').value, vocabSpacing: document.getElementById('sVocabSpacing').value, zhVoice: document.getElementById('zhVoiceSelect').value, kmVoice: document.getElementById('kmVoiceSelect').value, zhRate: document.getElementById('zhRateSlider').value, pinyinFont: document.getElementById('pinyinFont').value, pinyinColor: document.getElementById('pinyinColor').value, pinyinBold: document.getElementById('pinyinBold').classList.contains('active'), pinyinSizePx: document.getElementById('pinyinSizePx').value, pinyinSpacing: document.getElementById('pinyinSpacing').value, bottomFont: document.getElementById('bottomFont').value, bottomCharColor: document.getElementById('bottomCharColor').value, bottomBold: document.getElementById('bottomBold').classList.contains('active'), bottomSizePx: userSetBottomFontSize, topPinyinVisible: topPinyinVisible, bottomCharVisible: bottomCharVisible, appMode: appMode, normalCurrentIdx: normalCurrentIdx, normalCurrentPage: normalCurrentPage, shadow: document.getElementById('shadowSlider').value }; localStorage.setItem('vocabMaster_List', JSON.stringify(vocabList)); localStorage.setItem('vocabMaster_Settings', JSON.stringify(settings)); }
-    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings){ const s = JSON.parse(savedSettings); userSetChineseFontSize = s.mZhSize || 42; userSetKhmerFontSize = s.mKmSize || 42; document.getElementById('mZhSize').value = userSetChineseFontSize; document.getElementById('mKmSize').value = userSetKhmerFontSize; document.getElementById('mZhColor').value = s.mZhColor || "#ffffff"; document.getElementById('mKmColor').value = s.mKmColor || "#ffffff"; document.getElementById('zhReps').value = s.zhReps || 1; document.getElementById('kmReps').value = s.kmReps || 1; document.getElementById('autoDelay').value = s.autoDelay || 5; if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor || "#ffffff"; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor || "#ffffff"; document.getElementById('sVocabSpacing').value = s.vocabSpacing || 8; document.body.style.setProperty('--vocab-spacing', (s.vocabSpacing || 8) + 'px'); document.getElementById('vocabSpacingVal').innerText = (s.vocabSpacing || 8) + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.pinyinFont) document.getElementById('pinyinFont').value = s.pinyinFont; if(s.pinyinColor) document.getElementById('pinyinColor').value = s.pinyinColor || "#ffffff"; if(s.pinyinBold !== undefined) { const btn = document.getElementById('pinyinBold'); if(s.pinyinBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.pinyinSizePx) { document.getElementById('pinyinSizePx').value = s.pinyinSizePx; userSetPinyinFontSize = parseInt(s.pinyinSizePx); } if(s.pinyinSpacing) document.getElementById('pinyinSpacing').value = s.pinyinSpacing; if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont; if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor || "#ffffff"; if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomFontSize = parseInt(s.bottomSizePx); } if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible; if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible; else bottomCharVisible = true;
+    function loadSettings() { const savedSettings = localStorage.getItem('vocabMaster_Settings'); if(savedSettings){ const s = JSON.parse(savedSettings); userSetChineseFontSize = s.mZhSize || 42; userSetKhmerFontSize = s.mKmSize || 42; document.getElementById('mZhSize').value = userSetChineseFontSize; document.getElementById('mKmSize').value = userSetKhmerFontSize; document.getElementById('mZhColor').value = s.mZhColor || "#ffffff"; document.getElementById('mKmColor').value = s.mKmColor || "#ffffff"; document.getElementById('zhReps').value = s.zhReps || 1; document.getElementById('kmReps').value = s.kmReps || 1; let delayVal = s.autoDelay !== undefined ? s.autoDelay : 3; document.getElementById('autoDelay').value = delayVal; if(s.shadow !== undefined) document.getElementById('shadowSlider').value = s.shadow; if(s.sZhFont) document.getElementById('sZhFont').value = s.sZhFont; if(s.sKmFont) document.getElementById('sKmFont').value = s.sKmFont; if(s.sZhSize) document.getElementById('sZhSize').value = s.sZhSize; if(s.sKmSize) document.getElementById('sKmSize').value = s.sKmSize; if(s.sZhColor) document.getElementById('sZhColor').value = s.sZhColor || "#ffffff"; if(s.sKmColor) document.getElementById('sKmColor').value = s.sKmColor || "#ffffff"; document.getElementById('sVocabSpacing').value = s.vocabSpacing || 8; document.body.style.setProperty('--vocab-spacing', (s.vocabSpacing || 8) + 'px'); document.getElementById('vocabSpacingVal').innerText = (s.vocabSpacing || 8) + 'px'; if(s.zhVoice) document.getElementById('zhVoiceSelect').value = s.zhVoice; if(s.kmVoice) document.getElementById('kmVoiceSelect').value = s.kmVoice; if(s.zhRate !== undefined) document.getElementById('zhRateSlider').value = s.zhRate; if(s.pinyinFont) document.getElementById('pinyinFont').value = s.pinyinFont; if(s.pinyinColor) document.getElementById('pinyinColor').value = s.pinyinColor || "#ffffff"; if(s.pinyinBold !== undefined) { const btn = document.getElementById('pinyinBold'); if(s.pinyinBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.pinyinSizePx) { document.getElementById('pinyinSizePx').value = s.pinyinSizePx; userSetPinyinFontSize = parseInt(s.pinyinSizePx); } if(s.pinyinSpacing) document.getElementById('pinyinSpacing').value = s.pinyinSpacing; if(s.bottomFont) document.getElementById('bottomFont').value = s.bottomFont; if(s.bottomCharColor) document.getElementById('bottomCharColor').value = s.bottomCharColor || "#ffffff"; if(s.bottomBold !== undefined) { const btn = document.getElementById('bottomBold'); if(s.bottomBold) btn.classList.add('active'); else btn.classList.remove('active'); } if(s.bottomSizePx) { document.getElementById('bottomSizePx').value = s.bottomSizePx; userSetBottomFontSize = parseInt(s.bottomSizePx); } if(s.topPinyinVisible !== undefined) topPinyinVisible = s.topPinyinVisible; if(s.bottomCharVisible !== undefined) bottomCharVisible = s.bottomCharVisible; else bottomCharVisible = true;
             if(s.appMode === 'normal') { appMode = 'normal'; document.getElementById('modeToggleBtn').innerText = 'NORMAL (Space)'; document.getElementById('modeToggleBtn').classList.remove('mode-random-active'); document.getElementById('modeToggleBtn').classList.add('mode-normal-active'); } else { appMode = 'random'; document.getElementById('modeToggleBtn').innerText = 'RANDOM (Space)'; document.getElementById('modeToggleBtn').classList.remove('mode-normal-active'); document.getElementById('modeToggleBtn').classList.add('mode-random-active'); } normalCurrentIdx = s.normalCurrentIdx || 0; normalCurrentPage = s.normalCurrentPage || 0; sidebarVisible = s.sidebarVisible !== undefined ? s.sidebarVisible : false; if(!sidebarVisible) { document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; } } else { document.getElementById('pinyinFont').value = "'Baguette Simplified'"; document.getElementById('pinyinColor').value = "#ffffff"; document.getElementById('pinyinSizePx').value = "55"; userSetPinyinFontSize = 55; document.getElementById('pinyinSpacing').value = "0"; document.getElementById('bottomSizePx').value = "55"; userSetBottomFontSize = 55; document.getElementById('mKmColor').value = "#ffffff"; document.getElementById('bottomCharColor').value = "#ffffff"; document.getElementById('shadowSlider').value = "3"; sidebarVisible = false; document.getElementById('rightSide').classList.add('hidden'); document.getElementById('sidebarToggleBtn').innerText = 'SHOW SIDEBAR'; bottomCharVisible = true; applyPinyinStyles(); applyBottomStyles(); } applyChineseMainStyle(); applyPinyinStyles(); applyBottomStyles(); applyTextVisibility(); setKhmerFontSize(userSetKhmerFontSize); applyShadow(); applyBottomAutoScale(); }
     function toggleBold(btnId, applyCallback) { const btn = document.getElementById(btnId); if (btn) { btn.classList.toggle('active'); if (applyCallback && typeof applyCallback === 'function') { applyCallback(); } else { applyStyles(); } } }
     function switchTab(tab) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active'); document.querySelectorAll('.control-group').forEach(g => g.classList.toggle('active', g.id.startsWith(tab))); if (tab === 'side' && !sidebarVisible) { toggleSidebar(); } }
@@ -2749,6 +2984,7 @@
             if (e.target.closest('#floatingMenu')) return; 
             if (e.target.closest('.chinese-word')) return; 
             if (e.target.closest('.khmer-text')) return; 
+            if (e.target.closest('.emoji-container')) return;
             if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
                 document.activeElement.blur();
             }
@@ -2759,6 +2995,7 @@
             if (e.target.closest('#floatingMenu')) return;
             if (e.target.closest('.chinese-word')) return;
             if (e.target.closest('.khmer-text')) return;
+            if (e.target.closest('.emoji-container')) return;
             if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
                 document.activeElement.blur();
             }
@@ -2807,9 +3044,9 @@
     let longPressTimer = null, pressStartX = 0, pressStartY = 0, hasMovedDuringPress = false;
     const canvas = document.getElementById('displayArea');
     let initialPinchDistance = 0, initialFontSize = 0, isPinching = false;
-    function getDistance(touches) { const dx = touches[0].clientX - touches[1].clientX; const dy = touches[0].clientY - touches[1].clientY; return Math.hypot(dx, dy); }
-    function handlePinchStart(e, type) { if (e.touches.length === 2) { e.preventDefault(); isPinching = true; initialPinchDistance = getDistance(e.touches); initialFontSize = (type === 'chinese') ? userSetChineseFontSize : userSetKhmerFontSize; } }
-    function handlePinchMove(e, type) { if (isPinching && e.touches.length === 2) { e.preventDefault(); const newDistance = getDistance(e.touches); if (initialPinchDistance > 0) { const scale = newDistance / initialPinchDistance; let newSize = initialFontSize * scale; newSize = Math.max(2, Math.min(150, newSize)); if (type === 'chinese') setChineseFontSize(Math.round(newSize)); else setKhmerFontSize(Math.round(newSize)); } } }
+    function getDistanceFromTouches(touches) { const dx = touches[0].clientX - touches[1].clientX; const dy = touches[0].clientY - touches[1].clientY; return Math.hypot(dx, dy); }
+    function handlePinchStart(e, type) { if (e.touches.length === 2) { e.preventDefault(); isPinching = true; initialPinchDistance = getDistanceFromTouches(e.touches); initialFontSize = (type === 'chinese') ? userSetChineseFontSize : userSetKhmerFontSize; } }
+    function handlePinchMove(e, type) { if (isPinching && e.touches.length === 2) { e.preventDefault(); const newDistance = getDistanceFromTouches(e.touches); if (initialPinchDistance > 0) { const scale = newDistance / initialPinchDistance; let newSize = initialFontSize * scale; newSize = Math.max(2, Math.min(150, newSize)); if (type === 'chinese') setChineseFontSize(Math.round(newSize)); else setKhmerFontSize(Math.round(newSize)); } } }
     function handlePinchEnd() { isPinching = false; initialPinchDistance = 0; }
     function applyLayerTransforms() { if (!chineseElement) return; chineseElement.querySelectorAll('.pinyin-top').forEach(el => el.style.transform = `translate(${topLayerX}px, ${topLayerY}px)`); chineseElement.querySelectorAll('.chinese-bottom').forEach(el => el.style.transform = `translate(${bottomLayerX}px, ${bottomLayerY}px)`); }
     function saveAllDragPositions() { localStorage.setItem('drag_chineseX', chineseX); localStorage.setItem('drag_chineseY', chineseY); localStorage.setItem('drag_khmerX', khmerX); localStorage.setItem('drag_khmerY', khmerY); localStorage.setItem('drag_topX', topLayerX); localStorage.setItem('drag_topY', topLayerY); localStorage.setItem('drag_bottomX', bottomLayerX); localStorage.setItem('drag_bottomY', bottomLayerY); }
@@ -3233,6 +3470,18 @@
     
     window.onload = async () => {
         initCopyPopup();
+        emojiContainer = document.getElementById('emojiContainer');
+        // Add pinch and wheel resize for emoji
+        if (emojiContainer) {
+            emojiContainer.addEventListener('touchstart', handleEmojiPinchStart, { passive: false });
+            emojiContainer.addEventListener('touchmove', handleEmojiPinchMove, { passive: false });
+            emojiContainer.addEventListener('touchend', handleEmojiPinchEnd);
+            emojiContainer.addEventListener('wheel', handleEmojiWheel, { passive: false });
+            // Initialize drag
+            initEmojiDrag();
+            // Load saved position
+            loadEmojiPosition();
+        }
         loadSettings(); 
         const savedList = localStorage.getItem('vocabMaster_List'); 
         if(savedList){ vocabList = JSON.parse(savedList); if(vocabList.length) { if (appMode === 'random') pickRandom(); else { normalCurrentIdx = 0; normalCurrentPage = 0; renderNormalSidebar(); } } }
