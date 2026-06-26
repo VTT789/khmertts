@@ -2175,9 +2175,6 @@
             "https://docs.google.com/spreadsheets/d/14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM/edit",
             DEFAULT_SHEET_ID = "14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM";
 
-        // Translation cache to avoid repeated API calls
-        const translationCache = new Map();
-
         function getDistance(e) { const t = e[0].clientX - e[1].clientX,
                 n = e[0].clientY - e[1].clientY; return Math.hypot(t, n) }
 
@@ -2250,57 +2247,8 @@
                     "touchmove", t, { passive: !1 }), window.addEventListener("touchend", n)
         }
 
-        // Cached translation function
-        async function fetchEmojiForChinese(chinese) {
-            if (!chinese) {
-                emojiContainer.classList.add("hidden");
-                return;
-            }
-
-            // Check cache first
-            let english = translationCache.get(chinese);
-            if (!english) {
-                try {
-                    const url =
-                        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=en&dt=t&q=${encodeURIComponent(chinese)}`;
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const data = await response.json();
-                    english = data[0][0][0].toLowerCase();
-                    // Store in cache
-                    translationCache.set(chinese, english);
-                } catch (error) {
-                    console.warn("Translation failed:", error);
-                    if (!window._quotaToastShown) {
-                        window._quotaToastShown = true;
-                        showToast("⚠️ Translation quota exceeded – emojis disabled for now");
-                    }
-                    emojiContainer.classList.add("hidden");
-                    return;
-                }
-            }
-
-            // Use english to fetch emoji
-            try {
-                const emojiUrl = `https://emojihub.yurace.pro/api/search?q=${encodeURIComponent(english)}`;
-                const resp = await fetch(emojiUrl);
-                const emojis = await resp.json();
-                if (emojis && emojis.length > 0) {
-                    const codes = emojis.slice(0, 6).map(e => e.htmlCode ? e.htmlCode[0] : "").filter(Boolean);
-                    if (codes.length) {
-                        currentEmojiText = codes.join(" ");
-                        emojiContainer.innerHTML = currentEmojiText;
-                        emojiContainer.classList.remove("hidden");
-                        emojiContainer.classList.add("visible");
-                        return;
-                    }
-                }
-                emojiContainer.classList.add("hidden");
-            } catch (e) {
-                console.warn("Emoji fetch error:", e);
-                emojiContainer.classList.add("hidden");
-            }
-        }
+        // Emoji fetching REMOVED - no more translate.googleapis.com calls
+        // The emoji container is permanently hidden
 
         function indexToLetter(e) { let t = "",
                 n = e; for (; n >= 0;) t = String.fromCharCode(n % 26 + 65) + t, n = Math.floor(n / 26) - 1; return t }
@@ -2629,8 +2577,7 @@
                         w && speakAutoSequence(w.chinese, w.khmer);
                         scrollToActiveSidebarItem(); } else renderNormalSidebar() }
             }
-            const ch = vocabList[e]?.chinese || "";
-            ch ? fetchEmojiForChinese(ch) : emojiContainer.classList.add("hidden");
+            // Emoji fetching removed - no more translate.googleapis.com calls
         }
 
         function pickRandom() {
