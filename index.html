@@ -792,6 +792,26 @@
             transition: width .2s ease, background .2s;
             position: relative
         }
+        /* Mobile sidebar - smaller width */
+        @media (max-width:700px) {
+            .sidebar {
+                min-width: 200px;
+                width: var(--sidebar-width, 260px);
+            }
+            .sidebar .side-number-col {
+                min-width: 40px;
+                margin-right: 6px;
+            }
+            .sidebar .vocab-item {
+                padding: 8px 10px;
+            }
+            .sidebar .side-zh {
+                font-size: 0.9rem;
+            }
+            .sidebar .side-km {
+                font-size: 0.75rem;
+            }
+        }
         .sidebar.hidden {
             width: 0 !important;
             min-width: 0 !important;
@@ -1101,6 +1121,7 @@
             text-overflow: ellipsis;
             color: var(--text-primary)
         }
+        /* ====== FIXED: btn-main styles ====== */
         .btn-main {
             background: #f1f5f9;
             border: 1px solid #cbd5e1;
@@ -1112,6 +1133,50 @@
             flex: 1;
             transition: all .2s;
             color: var(--text-primary)
+        }
+        /* Auto button - OFF state: no background */
+        .btn-main.off {
+            background: transparent !important;
+            border-color: var(--border);
+            color: var(--text-primary);
+        }
+        /* Auto button - ACTIVE state: blue background */
+        .btn-main.active {
+            background: #2563eb !important;
+            color: #fff !important;
+            border: 1px solid #2563eb !important;
+        }
+        body.night-mode .btn-main.active {
+            background: #3b82f6 !important;
+            border-color: #3b82f6 !important;
+        }
+        body.night-mode .btn-main.off {
+            background: transparent !important;
+            border-color: #475569;
+            color: #94a3b8;
+        }
+
+        /* Mode toggle - NORMAL mode: BLUE background */
+        .mode-normal-active {
+            background: #2563eb !important;
+            color: #fff !important;
+            border: 1px solid #2563eb !important;
+        }
+        /* Mode toggle - RANDOM mode: transparent background */
+        .mode-random-active {
+            background: transparent !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border) !important;
+        }
+        body.night-mode .mode-normal-active {
+            background: #3b82f6 !important;
+            border-color: #3b82f6 !important;
+            color: #fff !important;
+        }
+        body.night-mode .mode-random-active {
+            background: transparent !important;
+            border-color: #475569 !important;
+            color: #e2e8f0 !important;
         }
         .btn-accent {
             background: var(--accent);
@@ -1127,16 +1192,6 @@
             background: #1e293b;
             color: #fff;
             border: none
-        }
-        .mode-random-active {
-            background: #2563eb !important;
-            color: #fff !important;
-            border: none !important
-        }
-        .mode-normal-active {
-            background: #1e293b !important;
-            color: #fff !important;
-            border: none !important
         }
         .input-icon-wrapper {
             position: relative;
@@ -1210,15 +1265,34 @@
         .file-source-card .url-input-area {
             position: relative;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .file-source-card .url-input-area .input-wrap {
+            position: relative;
+            width: 100%;
         }
         .file-source-card .url-input-area input {
             width: 100%;
             padding-right: 40px;
+            padding: 12px;
+            border-radius: 32px;
+            border: 1px solid #cbd5e1;
+            font-size: .8rem;
+            box-sizing: border-box;
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+        body.night-mode .file-source-card .url-input-area input {
+            background: #334155;
+            color: #fff;
+            border-color: #475569;
         }
         .file-source-card .url-clear-btn {
             position: absolute;
             right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
             background: transparent;
             border: none;
             font-size: 1.2rem;
@@ -1246,7 +1320,7 @@
             border-radius: 32px;
             border: 1px solid #cbd5e1;
             font-size: .8rem;
-            margin: 8px 0;
+            margin: 4px 0 8px 0;
             background: var(--input-bg);
             color: var(--text-primary);
         }
@@ -1646,7 +1720,8 @@
                 width: 320px
             }
             .side-number-col {
-                min-width: 50px
+                min-width: 40px;
+                margin-right: 6px;
             }
             .choice-search-area input {
                 font-size: .9rem;
@@ -1664,6 +1739,18 @@
             .insert-symbol-icon-inside {
                 font-size: .9rem;
                 padding: 4px 8px
+            }
+            .sidebar .side-zh {
+                font-size: 0.85rem;
+            }
+            .sidebar .side-km {
+                font-size: 0.7rem;
+            }
+            .sidebar .side-number {
+                font-size: 0.6rem;
+            }
+            .sidebar .vocab-item {
+                padding: 6px 8px;
             }
         }
         .copy-popup {
@@ -1946,6 +2033,28 @@
             border-color: rgba(255, 255, 255, .25);
             color: #f1f5f9
         }
+        /* Override for floating menu - auto button states */
+        #floatingMenu .btn-main.off {
+            background: transparent !important;
+            border-color: rgba(255,255,255,0.2) !important;
+            color: #94a3b8 !important;
+        }
+        #floatingMenu .btn-main.active {
+            background: #2563eb !important;
+            color: #fff !important;
+            border-color: #2563eb !important;
+        }
+        /* Floating menu - mode toggle states */
+        #floatingMenu .mode-normal-active {
+            background: #2563eb !important;
+            color: #fff !important;
+            border-color: #2563eb !important;
+        }
+        #floatingMenu .mode-random-active {
+            background: transparent !important;
+            color: #94a3b8 !important;
+            border-color: rgba(255,255,255,0.2) !important;
+        }
         #floatingMenu .btn-accent {
             background: var(--accent) !important
         }
@@ -2014,7 +2123,7 @@
                 <div id=panelContent>
                     <button id=insertDataBtn class="btn-main btn-accent" style=background:linear-gradient(135deg,#2563eb,#1e40af);margin-bottom:12px;width:100%;font-size:.85rem;padding:10px;cursor:pointer>➕ INSERT VOCAB</button>
                     <div class=nav-row>
-                        <button id=modeToggleBtn class="btn-main mode-random-active" onclick=toggleAppMode()>RANDOM (Space)</button>
+                        <button id=modeToggleBtn class="btn-main mode-random-active" onclick=toggleAppMode()>RANDOM</button>
                         <button id=autoBtn class="btn-main off" onclick=toggleAuto()>AUTO: OFF</button>
                     </div>
                     <div class=tab-row style=margin-top:10px>
@@ -2671,12 +2780,12 @@
                 `<div class="file-source-card" onclick="event.stopPropagation()">
                     <h3>📥 Load Vocabulary</h3>
                     <div class="url-input-area">
-                        <div style="position:relative; width:100%;">
+                        <div class="input-wrap">
                             <input type="text" id="sheetUrlInputModal" placeholder="Google Sheet URL or ID" value="${currentSheetId||DEFAULT_SHEET_ID}">
                             <button id="clearUrlBtn" class="url-clear-btn" title="Clear input">✕</button>
                         </div>
                         <select id="sheetHistorySelect">
-                            <option value="">-- Select from history --</option>
+                            <option value="">-- Select URL --</option>
                             ${sheetHistory.map(id => `<option value="${id}">${id}</option>`).join('')}
                         </select>
                         <button id="confirmUrlLoad" class="confirm-url-btn">Load Sheet</button>
@@ -2696,13 +2805,13 @@
                 t.focus();
             });
 
-            // History select
+            // History select - auto-load when selected (if not the placeholder)
             historySelect.addEventListener('change', function() {
                 const val = this.value;
                 if (val) {
                     t.value = val;
-                    // Auto-load? We'll let user click load, but we can optionally auto-load.
-                    // For safety, we'll just fill the input, user still needs to click Load.
+                    // Auto-load immediately
+                    n.click();
                 }
             });
 
@@ -2828,19 +2937,17 @@
             else if (vocabList.length) {
                 const newIdx = Math.floor(Math.random() * vocabList.length);
                 loadWordByMode(newIdx, !0);
-                minimizeFloatingMenuOnRandom();
+                // Do NOT auto-minimize - user wants to control this
             }
         }
 
         function historyPrev() { autoTimer && (clearTimeout(autoTimer), autoTimer = null); if ("random" === appMode) { if (
                     historyIndex > 0) { historyIndex--;
-                    loadWordByMode(history[historyIndex], !1); } } else goPrevNormal();
-            minimizeFloatingMenuOnRandom(); }
+                    loadWordByMode(history[historyIndex], !1); } } else goPrevNormal(); }
 
         function historyNext() { autoTimer && (clearTimeout(autoTimer), autoTimer = null); if ("random" === appMode) { if (
                     historyIndex < history.length - 1) { historyIndex++;
-                    loadWordByMode(history[historyIndex], !1); } } else goNextNormal();
-            minimizeFloatingMenuOnRandom(); }
+                    loadWordByMode(history[historyIndex], !1); } } else goNextNormal(); }
 
         function goPrevNormal() {
             if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), !vocabList.length) return;
@@ -2859,22 +2966,34 @@
         function toggleAppMode() {
             autoTimer && (clearTimeout(autoTimer), autoTimer = null);
             const e = document.getElementById("modeToggleBtn");
-            if ("random" === appMode) { appMode = "normal", e.innerText = "NORMAL (Space)", e.classList.remove(
-                    "mode-random-active"), e.classList.add("mode-normal-active"); const t = document.getElementById(
-                    "chineseWord").getAttribute("data-plain") || "";
+            if ("random" === appMode) {
+                appMode = "normal";
+                e.innerText = "NORMAL";
+                e.classList.remove("mode-random-active");
+                e.classList.add("mode-normal-active");
+                const t = document.getElementById("chineseWord").getAttribute("data-plain") || "";
                 let n = vocabList.findIndex((e => e.chinese === t));
-                -1 === n && vocabList.length && (n = 0), normalCurrentIdx = n;
+                -1 === n && vocabList.length && (n = 0);
+                normalCurrentIdx = n;
                 const o = filterVocabBySearch(vocabList);
-                normalCurrentPage = Math.floor(o.findIndex((e => e === vocabList[n])) / 40), normalCurrentPage < 0 && (
-                    normalCurrentPage = 0), renderNormalSidebar() } else { appMode = "random", e.innerText =
-                    "RANDOM (Space)", e.classList.remove("mode-normal-active"), e.classList.add(
-                    "mode-random-active"); const t = document.getElementById("chineseWord").getAttribute(
-                    "data-plain") || "";
+                normalCurrentPage = Math.floor(o.findIndex((e => e === vocabList[n])) / 40);
+                normalCurrentPage < 0 && (normalCurrentPage = 0);
+                renderNormalSidebar();
+            } else {
+                appMode = "random";
+                e.innerText = "RANDOM";
+                e.classList.remove("mode-normal-active");
+                e.classList.add("mode-random-active");
+                const t = document.getElementById("chineseWord").getAttribute("data-plain") || "";
                 let n = vocabList.findIndex((e => e.chinese === t));
-                -1 === n && vocabList.length && (n = 0); if (-1 !== n) { history = [n];
+                -1 === n && vocabList.length && (n = 0);
+                if (-1 !== n) {
+                    history = [n];
                     historyIndex = 0;
-                    renderRandomSidebar(n); } else vocabList.length && pickRandom();
-                minimizeFloatingMenuOnRandom() }
+                    renderRandomSidebar(n);
+                } else vocabList.length && pickRandom();
+                // Do NOT auto-minimize - user wants to control this
+            }
             saveAllData();
             const t = document.getElementById("modeRandomIconHeader"),
                 n = document.getElementById("modeNormalIconHeader");
@@ -2885,9 +3004,19 @@
         function toggleAuto() {
             autoActive = !autoActive;
             const e = document.getElementById("autoBtn");
-            autoActive ? (e.classList.remove("off"), e.classList.add("active")) : (e.classList.remove("active"), e
-                .classList.add("off")), e.innerText = autoActive ? "AUTO: ON" : "AUTO: OFF", autoActive ? pickRandom() : (
-                autoTimer && (clearTimeout(autoTimer), autoTimer = null), killAllSpeech())
+            if (autoActive) {
+                e.classList.remove("off");
+                e.classList.add("active");
+                e.innerText = "AUTO: ON";
+                pickRandom();
+            } else {
+                e.classList.remove("active");
+                e.classList.add("off");
+                e.innerText = "AUTO: OFF";
+                autoTimer && (clearTimeout(autoTimer), autoTimer = null);
+                killAllSpeech();
+            }
+            // Do NOT auto-minimize - user wants to control this
         }
 
         function startAutoCycle() {
@@ -2900,9 +3029,25 @@
             sidebarVisible = !sidebarVisible;
             const e = document.getElementById("rightSide"),
                 t = document.getElementById("dragResizer");
-            sidebarVisible ? (e.classList.remove("hidden"), t.classList.remove("hidden"), document.getElementById(
-                "sidebarToggleBtn").innerText = "HIDE SIDEBAR") : (e.classList.add("hidden"), t.classList.add("hidden"),
-                document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR"), saveAllData()
+            if (sidebarVisible) {
+                e.classList.remove("hidden");
+                t.classList.remove("hidden");
+                document.getElementById("sidebarToggleBtn").innerText = "HIDE SIDEBAR";
+                // On mobile, ensure sidebar is visible with proper width
+                setTimeout(() => {
+                    if (window.innerWidth <= 700) {
+                        const w = Math.min(window.innerWidth * 0.7, 280);
+                        document.documentElement.style.setProperty("--sidebar-width", w + "px");
+                        e.style.width = w + "px";
+                    }
+                    forceShrink();
+                }, 50);
+            } else {
+                e.classList.add("hidden");
+                t.classList.add("hidden");
+                document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
+            }
+            saveAllData()
         }
 
         function escapeHtml(e) { return e ? e.replace(/[&<>]/g, (function(e) { return "&" === e ? "&amp;" : "<" === e ?
@@ -2976,7 +3121,6 @@
                                 s.style.display = "none";
                                 loadWordByMode(n, true);
                                 blurSearchInput();
-                                minimizeFloatingMenuOnRandom();
                             }
                         }));
                     }));
@@ -4030,12 +4174,12 @@
                     bottomCharVisible = void 0 === t.bottomCharVisible || t.bottomCharVisible;
                     if ("normal" === t.appMode) {
                         appMode = "normal";
-                        document.getElementById("modeToggleBtn").innerText = "NORMAL (Space)";
+                        document.getElementById("modeToggleBtn").innerText = "NORMAL";
                         document.getElementById("modeToggleBtn").classList.remove("mode-random-active");
                         document.getElementById("modeToggleBtn").classList.add("mode-normal-active");
                     } else {
                         appMode = "random";
-                        document.getElementById("modeToggleBtn").innerText = "RANDOM (Space)";
+                        document.getElementById("modeToggleBtn").innerText = "RANDOM";
                         document.getElementById("modeToggleBtn").classList.remove("mode-normal-active");
                         document.getElementById("modeToggleBtn").classList.add("mode-random-active");
                     }
@@ -4771,11 +4915,6 @@
             await loadSheetData();
         }
 
-        function minimizeFloatingMenuOnRandom() {
-            const menu = document.getElementById("floatingMenu"),
-                trigger = document.getElementById("minimizedTrigger");
-            if (menu && trigger && menu.style.display !== "none") toggleMenu(true);
-        }
         // ========== FIX: Force reapply all styles when any style control changes ==========
         function refreshAllStyles() {
             applyChineseMainStyle();
@@ -5060,20 +5199,6 @@
                     gearTop = top;
                     saveGearPosition();
                 }
-            }
-        };
-        const originalMinimize = minimizeFloatingMenuOnRandom;
-        window.minimizeFloatingMenuOnRandom = function() {
-            originalMinimize();
-            const gear = document.getElementById("minimizedTrigger");
-            if (gear && gear.style.display === "flex") {
-                const left = window.innerWidth - 80;
-                const top = window.innerHeight - 120;
-                gear.style.left = left + "px";
-                gear.style.top = top + "px";
-                gearLeft = left;
-                gearTop = top;
-                saveGearPosition();
             }
         };
     </script>
