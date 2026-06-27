@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js">
     </script>
     <style>
-        /* All existing styles unchanged */
+        /* ===== All existing @font-face and base styles remain unchanged ===== */
         @font-face {
             font-family: BaguettePinyin;
             src: url('/static/Fonts/Chinese/pinyin-baguette.woff2') format('woff2');
@@ -821,9 +821,7 @@
                 flex: 1 1 25vw !important;
                 flex-shrink: 1 !important;
             }
-            .main-layout .resizer {
-                display: none !important;
-            }
+            /* we no longer hide the resizer; we control it via JS */
         }
         .sidebar.hidden {
             width: 0 !important;
@@ -845,6 +843,30 @@
         }
         .resizer.hidden {
             display: none !important
+        }
+        /* mobile: when sidebar is hidden, resizer becomes a toggle button */
+        .resizer.sidebar-hidden {
+            width: 44px !important;
+            background: transparent !important;
+            border-left: 1px solid var(--border);
+            cursor: pointer;
+        }
+        .resizer.sidebar-hidden .resizer-btn {
+            width: 44px;
+            height: 44px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 50%;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, .2);
+            font-size: 24px;
+            border: none;
+            transform: translate(-50%, -50%);
+            left: 50%;
+            top: 50%;
+            position: absolute;
+        }
+        body.night-mode .resizer.sidebar-hidden .resizer-btn {
+            background: #3b82f6;
         }
         .resizer:hover {
             background: var(--accent)
@@ -2255,7 +2277,7 @@
                 <div class="emoji-container hidden" id=emojiContainer></div>
             </div>
         </div>
-        <div class="resizer hidden" id=dragResizer>
+        <div class="resizer" id=dragResizer>
             <button class=resizer-btn id=sidebarCloseBtn>☰</button>
         </div>
         <div class="sidebar hidden" id=rightSide>
@@ -3012,59 +3034,82 @@
                 autoTimer = setTimeout((() => { autoActive && pickRandom(), autoTimer = null }), e) }
         }
 
+        // ===== FIXED: toggleSidebar - on mobile resizer stays visible =====
         function toggleSidebar() {
             sidebarVisible = !sidebarVisible;
-            const e = document.getElementById("rightSide"),
-                t = document.getElementById("dragResizer");
+            const sidebar = document.getElementById('rightSide');
+            const resizer = document.getElementById('dragResizer');
+            const toggleBtn = document.getElementById('sidebarToggleBtn');
+
             if (sidebarVisible) {
-                e.classList.remove("hidden");
-                t.classList.remove("hidden");
-                document.getElementById("sidebarToggleBtn").innerText = "HIDE SIDEBAR";
+                sidebar.classList.remove('hidden');
+                // On mobile, resizer is visible but we set it to thin strip
+                if (window.innerWidth <= 700) {
+                    resizer.classList.remove('hidden');
+                    resizer.style.width = '6px';
+                    resizer.classList.remove('sidebar-hidden');
+                } else {
+                    // On desktop, show resizer normally
+                    resizer.classList.remove('hidden');
+                }
+                toggleBtn.innerText = 'HIDE SIDEBAR';
+                // Adjust for portrait/landscape
                 setTimeout(() => {
                     if (window.innerWidth <= 700) {
                         if (window.matchMedia("(orientation: portrait)").matches) {
                             const w = window.innerWidth * 0.75;
                             document.documentElement.style.setProperty("--sidebar-width", w + "px");
-                            e.style.width = w + "px";
-                            e.style.minWidth = w + "px";
-                            t.style.display = "none";
+                            sidebar.style.width = w + "px";
+                            sidebar.style.minWidth = w + "px";
                         } else {
                             const w = Math.min(window.innerWidth * 0.7, 280);
                             document.documentElement.style.setProperty("--sidebar-width", w + "px");
-                            e.style.width = w + "px";
-                            t.style.display = "flex";
+                            sidebar.style.width = w + "px";
                         }
                     }
                     forceShrink();
                 }, 50);
             } else {
-                e.classList.add("hidden");
-                t.classList.add("hidden");
-                document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
+                sidebar.classList.add('hidden');
+                // On mobile, we keep resizer visible as a toggle button
                 if (window.innerWidth <= 700) {
-                    t.style.display = "flex";
+                    resizer.classList.remove('hidden');
+                    resizer.style.width = '44px';
+                    resizer.classList.add('sidebar-hidden');
+                } else {
+                    resizer.classList.add('hidden');
                 }
+                toggleBtn.innerText = 'SHOW SIDEBAR';
             }
-            saveAllData()
+            saveAllData();
         }
 
         function handleOrientationChange() {
             if (sidebarVisible && window.innerWidth <= 700) {
-                const e = document.getElementById("rightSide");
-                const t = document.getElementById("dragResizer");
+                const sidebar = document.getElementById('rightSide');
+                const resizer = document.getElementById('dragResizer');
                 if (window.matchMedia("(orientation: portrait)").matches) {
                     const w = window.innerWidth * 0.75;
                     document.documentElement.style.setProperty("--sidebar-width", w + "px");
-                    e.style.width = w + "px";
-                    e.style.minWidth = w + "px";
-                    t.style.display = "none";
+                    sidebar.style.width = w + "px";
+                    sidebar.style.minWidth = w + "px";
+                    // resizer should be thin when sidebar visible
+                    resizer.style.width = '6px';
+                    resizer.classList.remove('sidebar-hidden');
                 } else {
                     const w = Math.min(window.innerWidth * 0.7, 280);
                     document.documentElement.style.setProperty("--sidebar-width", w + "px");
-                    e.style.width = w + "px";
-                    t.style.display = "flex";
+                    sidebar.style.width = w + "px";
+                    resizer.style.width = '6px';
+                    resizer.classList.remove('sidebar-hidden');
                 }
                 forceShrink();
+            } else if (!sidebarVisible && window.innerWidth <= 700) {
+                // sidebar hidden, ensure resizer is toggle button
+                const resizer = document.getElementById('dragResizer');
+                resizer.classList.remove('hidden');
+                resizer.style.width = '44px';
+                resizer.classList.add('sidebar-hidden');
             }
         }
 
