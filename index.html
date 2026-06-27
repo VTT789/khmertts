@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
     <title>📖 Vocab Master – Fixed Auto Timer</title>
-    <!-- Favicon -->
     <link rel="icon" href="/static/ABAicon.png" type="image/png">
-<link rel="apple-touch-icon" sizes="180x180" href="/static/ABAicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/ABAicon.png">
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js">
     </script>
     <style>
+        /* All existing styles unchanged */
         @font-face {
             font-family: BaguettePinyin;
             src: url('/static/Fonts/Chinese/pinyin-baguette.woff2') format('woff2');
@@ -265,7 +265,6 @@
         body.night-mode .offset-reset-btn:hover {
             background: #b91c1c !important
         }
-        /* Pagination button color fix for dark/light */
         .pagination-btn {
             color: var(--pagination-color, #0f172a);
         }
@@ -792,7 +791,6 @@
             transition: width .2s ease, background .2s;
             position: relative
         }
-        /* Mobile sidebar - smaller width */
         @media (max-width:700px) {
             .sidebar {
                 min-width: 200px;
@@ -812,7 +810,6 @@
                 font-size: 0.75rem;
             }
         }
-        /* Mobile Portrait: 75% Sidebar, 25% Main */
         @media (max-width: 700px) and (orientation: portrait) {
             .main-layout .sidebar:not(.hidden) {
                 width: 75vw !important;
@@ -1137,7 +1134,6 @@
             text-overflow: ellipsis;
             color: var(--text-primary)
         }
-        /* ====== FIXED: btn-main styles ====== */
         .btn-main {
             background: #f1f5f9;
             border: 1px solid #cbd5e1;
@@ -1150,13 +1146,11 @@
             transition: all .2s;
             color: var(--text-primary)
         }
-        /* Auto button - OFF state: no background */
         .btn-main.off {
             background: transparent !important;
             border-color: var(--border);
             color: var(--text-primary);
         }
-        /* Auto button - ACTIVE state: blue background */
         .btn-main.active {
             background: #2563eb !important;
             color: #fff !important;
@@ -1171,14 +1165,11 @@
             border-color: #475569;
             color: #94a3b8;
         }
-
-        /* Mode toggle - NORMAL mode: BLUE background */
         .mode-normal-active {
             background: #2563eb !important;
             color: #fff !important;
             border: 1px solid #2563eb !important;
         }
-        /* Mode toggle - RANDOM mode: transparent background */
         .mode-random-active {
             background: transparent !important;
             color: var(--text-primary) !important;
@@ -1973,7 +1964,6 @@
         .big-edit-input {
             flex: 1
         }
-        /* Cache clear button */
         .cache-clear-btn {
             background: #ef4444;
             color: #fff;
@@ -2049,7 +2039,6 @@
             border-color: rgba(255, 255, 255, .25);
             color: #f1f5f9
         }
-        /* Override for floating menu - auto button states */
         #floatingMenu .btn-main.off {
             background: transparent !important;
             border-color: rgba(255,255,255,0.2) !important;
@@ -2060,7 +2049,6 @@
             color: #fff !important;
             border-color: #2563eb !important;
         }
-        /* Floating menu - mode toggle states */
         #floatingMenu .mode-normal-active {
             background: #2563eb !important;
             color: #fff !important;
@@ -2186,7 +2174,6 @@
                         <div class=size-row><label>🇨🇳 Speech Rate</label><input type=range id=zhRateSlider class=size-slider min=-100 max=100 value=0 step=5><span id=zhRateVal>0%</span></div>
                         <div class=size-row><label>ZH Repetitions</label><input type=range id=zhReps class=size-slider min=0 max=10 value=1><span id=repVal>1</span></div>
                         <div class=size-row><label>KM Repetitions</label><input type=range id=kmReps class=size-slider min=0 max=10 value=1><span id=kmRepVal>1</span></div>
-                        <!-- NEW: Speech Order Toggle -->
                         <div class=size-row>
                             <label>Speech Order</label>
                             <button id="speechOrderToggle" class="btn-main" style="flex:1; text-align:center;">ZH → KM</button>
@@ -2201,7 +2188,6 @@
                             <div class=size-row><label>KM Side Size</label><input type=range id=sKmSize min=0.5 max=4 step=0.1 value=0.9></div>
                             <div class=size-row><label>📋 Vocab Spacing</label><input type=range id=sVocabSpacing min=0 max=30 step=1 value=8><span id=vocabSpacingVal>8px</span></div>
                         </div>
-                        <!-- Cache clear button -->
                         <button id=clearCacheBtn class="cache-clear-btn" style="margin-top:8px;">🗑️ Clear Cache & Reset</button>
                         <div id=cacheWarning class=cache-warning>⚠️ Storage full — clear cache to continue</div>
                     </div>
@@ -2281,7 +2267,7 @@
     <script src=https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js>
     </script>
     <script>
-        // ======================== SAFE LOCALSTORAGE WRAPPER (FIXES QUOTA EXCEEDED) =========================
+        // ======================== SAFE LOCALSTORAGE WRAPPER =========================
         let storageQuotaExceeded = false;
 
         function safeSetItem(key, value) {
@@ -2317,7 +2303,6 @@
             try { localStorage.removeItem(key); } catch (e) {}
         }
 
-        // Compress vocabulary list: store as array of arrays (much smaller than object array)
         function compressVocabList(list) {
             return list.map(item => [item.khmer || '', item.chinese || '', item.sheetRow || 2]);
         }
@@ -2331,7 +2316,6 @@
             }));
         }
 
-        // Clear all non-essential data (keeps sheet ID and password)
         function clearAllCache() {
             if (!confirm('⚠️ Clear all cached data? This will reset your vocabulary list, settings, and positions. Your sheet data will be reloaded.')) return;
             const sheetId = currentSheetId || safeGetItem('vocabMaster_SheetId', '');
@@ -2346,7 +2330,6 @@
                         localStorage.removeItem(k);
                     }
                 }
-                // Restore essential
                 if (sheetId) safeSetItem('vocabMaster_SheetId', sheetId);
                 if (password) safeSetItem('vocabMaster_Password', password);
                 showToast('✅ Cache cleared! Reloading...');
@@ -2356,7 +2339,7 @@
             }
         }
 
-        // ======================== PASSWORD PROTECTION (GLOBAL) =========================
+        // ======================== PASSWORD PROTECTION =========================
         let passwordVerified = false;
         let dynamicPassword = "012891556";
 
@@ -2428,7 +2411,7 @@
                 if (callbackAfterDelete) callbackAfterDelete(rowNum, vocabIndex);
             }, "delete vocabulary");
         }
-        // ======================== ORIGINAL GLOBALS (preserve) =========================
+        // ======================== ORIGINAL GLOBALS =========================
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || "MacIntel" === navigator.platform && navigator
         .maxTouchPoints > 1;
         let editUnlocked = !0,
@@ -2458,30 +2441,25 @@
         const GOOGLE_SHEET_URL =
             "https://docs.google.com/spreadsheets/d/14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM/edit",
             DEFAULT_SHEET_ID = "14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM";
-        // Sheet history management
         let sheetHistory = [];
 
         function loadSheetHistory() {
             const stored = safeGetItem('sheetHistory', '[]');
             try { sheetHistory = JSON.parse(stored); if (!Array.isArray(sheetHistory)) sheetHistory = []; } catch (e) { sheetHistory =
                     []; }
-            // Remove duplicates
             const seen = new Set();
             sheetHistory = sheetHistory.filter(id => {
                 if (seen.has(id)) return false;
                 seen.add(id);
                 return true;
             });
-            // Limit to 10
             if (sheetHistory.length > 10) sheetHistory = sheetHistory.slice(0, 10);
         }
 
         function addSheetToHistory(id) {
             if (!id) return;
             loadSheetHistory();
-            // Remove if exists
             sheetHistory = sheetHistory.filter(s => s !== id);
-            // Add to front
             sheetHistory.unshift(id);
             if (sheetHistory.length > 10) sheetHistory = sheetHistory.slice(0, 10);
             safeSetItem('sheetHistory', JSON.stringify(sheetHistory));
@@ -2789,7 +2767,6 @@
                 e && e.scrollIntoView({ behavior: "smooth", block: "center" }) }), 100) }
 
         function showLoadVocabularyModal() {
-            // Load history
             loadSheetHistory();
             const e = document.createElement("div");
             e.className = "modal-overlay", e.innerHTML =
@@ -2815,18 +2792,15 @@
                 clearBtn = e.querySelector("#clearUrlBtn"),
                 historySelect = e.querySelector("#sheetHistorySelect");
 
-            // Clear button
             clearBtn.addEventListener('click', function() {
                 t.value = '';
                 t.focus();
             });
 
-            // History select - auto-load when selected (if not the placeholder)
             historySelect.addEventListener('change', function() {
                 const val = this.value;
                 if (val) {
                     t.value = val;
-                    // Auto-load immediately
                     n.click();
                 }
             });
@@ -2874,7 +2848,7 @@
             const a = vocabList[sidebarIndices[sidebarFocusIdx]];
             a && speakAutoSequence(a.chinese, a.khmer), scrollToActiveSidebarItem()
         }
-        // -------- Performance: first-character cache for random mode ----------
+
         let firstCharCache = new Map();
 
         function buildFirstCharCache() {
@@ -2953,7 +2927,6 @@
             else if (vocabList.length) {
                 const newIdx = Math.floor(Math.random() * vocabList.length);
                 loadWordByMode(newIdx, !0);
-                // Do NOT auto-minimize - user wants to control this
             }
         }
 
@@ -3008,7 +2981,6 @@
                     historyIndex = 0;
                     renderRandomSidebar(n);
                 } else vocabList.length && pickRandom();
-                // Do NOT auto-minimize - user wants to control this
             }
             saveAllData();
             const t = document.getElementById("modeRandomIconHeader"),
@@ -3032,7 +3004,6 @@
                 autoTimer && (clearTimeout(autoTimer), autoTimer = null);
                 killAllSpeech();
             }
-            // Do NOT auto-minimize - user wants to control this
         }
 
         function startAutoCycle() {
@@ -3049,21 +3020,15 @@
                 e.classList.remove("hidden");
                 t.classList.remove("hidden");
                 document.getElementById("sidebarToggleBtn").innerText = "HIDE SIDEBAR";
-
-                // On mobile, ensure sidebar is visible with proper width
                 setTimeout(() => {
                     if (window.innerWidth <= 700) {
-                        // Check orientation
                         if (window.matchMedia("(orientation: portrait)").matches) {
-                            // Portrait: 75% sidebar, 25% main
                             const w = window.innerWidth * 0.75;
                             document.documentElement.style.setProperty("--sidebar-width", w + "px");
                             e.style.width = w + "px";
                             e.style.minWidth = w + "px";
-                            // Hide resizer on portrait mobile
                             t.style.display = "none";
                         } else {
-                            // Landscape: 70% sidebar max 280px
                             const w = Math.min(window.innerWidth * 0.7, 280);
                             document.documentElement.style.setProperty("--sidebar-width", w + "px");
                             e.style.width = w + "px";
@@ -3077,13 +3042,12 @@
                 t.classList.add("hidden");
                 document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
                 if (window.innerWidth <= 700) {
-                    t.style.display = "flex"; // Reset display
+                    t.style.display = "flex";
                 }
             }
             saveAllData()
         }
 
-        // Handle orientation changes dynamically
         function handleOrientationChange() {
             if (sidebarVisible && window.innerWidth <= 700) {
                 const e = document.getElementById("rightSide");
@@ -3104,7 +3068,6 @@
             }
         }
 
-        // Add event listeners for orientation/resize
         window.addEventListener("resize", handleOrientationChange);
         window.addEventListener("orientationchange", function() {
             setTimeout(handleOrientationChange, 300);
@@ -3273,14 +3236,12 @@
                     r = null,
                     s = !1,
                     l = !1;
-                // Prevent click if long-press triggered
                 let longPressPrev = !1,
                     longPressNext = !1;
                 const d = () => { const e = filterVocabBySearch(vocabList); if (e.length) { loadWordByMode(vocabList
                             .findIndex((t => t === e[0])), !0), showToast("📖 Jumped to FIRST word") } },
                     c = () => { const e = filterVocabBySearch(vocabList); if (e.length) { loadWordByMode(vocabList
                                 .findIndex((t => t === e[e.length - 1])), !0), showToast("📖 Jumped to LAST word") } };
-                // Prev button
                 if (o) {
                     o.onclick = function(e) {
                         e.preventDefault();
@@ -3288,7 +3249,6 @@
                         if (normalCurrentPage > 0) { normalCurrentPage--;
                             renderNormalSidebar(); }
                     };
-                    // Long press detection for Prev
                     const prevStart = function(e) {
                         e.preventDefault();
                         s = !1;
@@ -3310,7 +3270,6 @@
                     o.addEventListener("touchend", prevEnd);
                     o.addEventListener("mouseleave", prevEnd);
                 }
-                // Next button
                 if (i) {
                     i.onclick = function(e) {
                         e.preventDefault();
@@ -3344,7 +3303,6 @@
             } else e.style.display = "none", e.innerHTML = ""
         }
 
-        // ======== GLOBAL DELETE FUNCTION FOR ADD MODAL SEARCH ========
         window.deleteFromAddSearch = function(idx, row, searchQuery) {
             const item = vocabList[idx];
             if (!item) { showToast("Item not found"); return }
@@ -3374,7 +3332,6 @@
             }, "delete vocabulary");
         };
 
-        // ======== GLOBAL DELETE FUNCTION FOR EDIT MODAL SEARCH ========
         window.deleteFromEditSearch = function(idx, row, searchQuery) {
             const item = vocabList[idx];
             if (!item) { showToast("Item not found"); return }
@@ -3405,7 +3362,6 @@
             }, "delete vocabulary");
         };
 
-        // ======== REFRESH ADD MODAL SEARCH ========
         function refreshAddModalSearch() {
             const addSearchInput = document.getElementById('vocabSearchInput');
             if (addSearchInput && window.addModalPerformSearch) { window.addModalPerformSearch(addSearchInput.value); }
@@ -3437,7 +3393,6 @@
             const addSearchInput = document.getElementById("vocabSearchInput");
             const addResultsContainer = document.getElementById("vocabSearchResults");
 
-            // --- shared search function for Add modal ---
             window.addModalPerformSearch = function(query) {
                 const q = query.trim().toLowerCase();
                 if (!q) { addResultsContainer.innerHTML = ""; return; }
@@ -3464,12 +3419,10 @@
                 }
             };
 
-            // search input triggers search
             addSearchInput.addEventListener("input", () => {
                 window.addModalPerformSearch(addSearchInput.value);
             });
 
-            // addChineseInput typing triggers search too
             t.addEventListener("input", () => {
                 const val = t.value;
                 addSearchInput.value = val;
@@ -3642,7 +3595,6 @@
                         pinyin: "" }))) }
         }
 
-        // ======== showEditModal with delete icons and background click close ========
         window.updateEditModalState = function(idx, row, chinese, khmer) {
             window.currentEdit.idx = idx;
             window.currentEdit.row = row;
@@ -3689,7 +3641,6 @@
 
             window.currentEdit = { idx: e, row: t };
 
-            // --- shared search function for Edit modal ---
             window.editModalPerformSearch = function(query) {
                 const q = query.trim().toLowerCase();
                 if (!q) { resultsEdit.innerHTML = ""; return; }
@@ -3887,7 +3838,7 @@
         function speakKhmerFromMain() { const e = document.getElementById("khmerWord"),
                 t = e ? e.innerText : "";
             t && (killAllSpeech(), speakKhmerEdge(t)) }
-        // ===== MODIFIED: speakAutoSequence now respects speech order and reps=0 =====
+
         async function speakAutoSequence(chinese, khmer) {
             killAllSpeech();
 
@@ -3926,7 +3877,7 @@
 
             if (autoActive) startAutoCycle();
         }
-        // ===== NEW: speech order management =====
+
         let speechOrder = 'zh_first';
 
         function getSpeechOrder() {
@@ -4127,7 +4078,6 @@
             i && (i.style.textShadow = o), saveAllData()
         }
 
-        // ========== FIXED: saveAllData with compression and safe storage ==========
         function saveAllData() {
             const settings = {
                 mZhSize: userSetChineseFontSize,
@@ -4164,10 +4114,8 @@
                 normalCurrentPage: normalCurrentPage,
                 shadow: document.getElementById("shadowSlider").value
             };
-            // Store settings as JSON
             safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
 
-            // Store vocabulary list in compressed format
             if (vocabList.length > 0) {
                 const compressed = compressVocabList(vocabList);
                 const jsonStr = JSON.stringify(compressed);
@@ -4179,7 +4127,6 @@
             }
         }
 
-        // ========== FIXED: loadSettings with safe storage ==========
         function loadSettings() {
             const settingsStr = safeGetItem("vocabMaster_Settings", null);
             if (settingsStr) {
@@ -4252,7 +4199,6 @@
                     }
                 } catch (e) { console.warn("Settings parse error:", e); }
             } else {
-                // Defaults
                 document.getElementById("pinyinFont").value = "'Baguette Simplified'";
                 document.getElementById("pinyinColor").value = "#ffffff";
                 document.getElementById("pinyinSizePx").value = "55";
@@ -4269,7 +4215,6 @@
                 bottomCharVisible = true;
             }
 
-            // Load compressed vocabulary list
             const compressedStr = safeGetItem("vocabMaster_List_Compressed", null);
             if (compressedStr) {
                 try {
@@ -4654,7 +4599,7 @@
                     "touchmove", l, { passive: !1 }), window.addEventListener("touchend", d), c(), window
                 .addEventListener("resize", (() => c()))
         }
-        // ========== FIXED SIDEBAR RESIZER (works on mobile, hold & drag sidebarCloseBtn) ==========
+
         function initSidebarResizer() {
             const sidebar = document.getElementById("rightSide");
             const resizer = document.getElementById("dragResizer");
@@ -4789,22 +4734,56 @@
             }
         }
 
+        // ===== FIXED: Swipe navigation – ignore touches near bottom edge =====
         function initSwipeNavigation() {
-            const e = document.getElementById("displayArea");
-            if (!e) return;
-            let t = 0,
-                n = 0,
-                o = !1;
-            e.addEventListener("touchstart", (e => { t = e.touches[0].clientY, n = e.touches[0].clientX,
-                    o = !1 }), { passive: !1 }), e.addEventListener("touchmove", (e => {
-                if (!t) return;
-                const i = e.touches[0].clientY - t,
-                    a = e.touches[0].clientX - n;
-                Math.abs(i) > 30 && !o ? (o = !0, i > 0 ? "random" === appMode ? historyNext() :
-                    goNextNormal() : i < 0 && ("random" === appMode ? historyPrev() : goPrevNormal()),
-                    e.preventDefault()) : Math.abs(a) > 30 && !o && Math.abs(a) > Math.abs(i) && (o = !0,
-                    a > 0 ? moveSidebarFocus(1) : a < 0 && moveSidebarFocus(-1), e.preventDefault())
-            }), { passive: !1 }), e.addEventListener("touchend", (() => { t = 0, n = 0, o = !1 }))
+            const area = document.getElementById("displayArea");
+            if (!area) return;
+            let startY = 0,
+                startX = 0,
+                moved = false;
+
+            area.addEventListener("touchstart", function(e) {
+                const touch = e.touches[0];
+                // Ignore if touch starts within 80px of bottom (avoids system gesture conflict)
+                if (window.innerHeight - touch.clientY < 80) {
+                    startY = 0; // mark as not tracking
+                    return;
+                }
+                startY = touch.clientY;
+                startX = touch.clientX;
+                moved = false;
+            }, { passive: true });
+
+            area.addEventListener("touchmove", function(e) {
+                if (!startY) return; // not tracking
+                const touch = e.touches[0];
+                const deltaY = touch.clientY - startY;
+                const deltaX = touch.clientX - startX;
+                if (Math.abs(deltaY) > 30 && !moved) {
+                    moved = true;
+                    if (deltaY > 0) {
+                        // swipe down -> next
+                        if (appMode === "random") historyNext();
+                        else goNextNormal();
+                    } else {
+                        // swipe up -> prev
+                        if (appMode === "random") historyPrev();
+                        else goPrevNormal();
+                    }
+                    e.preventDefault();
+                } else if (Math.abs(deltaX) > 30 && !moved && Math.abs(deltaX) > Math.abs(deltaY)) {
+                    moved = true;
+                    if (deltaX > 0) moveSidebarFocus(1);
+                    else moveSidebarFocus(-1);
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            area.addEventListener("touchend", function() {
+                startY = 0;
+                startX = 0;
+                moved = false;
+            });
         }
 
         function addLog(e, t = !1) { console.log(e), t && showToast(`⚠️ ${e.substring(0,80)}`) }
@@ -4909,8 +4888,6 @@
                 gearElemDrag.style.top = t + "px"; }
         }
 
-        function initCtrlWheelResize() {}
-
         function initNightMode() {
             const isNight = safeGetItem("vocabMaster_NightMode", "false") === "true";
             if (isNight) document.body.classList.add("night-mode");
@@ -4975,7 +4952,6 @@
             await loadSheetData();
         }
 
-        // ========== FIX: Force reapply all styles when any style control changes ==========
         function refreshAllStyles() {
             applyChineseMainStyle();
             applyPinyinStyles();
@@ -5034,17 +5010,14 @@
                 loadEmojiPosition();
             }
 
-            // Cache clear button
             const clearBtn = document.getElementById("clearCacheBtn");
             if (clearBtn) {
                 clearBtn.addEventListener("click", clearAllCache);
             }
 
             loadSettings();
-            // Load sheet history
             loadSheetHistory();
 
-            // Initialize speech order toggle
             const orderBtn = document.getElementById('speechOrderToggle');
             if (orderBtn) {
                 const stored = safeGetItem('speechOrder', 'zh_first');
@@ -5053,9 +5026,7 @@
                 orderBtn.addEventListener('click', toggleSpeechOrder);
             }
 
-            // Check if we have vocabulary loaded from storage
             if (vocabList.length === 0) {
-                // Try to load from sheet
                 await initializeSheet();
             } else {
                 buildFirstCharCache();
