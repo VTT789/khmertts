@@ -731,6 +731,51 @@
         .khmer-text:active {
             cursor: grabbing
         }
+        .emoji-container {
+            position: fixed;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            background: rgba(0, 0, 0, .5);
+            backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 8px 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--emoji-font-size, 32px);
+            pointer-events: auto;
+            transition: none;
+            border: 1px solid rgba(255, 255, 255, .3);
+            white-space: nowrap;
+            cursor: grab;
+            font-weight: 500;
+            letter-spacing: 2px;
+            touch-action: none
+        }
+        .emoji-container:active {
+            cursor: grabbing
+        }
+        .emoji-container.visible {
+            display: flex
+        }
+        .emoji-container.hidden {
+            display: none
+        }
+        .emoji-container:hover {
+            background: rgba(0, 0, 0, .7)
+        }
+        body.night-mode .emoji-container {
+            background: rgba(30, 41, 59, .8);
+            border-color: rgba(255, 255, 255, .2)
+        }
+        @media (max-width:700px) {
+            .emoji-container {
+                padding: 6px 16px
+            }
+        }
         .sidebar {
             width: var(--sidebar-width);
             min-width: 280px;
@@ -1769,6 +1814,31 @@
         .big-edit-input {
             flex: 1
         }
+        /* Cache clear button */
+        .cache-clear-btn {
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 16px;
+            font-size: .7rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+            margin-top: 6px;
+            width: 100%
+        }
+        .cache-clear-btn:hover {
+            background: #dc2626;
+            transform: scale(.98)
+        }
+        .cache-warning {
+            font-size: .65rem;
+            color: #ef4444;
+            text-align: center;
+            margin-top: 4px;
+            display: none
+        }
     </style>
     <style>
         #floatingMenu {
@@ -1950,6 +2020,9 @@
                             <div class=size-row><label>KM Side Size</label><input type=range id=sKmSize min=0.5 max=4 step=0.1 value=0.9></div>
                             <div class=size-row><label>📋 Vocab Spacing</label><input type=range id=sVocabSpacing min=0 max=30 step=1 value=8><span id=vocabSpacingVal>8px</span></div>
                         </div>
+                        <!-- Cache clear button -->
+                        <button id=clearCacheBtn class="cache-clear-btn" style="margin-top:8px;">🗑️ Clear Cache & Reset</button>
+                        <div id=cacheWarning class=cache-warning>⚠️ Storage full — clear cache to continue</div>
                     </div>
                     <div id=pinyinControls class=control-group>
                         <div id=pinyinControlsWrapper>
@@ -2012,6 +2085,7 @@
             <div class=display-area id=displayArea>
                 <div class=chinese-word id=chineseWord></div>
                 <div class=khmer-text id=khmerWord>រួចរាល់</div>
+                <div class="emoji-container hidden" id=emojiContainer></div>
             </div>
         </div>
         <div class="resizer hidden" id=dragResizer>
@@ -2026,6 +2100,81 @@
     <script src=https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js>
     </script>
     <script>
+        // ======================== SAFE LOCALSTORAGE WRAPPER (FIXES QUOTA EXCEEDED) =========================
+        let storageQuotaExceeded = false;
+
+        function safeSetItem(key, value) {
+            try {
+                localStorage.setItem(key, value);
+                storageQuotaExceeded = false;
+                document.getElementById('cacheWarning') && (document.getElementById('cacheWarning').style.display = 'none');
+                return true;
+            } catch (e) {
+                if (e.name === 'QuotaExceededError' || e.code === 22) {
+                    storageQuotaExceeded = true;
+                    console.warn('localStorage quota exceeded for key:', key);
+                    const warn = document.getElementById('cacheWarning');
+                    if (warn) warn.style.display = 'block';
+                    showToast('⚠️ Storage full! Tap "Clear Cache" in Sidebar tab.');
+                    return false;
+                }
+                console.warn('localStorage error:', e);
+                return false;
+            }
+        }
+
+        function safeGetItem(key, fallback) {
+            try {
+                const val = localStorage.getItem(key);
+                return val !== null ? val : fallback;
+            } catch (e) {
+                return fallback;
+            }
+        }
+
+        function safeRemoveItem(key) {
+            try { localStorage.removeItem(key); } catch (e) {}
+        }
+
+        // Compress vocabulary list: store as array of arrays (much smaller than object array)
+        function compressVocabList(list) {
+            return list.map(item => [item.khmer || '', item.chinese || '', item.sheetRow || 2]);
+        }
+
+        function decompressVocabList(compressed) {
+            if (!Array.isArray(compressed)) return [];
+            return compressed.map(arr => ({
+                khmer: arr[0] || '',
+                chinese: arr[1] || '',
+                sheetRow: arr[2] || 2
+            }));
+        }
+
+        // Clear all non-essential data (keeps sheet ID and password)
+        function clearAllCache() {
+            if (!confirm('⚠️ Clear all cached data? This will reset your vocabulary list, settings, and positions. Your sheet data will be reloaded.')) return;
+            const sheetId = currentSheetId || safeGetItem('vocabMaster_SheetId', '');
+            const password = dynamicPassword || safeGetItem('vocabMaster_Password', '012891556');
+            try {
+                const keys = Object.keys(localStorage);
+                for (const k of keys) {
+                    if (k.startsWith('vocabMaster_') || k.startsWith('drag_') || k.startsWith('gear') ||
+                        k.startsWith('menu') || k.startsWith('emoji') || k.startsWith('sidebar') ||
+                        k === 'floatingMenuLeft' || k === 'floatingMenuTop' || k === 'speechOrder' ||
+                        k === 'topPinyinSectionHidden' || k === 'bottomSectionHidden') {
+                        localStorage.removeItem(k);
+                    }
+                }
+                // Restore essential
+                if (sheetId) safeSetItem('vocabMaster_SheetId', sheetId);
+                if (password) safeSetItem('vocabMaster_Password', password);
+                showToast('✅ Cache cleared! Reloading...');
+                setTimeout(() => location.reload(), 500);
+            } catch (e) {
+                showToast('❌ Clear failed: ' + e.message);
+            }
+        }
+
         // ======================== PASSWORD PROTECTION (GLOBAL) =========================
         let passwordVerified = false;
         let dynamicPassword = "012891556";
@@ -2104,6 +2253,21 @@
         let editUnlocked = !0,
             activePasswordModal = null,
             searchTerm = "",
+            currentEmojiText = "",
+            emojiFontSize = 32,
+            emojiContainer = null,
+            isPinchingEmoji = !1,
+            initialEmojiDistance = 0,
+            initialEmojiFontSize = 32,
+            emojiDragActive = !1,
+            emojiStartMouseX = 0,
+            emojiStartMouseY = 0,
+            emojiStartLeft = 0,
+            emojiStartTop = 0,
+            emojiX = 50,
+            emojiY = 70,
+            emojiLeftPx = null,
+            emojiTopPx = null,
             copyLocked = !1,
             pendingCopyText = "",
             copyPopup = null,
@@ -2114,7 +2278,92 @@
             "https://docs.google.com/spreadsheets/d/14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM/edit",
             DEFAULT_SHEET_ID = "14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM";
 
-        async function fetchEmojiForChinese(e) { /* REMOVED: emoji + Google Translate */ }
+        function getDistance(e) { const t = e[0].clientX - e[1].clientX,
+                n = e[0].clientY - e[1].clientY; return Math.hypot(t, n) }
+
+        function handleEmojiPinchStart(e) {
+            2 === e.touches.length && emojiContainer && emojiContainer.classList.contains("visible") && (e.preventDefault(),
+                isPinchingEmoji = !0, initialEmojiDistance = getDistance(e.touches), initialEmojiFontSize =
+                emojiFontSize)
+        }
+
+        function handleEmojiPinchMove(e) {
+            if (isPinchingEmoji && 2 === e.touches.length && emojiContainer && emojiContainer.classList.contains(
+                "visible")) { e.preventDefault(); const t = getDistance(e.touches); if (initialEmojiDistance > 0) { let e =
+                        initialEmojiFontSize * (t / initialEmojiDistance);
+                    e = Math.max(16, Math.min(120, e)), emojiFontSize = Math.round(e), document.documentElement.style
+                        .setProperty("--emoji-font-size", emojiFontSize + "px"), saveEmojiSize() } } }
+
+        function handleEmojiPinchEnd() { isPinchingEmoji = !1, initialEmojiDistance = 0 }
+
+        function handleEmojiWheel(e) {
+            if (e.ctrlKey && emojiContainer && emojiContainer.classList.contains("visible")) { e.preventDefault(); const t =
+                    e.deltaY > 0 ? -2 : 2; let n = emojiFontSize + t;
+                n = Math.max(16, Math.min(120, n)), emojiFontSize = n, document.documentElement.style.setProperty(
+                    "--emoji-font-size", emojiFontSize + "px"), saveEmojiSize() }
+        }
+
+        function saveEmojiPosition() {
+            if (emojiContainer) { const e = emojiContainer.offsetLeft,
+                    t = emojiContainer.offsetTop;
+                isNaN(e) || isNaN(t) || (safeSetItem("emojiPosLeft", e), safeSetItem("emojiPosTop", t)) }
+            safeSetItem("emojiFontSize", emojiFontSize)
+        }
+
+        function saveEmojiSize() { safeSetItem("emojiFontSize", emojiFontSize) }
+
+        function loadEmojiPosition() {
+            const e = safeGetItem("emojiPosLeft", null),
+                t = safeGetItem("emojiPosTop", null),
+                n = safeGetItem("emojiFontSize", null);
+            n && (emojiFontSize = parseInt(n), document.documentElement.style.setProperty("--emoji-font-size",
+                emojiFontSize + "px")), null !== e && null !== t && emojiContainer && (emojiContainer.style.left = e +
+                "px", emojiContainer.style.top = t + "px", emojiContainer.style.transform = "none", emojiContainer.style
+                .bottom = "auto", emojiContainer.style.right = "auto")
+        }
+
+        function initEmojiDrag() {
+            if (!emojiContainer) return;
+            const e = e => {
+                    e.preventDefault(), e.stopPropagation(), !emojiContainer.classList.contains("visible") || (
+                        emojiDragActive = !0, emojiStartMouseX = e.clientX ?? (e.touches ? e.touches[0].clientX :
+                            0), emojiStartMouseY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0),
+                        emojiStartLeft = emojiContainer.offsetLeft, emojiStartTop = emojiContainer.offsetTop,
+                        emojiContainer.style.cursor = "grabbing", emojiContainer.style.transition = "none")
+                },
+                t = e => {
+                    if (emojiDragActive) { e.preventDefault(), e.stopPropagation(); const t = e.clientX ?? (e.touches ?
+                            e.touches[0].clientX : 0),
+                            n = e.clientY ?? (e.touches ? e.touches[0].clientY : 0); let o = emojiStartLeft + (t -
+                                emojiStartMouseX),
+                            i = emojiStartTop + (n - emojiStartMouseY);
+                        o = Math.max(0, Math.min(window.innerWidth - emojiContainer.offsetWidth, o)), i = Math.max(0,
+                            Math.min(window.innerHeight - emojiContainer.offsetHeight, i)), emojiContainer.style
+                            .left = o + "px", emojiContainer.style.top = i + "px", emojiContainer.style.transform =
+                            "none", emojiContainer.style.bottom = "auto", emojiContainer.style.right = "auto" }
+                },
+                n = () => { emojiDragActive && (emojiDragActive = !1, emojiContainer.style.cursor = "grab",
+                        emojiContainer.style.transition = "", saveEmojiPosition()) };
+            emojiContainer.addEventListener("mousedown", e), emojiContainer.addEventListener("touchstart", e, { passive: !1 }),
+                window.addEventListener("mousemove", t), window.addEventListener("mouseup", n), window.addEventListener(
+                    "touchmove", t, { passive: !1 }), window.addEventListener("touchend", n)
+        }
+
+        async function fetchEmojiForChinese(e) {
+            if (e) try { const t =
+                        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=en&dt=t&q=${encodeURIComponent(e)}`,
+                    n = await fetch(t),
+                    o = (await n.json())[0][0][0].toLowerCase(); if (!o) return void emojiContainer.classList.add(
+                    "hidden"); const i =
+                        `https://emojihub.yurace.pro/api/search?q=${encodeURIComponent(o)}`,
+                    a = await fetch(i),
+                    r = await a.json(); if (r && r.length > 0) { const e = r.slice(0, 6).map((e => e.htmlCode ? e
+                        .htmlCode[0] : "")).filter((e => e)); if (e.length) return currentEmojiText = e.join(
+                        " "), emojiContainer.innerHTML = currentEmojiText, emojiContainer.classList.remove(
+                        "hidden"), void emojiContainer.classList.add("visible") }
+                emojiContainer.classList.add("hidden") } catch (e) { console.error("Emoji fetch error:", e),
+                    emojiContainer.classList.add("hidden") } else emojiContainer.classList.add("hidden")
+        }
 
         function indexToLetter(e) { let t = "",
                 n = e; for (; n >= 0;) t = String.fromCharCode(n % 26 + 65) + t, n = Math.floor(n / 26) - 1; return t }
@@ -2443,6 +2692,8 @@
                         w && speakAutoSequence(w.chinese, w.khmer);
                         scrollToActiveSidebarItem(); } else renderNormalSidebar() }
             }
+            const ch = vocabList[e]?.chinese || "";
+            ch ? fetchEmojiForChinese(ch) : emojiContainer.classList.add("hidden");
         }
 
         function pickRandom() {
@@ -2714,18 +2965,12 @@
 
         // ======== GLOBAL DELETE FUNCTION FOR ADD MODAL SEARCH ========
         window.deleteFromAddSearch = function(idx, row, searchQuery) {
-            // Get the item
             const item = vocabList[idx];
-            if (!item) {
-                showToast("Item not found");
-                return;
-            }
+            if (!item) { showToast("Item not found"); return }
             const rowToDelete = item.sheetRow;
-            // Use a local reference to the modal's refresh function
             showPasswordProtectionModal(async function() {
                 const success = await deleteVocabByRow(rowToDelete);
                 if (success) {
-                    // Remove from local list and update sheetRow numbers
                     vocabList.splice(idx, 1);
                     for (let i = 0; i < vocabList.length; i++) {
                         if (vocabList[i].sheetRow > rowToDelete) {
@@ -2735,34 +2980,23 @@
                     buildFirstCharCache();
                     saveAllData();
                     renderSidebarUI();
-                    if (sidebarFocusIdx >= vocabList.length) {
-                        sidebarFocusIdx = vocabList.length - 1;
-                    }
-                    if (vocabList.length > 0 && sidebarFocusIdx >= 0) {
-                        loadWordByMode(sidebarFocusIdx, true);
-                    } else {
+                    if (sidebarFocusIdx >= vocabList.length) { sidebarFocusIdx = vocabList.length - 1; }
+                    if (vocabList.length > 0 && sidebarFocusIdx >= 0) { loadWordByMode(sidebarFocusIdx, true); } else {
                         updateChineseDisplay("");
                         document.getElementById("khmerWord").innerText = "";
                     }
-                    // Refresh the Add modal search results if the modal is open
                     const addSearchInput = document.getElementById('vocabSearchInput');
-                    if (addSearchInput && window.addModalPerformSearch) {
-                        window.addModalPerformSearch(addSearchInput.value);
-                    }
+                    if (addSearchInput && window.addModalPerformSearch) { window.addModalPerformSearch(addSearchInput
+                            .value); }
                     showToast("✅ Deleted successfully");
-                } else {
-                    showToast("❌ Deletion failed");
-                }
+                } else { showToast("❌ Deletion failed"); }
             }, "delete vocabulary");
         };
 
         // ======== GLOBAL DELETE FUNCTION FOR EDIT MODAL SEARCH ========
         window.deleteFromEditSearch = function(idx, row, searchQuery) {
             const item = vocabList[idx];
-            if (!item) {
-                showToast("Item not found");
-                return;
-            }
+            if (!item) { showToast("Item not found"); return }
             const rowToDelete = item.sheetRow;
             showPasswordProtectionModal(async function() {
                 const success = await deleteVocabByRow(rowToDelete);
@@ -2776,37 +3010,25 @@
                     buildFirstCharCache();
                     saveAllData();
                     renderSidebarUI();
-                    if (sidebarFocusIdx >= vocabList.length) {
-                        sidebarFocusIdx = vocabList.length - 1;
-                    }
-                    if (vocabList.length > 0 && sidebarFocusIdx >= 0) {
-                        loadWordByMode(sidebarFocusIdx, true);
-                    } else {
+                    if (sidebarFocusIdx >= vocabList.length) { sidebarFocusIdx = vocabList.length - 1; }
+                    if (vocabList.length > 0 && sidebarFocusIdx >= 0) { loadWordByMode(sidebarFocusIdx, true); } else {
                         updateChineseDisplay("");
                         document.getElementById("khmerWord").innerText = "";
                     }
-                    // Refresh Edit modal search results
                     const editSearchInput = document.getElementById('vocabSearchInputEdit');
-                    if (editSearchInput && window.editModalPerformSearch) {
-                        window.editModalPerformSearch(editSearchInput.value);
-                    }
-                    // Also refresh Add modal search results
+                    if (editSearchInput && window.editModalPerformSearch) { window.editModalPerformSearch(
+                            editSearchInput.value); }
                     refreshAddModalSearch();
                     showToast("✅ Deleted successfully");
-                } else {
-                    showToast("❌ Deletion failed");
-                }
+                } else { showToast("❌ Deletion failed"); }
             }, "delete vocabulary");
         };
 
         // ======== REFRESH ADD MODAL SEARCH ========
         function refreshAddModalSearch() {
             const addSearchInput = document.getElementById('vocabSearchInput');
-            if (addSearchInput && window.addModalPerformSearch) {
-                window.addModalPerformSearch(addSearchInput.value);
-            }
+            if (addSearchInput && window.addModalPerformSearch) { window.addModalPerformSearch(addSearchInput.value); }
         }
-        // Expose to global
         window.refreshAddModalSearch = refreshAddModalSearch;
 
         function showAddNewModal() {
@@ -2815,14 +3037,7 @@
             e.className = "modal-overlay", e.innerHTML =
                 '<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>➕ ADD NEW VOCABULARY (appends at the end) <span id="editIconFromAdd" style="font-size:1.2rem; cursor:pointer; margin-left:12px;">✏️</span></h3>\n            <div style="margin-bottom:16px;">\n                <div class="input-icon-wrapper"><input id="addChineseInput" placeholder="Chinese word" class="big-edit-input-icon"><button class="insert-symbol-icon-inside" data-target="addChineseInput"> / </button></div>\n                <div class="input-icon-wrapper"><input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input-icon"><button class="insert-symbol-icon-inside" data-target="addKhmerInput"> / </button></div>\n            </div>\n            <div class="choice-search-area" style="display: flex; justify-content: space-between; align-items: center;"><input type="text" id="vocabSearchInput" placeholder="🔍 Search vocabulary..." style="flex:1; margin-right:8px;"><button id="openGoogleSheetBtnModal" style="background:#3b82f6; border:none; border-radius:40px; padding:8px 16px; color:white; font-weight:bold; cursor:pointer;">📊 OPEN SHEET (last row Khmer)</button></div>\n            <div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>\n            <div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#10b981;">✅ ADD TO SHEET (last row)</button></div>\n            <button id="closeAddModalBtn" class="cancel-icon">✕</button></div>',
                 document.body.appendChild(e);
-
-            // Click on background to close the modal
-            e.onclick = function(event) {
-                if (event.target === e) {
-                    e.remove();
-                }
-            };
-
+            e.onclick = function(event) { if (event.target === e) { e.remove(); } };
             e.querySelectorAll(".insert-symbol-icon-inside").forEach((e => { const t = e.getAttribute("data-target");
                 t && ((e, t) => { e.addEventListener("click", (e => { e.preventDefault(), e.stopPropagation();
                         const n = document.getElementById(t); if (!n) return; const o = n.selectionStart || 0,
@@ -2919,7 +3134,6 @@
                         updateDisplay();
                         showToast(`✅ Added "${chinese || khmer}" as #${getDisplayNumberFromArrayIndex(newIdx)}`);
                         scrollToSidebarItem();
-                        // Refresh search results in Add modal
                         if (window.addModalPerformSearch) {
                             window.addModalPerformSearch(addSearchInput.value);
                         }
@@ -3001,7 +3215,7 @@
                                 u.innerText = "😱";
                             }
                         }
-                        localStorage.setItem("topPinyinSectionHidden", !topPinyinVisible);
+                        safeSetItem("topPinyinSectionHidden", !topPinyinVisible);
                         saveAllData();
                         showToast(`Top Pinyin ${topPinyinVisible?"shown":"hidden"}`);
                     },
@@ -3021,7 +3235,7 @@
                                 p.innerText = "😱";
                             }
                         }
-                        localStorage.setItem("bottomSectionHidden", !bottomCharVisible);
+                        safeSetItem("bottomSectionHidden", !bottomCharVisible);
                         saveAllData();
                         showToast(`Bottom Char ${bottomCharVisible?"shown":"hidden"}`);
                     },
@@ -3073,14 +3287,7 @@
             a.className = "modal-overlay", a.innerHTML =
                 `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3 id="editModalHeading">✏️ EDIT Display #${i}  <span id="addIconInsideEdit" style="font-size:1.2rem; cursor:pointer; margin-left:12px;">➕</span></h3>\n            <div style="margin-bottom:16px;">\n                <div class="input-icon-wrapper"><input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(o)}" class="big-edit-input-icon"><button class="insert-symbol-icon-inside" data-target="editChineseInput"> / </button></div>\n                <div class="input-icon-wrapper"><input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(n)}" class="big-edit-input-icon"><button class="insert-symbol-icon-inside" data-target="editKhmerInput"> / </button></div>\n            </div>\n            <div style="display:flex; gap:8px; margin-bottom:12px;"><input type="text" id="vocabSearchInputEdit" placeholder="🔍 Search vocabulary..." style="flex:1; background:rgba(0,0,0,0.5); color:#fff; border-radius:40px; border:1px solid rgba(255,255,255,0.3); padding:8px 16px;"><button id="openSheetRowBtn" style="background:#3b82f6;">📊 OPEN SHEET (Khmer cell)</button></div>\n            <div id="vocabSearchResultsEdit" style="max-height:200px; overflow-y:auto; margin-top:8px; margin-bottom:12px;"></div>\n            <div class="edit-group-buttons" style="margin-bottom:12px;"><button id="confirmUpdateBtn" style="background:#10b981;">💾 UPDATE SHEET</button></div>\n            <div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${i}</button></div>\n            <button id="closeEditModalBtn" class="cancel-icon">✕</button></div>`,
                 document.body.appendChild(a);
-
-            // Click on background to close the modal
-            a.onclick = function(event) {
-                if (event.target === a) {
-                    a.remove();
-                }
-            };
-
+            a.onclick = function(event) { if (event.target === a) { a.remove(); } };
             a.querySelectorAll(".insert-symbol-icon-inside").forEach((e => { const t = e.getAttribute("data-target");
                 t && ((e, t) => { e.addEventListener("click", (e => { e.preventDefault(), e.stopPropagation();
                         const n = document.getElementById(t); if (!n) return; const o = n.selectionStart || 0,
@@ -3154,7 +3361,6 @@
                     renderSidebarUI();
                     updateDisplay();
                     showToast("✅ Updated successfully");
-                    // Refresh Add modal search results if open
                     refreshAddModalSearch();
                 }
             };
@@ -3216,7 +3422,6 @@
                             }
                         }
                         showToast("✅ Deleted successfully");
-                        // Refresh Add modal search results if open
                         refreshAddModalSearch();
                     }
                 }
@@ -3342,7 +3547,7 @@
         let speechOrder = 'zh_first';
 
         function getSpeechOrder() {
-            const stored = localStorage.getItem('speechOrder');
+            const stored = safeGetItem('speechOrder', 'zh_first');
             if (stored === 'zh_first' || stored === 'km_first') {
                 speechOrder = stored;
             }
@@ -3351,7 +3556,7 @@
 
         function toggleSpeechOrder() {
             speechOrder = (speechOrder === 'zh_first') ? 'km_first' : 'zh_first';
-            localStorage.setItem('speechOrder', speechOrder);
+            safeSetItem('speechOrder', speechOrder);
             const btn = document.getElementById('speechOrderToggle');
             btn.textContent = speechOrder === 'zh_first' ? 'ZH → KM' : 'KM → ZH';
             showToast(`Speech order: ${speechOrder === 'zh_first' ? 'Chinese first' : 'Khmer first'}`);
@@ -3539,8 +3744,9 @@
             i && (i.style.textShadow = o), saveAllData()
         }
 
+        // ========== FIXED: saveAllData with compression and safe storage ==========
         function saveAllData() {
-            const e = {
+            const settings = {
                 mZhSize: userSetChineseFontSize,
                 mKmSize: userSetKhmerFontSize,
                 mZhColor: document.getElementById("mZhColor").value,
@@ -3575,73 +3781,132 @@
                 normalCurrentPage: normalCurrentPage,
                 shadow: document.getElementById("shadowSlider").value
             };
-            localStorage.setItem("vocabMaster_List", JSON.stringify(vocabList)), localStorage.setItem(
-                "vocabMaster_Settings", JSON.stringify(e))
+            // Store settings as JSON
+            safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
+
+            // Store vocabulary list in compressed format
+            if (vocabList.length > 0) {
+                const compressed = compressVocabList(vocabList);
+                // Check if compressed data is too large
+                const jsonStr = JSON.stringify(compressed);
+                // If list is huge, try to store it, but if quota exceeded, warn user
+                if (!safeSetItem("vocabMaster_List_Compressed", jsonStr)) {
+                    // If quota exceeded, try to store only essential data
+                    showToast("⚠️ Vocabulary list too large for storage. Try clearing cache.");
+                }
+            } else {
+                safeRemoveItem("vocabMaster_List_Compressed");
+            }
         }
 
+        // ========== FIXED: loadSettings with safe storage ==========
         function loadSettings() {
-            const e = localStorage.getItem("vocabMaster_Settings");
-            if (e) {
-                const t = JSON.parse(e);
-                userSetChineseFontSize = t.mZhSize || 42, userSetKhmerFontSize = t.mKmSize || 42, document
-                    .getElementById("mZhSize").value = userSetChineseFontSize, document.getElementById(
-                        "mKmSize").value = userSetKhmerFontSize, document.getElementById("mZhColor").value = t
-                    .mZhColor || "#ffffff", document.getElementById("mKmColor").value = t.mKmColor ||
-                    "#ffffff", document.getElementById("zhReps").value = t.zhReps || 1, document
-                    .getElementById("kmReps").value = t.kmReps || 1;
-                let n = void 0 !== t.autoDelay ? t.autoDelay : 3;
-                if (document.getElementById("autoDelay").value = n, void 0 !== t.shadow && (document
-                        .getElementById("shadowSlider").value = t.shadow), t.sZhFont && (document
-                        .getElementById("sZhFont").value = t.sZhFont), t.sKmFont && (document
-                        .getElementById("sKmFont").value = t.sKmFont), t.sZhSize && (document
-                        .getElementById("sZhSize").value = t.sZhSize), t.sKmSize && (document
-                        .getElementById("sKmSize").value = t.sKmSize), t.sZhColor && (document
-                        .getElementById("sZhColor").value = t.sZhColor || "#ffffff"), t.sKmColor && (
-                        document.getElementById("sKmColor").value = t.sKmColor || "#ffffff"), document
-                    .getElementById("sVocabSpacing").value = t.vocabSpacing || 8, document.body.style
-                    .setProperty("--vocab-spacing", (t.vocabSpacing || 8) + "px"), document
-                    .getElementById("vocabSpacingVal").innerText = (t.vocabSpacing || 8) + "px", t
-                    .zhVoice && (document.getElementById("zhVoiceSelect").value = t.zhVoice), t.kmVoice &&
-                    (document.getElementById("kmVoiceSelect").value = t.kmVoice), void 0 !== t.zhRate && (
-                        document.getElementById("zhRateSlider").value = t.zhRate), t.pinyinFont && (
-                        document.getElementById("pinyinFont").value = t.pinyinFont), t.pinyinColor && (
-                        document.getElementById("pinyinColor").value = t.pinyinColor || "#ffffff"),
-                    void 0 !== t.pinyinBold) { const e = document.getElementById("pinyinBold");
-                    t.pinyinBold ? e.classList.add("active") : e.classList.remove("active") }
-                if (t.pinyinSizePx && (document.getElementById("pinyinSizePx").value = t.pinyinSizePx,
-                        userSetPinyinFontSize = parseInt(t.pinyinSizePx)), t.pinyinSpacing && (document
-                        .getElementById("pinyinSpacing").value = t.pinyinSpacing), t.bottomFont && (
-                        document.getElementById("bottomFont").value = t.bottomFont), t.bottomCharColor && (
-                        document.getElementById("bottomCharColor").value = t.bottomCharColor ||
-                        "#ffffff"), void 0 !== t.bottomBold) { const e = document.getElementById(
-                        "bottomBold");
-                    t.bottomBold ? e.classList.add("active") : e.classList.remove("active") }
-                t.bottomSizePx && (document.getElementById("bottomSizePx").value = t.bottomSizePx,
-                        userSetBottomFontSize = parseInt(t.bottomSizePx)), void 0 !== t.topPinyinVisible &&
-                    (topPinyinVisible = t.topPinyinVisible), bottomCharVisible = void 0 === t
-                    .bottomCharVisible || t.bottomCharVisible, "normal" === t.appMode ? (appMode =
-                        "normal", document.getElementById("modeToggleBtn").innerText = "NORMAL (Space)",
-                        document.getElementById("modeToggleBtn").classList.remove(
-                        "mode-random-active"), document.getElementById("modeToggleBtn").classList
-                        .add("mode-normal-active")) : (appMode = "random", document.getElementById(
-                        "modeToggleBtn").innerText = "RANDOM (Space)", document.getElementById(
-                        "modeToggleBtn").classList.remove("mode-normal-active"), document
-                    .getElementById("modeToggleBtn").classList.add("mode-random-active")),
-                    normalCurrentIdx = t.normalCurrentIdx || 0, normalCurrentPage = t.normalCurrentPage ||
-                    0, sidebarVisible = void 0 !== t.sidebarVisible && t.sidebarVisible, sidebarVisible ||
-                    (document.getElementById("rightSide").classList.add("hidden"), document
-                        .getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR")
-            } else document.getElementById("pinyinFont").value = "'Baguette Simplified'", document
-                .getElementById("pinyinColor").value = "#ffffff", document.getElementById("pinyinSizePx")
-                .value = "55", userSetPinyinFontSize = 55, document.getElementById("pinyinSpacing").value =
-                "0", document.getElementById("bottomSizePx").value = "55", userSetBottomFontSize = 55,
-                document.getElementById("mKmColor").value = "#ffffff", document.getElementById(
-                    "bottomCharColor").value = "#ffffff", document.getElementById("shadowSlider").value =
-                "3", sidebarVisible = !1, document.getElementById("rightSide").classList.add("hidden"),
-                document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR",
-                bottomCharVisible = !0, applyPinyinStyles(), applyBottomStyles();
-            applyChineseMainStyle(), applyPinyinStyles(), applyBottomStyles(), applyTextVisibility(),
-                setKhmerFontSize(userSetKhmerFontSize), applyShadow(), applyBottomAutoScale()
+            const settingsStr = safeGetItem("vocabMaster_Settings", null);
+            if (settingsStr) {
+                try {
+                    const t = JSON.parse(settingsStr);
+                    userSetChineseFontSize = t.mZhSize || 42;
+                    userSetKhmerFontSize = t.mKmSize || 42;
+                    document.getElementById("mZhSize").value = userSetChineseFontSize;
+                    document.getElementById("mKmSize").value = userSetKhmerFontSize;
+                    document.getElementById("mZhColor").value = t.mZhColor || "#ffffff";
+                    document.getElementById("mKmColor").value = t.mKmColor || "#ffffff";
+                    document.getElementById("zhReps").value = t.zhReps || 1;
+                    document.getElementById("kmReps").value = t.kmReps || 1;
+                    let n = void 0 !== t.autoDelay ? t.autoDelay : 3;
+                    document.getElementById("autoDelay").value = n;
+                    if (void 0 !== t.shadow) document.getElementById("shadowSlider").value = t.shadow;
+                    if (t.sZhFont) document.getElementById("sZhFont").value = t.sZhFont;
+                    if (t.sKmFont) document.getElementById("sKmFont").value = t.sKmFont;
+                    if (t.sZhSize) document.getElementById("sZhSize").value = t.sZhSize;
+                    if (t.sKmSize) document.getElementById("sKmSize").value = t.sKmSize;
+                    if (t.sZhColor) document.getElementById("sZhColor").value = t.sZhColor || "#ffffff";
+                    if (t.sKmColor) document.getElementById("sKmColor").value = t.sKmColor || "#ffffff";
+                    document.getElementById("sVocabSpacing").value = t.vocabSpacing || 8;
+                    document.body.style.setProperty("--vocab-spacing", (t.vocabSpacing || 8) + "px");
+                    document.getElementById("vocabSpacingVal").innerText = (t.vocabSpacing || 8) + "px";
+                    if (t.zhVoice) document.getElementById("zhVoiceSelect").value = t.zhVoice;
+                    if (t.kmVoice) document.getElementById("kmVoiceSelect").value = t.kmVoice;
+                    if (void 0 !== t.zhRate) document.getElementById("zhRateSlider").value = t.zhRate;
+                    if (t.pinyinFont) document.getElementById("pinyinFont").value = t.pinyinFont;
+                    if (t.pinyinColor) document.getElementById("pinyinColor").value = t.pinyinColor || "#ffffff";
+                    if (void 0 !== t.pinyinBold) {
+                        const e = document.getElementById("pinyinBold");
+                        t.pinyinBold ? e.classList.add("active") : e.classList.remove("active");
+                    }
+                    if (t.pinyinSizePx) {
+                        document.getElementById("pinyinSizePx").value = t.pinyinSizePx;
+                        userSetPinyinFontSize = parseInt(t.pinyinSizePx);
+                    }
+                    if (t.pinyinSpacing) document.getElementById("pinyinSpacing").value = t.pinyinSpacing;
+                    if (t.bottomFont) document.getElementById("bottomFont").value = t.bottomFont;
+                    if (t.bottomCharColor) document.getElementById("bottomCharColor").value = t.bottomCharColor ||
+                        "#ffffff";
+                    if (void 0 !== t.bottomBold) {
+                        const e = document.getElementById("bottomBold");
+                        t.bottomBold ? e.classList.add("active") : e.classList.remove("active");
+                    }
+                    if (t.bottomSizePx) {
+                        document.getElementById("bottomSizePx").value = t.bottomSizePx;
+                        userSetBottomFontSize = parseInt(t.bottomSizePx);
+                    }
+                    if (void 0 !== t.topPinyinVisible) topPinyinVisible = t.topPinyinVisible;
+                    bottomCharVisible = void 0 === t.bottomCharVisible || t.bottomCharVisible;
+                    if ("normal" === t.appMode) {
+                        appMode = "normal";
+                        document.getElementById("modeToggleBtn").innerText = "NORMAL (Space)";
+                        document.getElementById("modeToggleBtn").classList.remove("mode-random-active");
+                        document.getElementById("modeToggleBtn").classList.add("mode-normal-active");
+                    } else {
+                        appMode = "random";
+                        document.getElementById("modeToggleBtn").innerText = "RANDOM (Space)";
+                        document.getElementById("modeToggleBtn").classList.remove("mode-normal-active");
+                        document.getElementById("modeToggleBtn").classList.add("mode-random-active");
+                    }
+                    normalCurrentIdx = t.normalCurrentIdx || 0;
+                    normalCurrentPage = t.normalCurrentPage || 0;
+                    sidebarVisible = void 0 !== t.sidebarVisible && t.sidebarVisible;
+                    if (!sidebarVisible) {
+                        document.getElementById("rightSide").classList.add("hidden");
+                        document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
+                    }
+                } catch (e) { console.warn("Settings parse error:", e); }
+            } else {
+                // Defaults
+                document.getElementById("pinyinFont").value = "'Baguette Simplified'";
+                document.getElementById("pinyinColor").value = "#ffffff";
+                document.getElementById("pinyinSizePx").value = "55";
+                userSetPinyinFontSize = 55;
+                document.getElementById("pinyinSpacing").value = "0";
+                document.getElementById("bottomSizePx").value = "55";
+                userSetBottomFontSize = 55;
+                document.getElementById("mKmColor").value = "#ffffff";
+                document.getElementById("bottomCharColor").value = "#ffffff";
+                document.getElementById("shadowSlider").value = "3";
+                sidebarVisible = false;
+                document.getElementById("rightSide").classList.add("hidden");
+                document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
+                bottomCharVisible = true;
+            }
+
+            // Load compressed vocabulary list
+            const compressedStr = safeGetItem("vocabMaster_List_Compressed", null);
+            if (compressedStr) {
+                try {
+                    const compressed = JSON.parse(compressedStr);
+                    if (Array.isArray(compressed) && compressed.length > 0) {
+                        vocabList = decompressVocabList(compressed);
+                    }
+                } catch (e) { console.warn("Vocab list parse error:", e); }
+            }
+
+            applyChineseMainStyle();
+            applyPinyinStyles();
+            applyBottomStyles();
+            applyTextVisibility();
+            setKhmerFontSize(userSetKhmerFontSize);
+            applyShadow();
+            applyBottomAutoScale();
         }
 
         function toggleBold(e, t) {
@@ -3666,7 +3931,7 @@
                         r = i.clientY ?? (i.touches ? i.touches[0].clientY : 0);
                     t = setTimeout((() => {
                         if (!i.target.closest("#floatingMenu") && !i.target.closest(".chinese-word") && !
-                            i.target.closest(".khmer-text")) {
+                            i.target.closest(".khmer-text") && !i.target.closest(".emoji-container")) {
                             requestAddNewVocab();
                             n = !0;
                             o()
@@ -3680,10 +3945,10 @@
             e.addEventListener("mousedown", i), e.addEventListener("touchstart", i, { passive: !1 }), e.addEventListener(
                 "click", (function(n) {
                     n.target.closest("#floatingMenu") || n.target.closest(".chinese-word") || n.target
-                    .closest(".khmer-text") || (t ? clearTimeout(t) : (!document.activeElement ||
-                        "INPUT" !== document.activeElement.tagName && "TEXTAREA" !== document
-                        .activeElement.tagName || document.activeElement.blur(), pickRandom(),
-                        blurSearchInput())),
+                    .closest(".khmer-text") || n.target.closest(".emoji-container") || (t ?
+                        clearTimeout(t) : (!document.activeElement || "INPUT" !== document
+                            .activeElement.tagName && "TEXTAREA" !== document.activeElement.tagName ||
+                            document.activeElement.blur(), pickRandom(), blurSearchInput())),
                         t && (clearTimeout(t), t = null)
                 })), e.addEventListener("wheel", (function(e) {
                     e.ctrlKey || (e.deltaY < 0 ? (e.preventDefault(), "random" === appMode ?
@@ -3761,23 +4026,34 @@
         }
 
         function saveAllDragPositions() {
-            localStorage.setItem("drag_chineseX", chineseX), localStorage.setItem("drag_chineseY", chineseY),
-                localStorage.setItem("drag_khmerX", khmerX), localStorage.setItem("drag_khmerY", khmerY),
-                localStorage.setItem("drag_topX", topLayerX), localStorage.setItem("drag_topY", topLayerY),
-                localStorage.setItem("drag_bottomX", bottomLayerX), localStorage.setItem("drag_bottomY",
-                bottomLayerY)
+            safeSetItem("drag_chineseX", chineseX);
+            safeSetItem("drag_chineseY", chineseY);
+            safeSetItem("drag_khmerX", khmerX);
+            safeSetItem("drag_khmerY", khmerY);
+            safeSetItem("drag_topX", topLayerX);
+            safeSetItem("drag_topY", topLayerY);
+            safeSetItem("drag_bottomX", bottomLayerX);
+            safeSetItem("drag_bottomY", bottomLayerY);
         }
 
         function loadAllDragPositions() {
-            chineseX = parseFloat(localStorage.getItem("drag_chineseX") ?? 50), chineseY = parseFloat(localStorage
-                .getItem("drag_chineseY") ?? 40), khmerX = parseFloat(localStorage.getItem("drag_khmerX") ??
-                50), khmerY = parseFloat(localStorage.getItem("drag_khmerY") ?? 70), topLayerX = parseFloat(
-                localStorage.getItem("drag_topX") ?? 0), topLayerY = parseFloat(localStorage.getItem(
-                "drag_topY") ?? 0), bottomLayerX = parseFloat(localStorage.getItem("drag_bottomX") ?? 0),
-                bottomLayerY = parseFloat(localStorage.getItem("drag_bottomY") ?? 0), chineseElement && (
-                    chineseElement.style.left = chineseX + "%", chineseElement.style.top = chineseY + "%"),
-                khmerElement && (khmerElement.style.left = khmerX + "%", khmerElement.style.top = khmerY + "%"),
-                applyLayerTransforms()
+            chineseX = parseFloat(safeGetItem("drag_chineseX", "50"));
+            chineseY = parseFloat(safeGetItem("drag_chineseY", "40"));
+            khmerX = parseFloat(safeGetItem("drag_khmerX", "50"));
+            khmerY = parseFloat(safeGetItem("drag_khmerY", "70"));
+            topLayerX = parseFloat(safeGetItem("drag_topX", "0"));
+            topLayerY = parseFloat(safeGetItem("drag_topY", "0"));
+            bottomLayerX = parseFloat(safeGetItem("drag_bottomX", "0"));
+            bottomLayerY = parseFloat(safeGetItem("drag_bottomY", "0"));
+            if (chineseElement) {
+                chineseElement.style.left = chineseX + "%";
+                chineseElement.style.top = chineseY + "%";
+            }
+            if (khmerElement) {
+                khmerElement.style.left = khmerX + "%";
+                khmerElement.style.top = khmerY + "%";
+            }
+            applyLayerTransforms();
         }
 
         function resetChinesePosition() { chineseX = 50, chineseY = 40, chineseElement && (chineseElement.style.left =
@@ -3981,12 +4257,12 @@
                     n = !1, t.style.transition = "";
                     const e = parseFloat(t.style.left),
                         o = parseFloat(t.style.top);
-                    isNaN(e) || isNaN(o) || (localStorage.setItem("floatingMenuLeft", e), localStorage
-                        .setItem("floatingMenuTop", o))
+                    if (!isNaN(e) && !isNaN(o)) { safeSetItem("floatingMenuLeft", e);
+                        safeSetItem("floatingMenuTop", o); }
                 },
                 c = () => {
-                    const e = localStorage.getItem("floatingMenuLeft"),
-                        n = localStorage.getItem("floatingMenuTop");
+                    const e = safeGetItem("floatingMenuLeft", null),
+                        n = safeGetItem("floatingMenuTop", null);
                     if (null !== e && null !== n) { const o = Math.max(0, Math.min(window.innerWidth - t
                                 .offsetWidth, parseFloat(e))),
                             i = Math.max(0, Math.min(window.innerHeight - t.offsetHeight, parseFloat(n)));
@@ -4014,7 +4290,7 @@
                 let newWidth = Math.min(window.innerWidth * 0.7, Math.max(200, width));
                 document.documentElement.style.setProperty("--sidebar-width", newWidth + "px");
                 sidebar.style.width = "var(--sidebar-width)";
-                localStorage.setItem("sidebarWidth", newWidth);
+                safeSetItem("sidebarWidth", newWidth);
                 forceShrink();
             }
 
@@ -4125,7 +4401,7 @@
             resizer.addEventListener("mousedown", onResizerStart);
             resizer.addEventListener("touchstart", onResizerStart, { passive: false });
 
-            let savedWidth = localStorage.getItem("sidebarWidth");
+            let savedWidth = safeGetItem("sidebarWidth", null);
             if (savedWidth && !sidebar.classList.contains("hidden")) {
                 setSidebarWidth(parseFloat(savedWidth));
             } else {
@@ -4222,24 +4498,28 @@
             gearElemDrag = document.getElementById("minimizedTrigger");
 
         function applyStoredMenuPosition() {
-            const e = parseFloat(localStorage.getItem("menuPosX")) || 0,
-                t = parseFloat(localStorage.getItem("menuPosY")) || 0;
-            isNaN(e) || isNaN(t) || (currentMenuTransform.x = e, currentMenuTransform.y = t, floatingMenuDiv.style
-                .transform = `translate3d(${e}px, ${t}px, 0)`)
+            const e = parseFloat(safeGetItem("menuPosX", "0")) || 0,
+                t = parseFloat(safeGetItem("menuPosY", "0")) || 0;
+            if (!isNaN(e) && !isNaN(t)) {
+                currentMenuTransform.x = e;
+                currentMenuTransform.y = t;
+                floatingMenuDiv.style.transform = `translate3d(${e}px, ${t}px, 0)`;
+            }
         }
 
-        function saveMenuPosition() { localStorage.setItem("menuPosX", currentMenuTransform.x), localStorage
-                .setItem("menuPosY", currentMenuTransform.y) }
+        function saveMenuPosition() {
+            safeSetItem("menuPosX", currentMenuTransform.x);
+            safeSetItem("menuPosY", currentMenuTransform.y);
+        }
 
         function saveGearPosition() {
             if (gearElemDrag) { const e = gearElemDrag.offsetLeft,
-                    t = gearElemDrag.offsetTop; if (!isNaN(e) && !isNaN(t)) { localStorage.setItem("gearPosLeft",
-                        e);
-                    localStorage.setItem("gearPosTop", t); } } }
+                    t = gearElemDrag.offsetTop; if (!isNaN(e) && !isNaN(t)) { safeSetItem("gearPosLeft", e);
+                    safeSetItem("gearPosTop", t); } } }
 
         function applyStoredGearPosition() {
-            let e = parseFloat(localStorage.getItem("gearPosLeft")),
-                t = parseFloat(localStorage.getItem("gearPosTop"));
+            let e = parseFloat(safeGetItem("gearPosLeft", "auto")),
+                t = parseFloat(safeGetItem("gearPosTop", "auto"));
             if (isNaN(e) || isNaN(t)) { e = window.innerWidth - 80;
                 t = window.innerHeight - 120; } else { e = Math.min(Math.max(5, e), window.innerWidth - 65);
                 t = Math.min(Math.max(5, t), window.innerHeight - 75); }
@@ -4252,14 +4532,15 @@
         function initCtrlWheelResize() {}
 
         function initNightMode() {
-            "true" === localStorage.getItem("vocabMaster_NightMode") && document.body.classList.add("night-mode");
+            const isNight = safeGetItem("vocabMaster_NightMode", "false") === "true";
+            if (isNight) document.body.classList.add("night-mode");
             const e = document.getElementById("dragDarkModeBtn");
             e && e.innerHTML && (e.innerHTML = document.body.classList.contains("night-mode") ? "☀️" : "🌙")
         }
 
         function toggleNightMode() {
             document.body.classList.toggle('night-mode');
-            localStorage.setItem('vocabMaster_NightMode', document.body.classList.contains('night-mode'));
+            safeSetItem('vocabMaster_NightMode', document.body.classList.contains('night-mode'));
             const e = document.getElementById('dragDarkModeBtn');
             e && (e.innerHTML = document.body.classList.contains('night-mode') ? "☀️" : "🌙");
 
@@ -4308,8 +4589,11 @@
             return n ? n[1] : null
         }
 
-        async function initializeSheet() { currentSheetId = DEFAULT_SHEET_ID, currentSheetUrl =
-                `https://docs.google.com/spreadsheets/d/${currentSheetId}`, await loadSheetData() }
+        async function initializeSheet() {
+            currentSheetId = DEFAULT_SHEET_ID;
+            currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`;
+            await loadSheetData();
+        }
 
         function minimizeFloatingMenuOnRandom() {
             const menu = document.getElementById("floatingMenu"),
@@ -4365,30 +4649,57 @@
                 "ArrowUp" === e.code && (e.preventDefault(), moveSidebarFocus(-1)) : e.stopPropagation()
         })), window.onload = async () => {
             initCopyPopup();
+            emojiContainer = document.getElementById("emojiContainer");
+            if (emojiContainer) {
+                emojiContainer.addEventListener("touchstart", handleEmojiPinchStart, { passive: false });
+                emojiContainer.addEventListener("touchmove", handleEmojiPinchMove, { passive: false });
+                emojiContainer.addEventListener("touchend", handleEmojiPinchEnd);
+                emojiContainer.addEventListener("wheel", handleEmojiWheel, { passive: false });
+                initEmojiDrag();
+                loadEmojiPosition();
+            }
+
+            // Cache clear button
+            const clearBtn = document.getElementById("clearCacheBtn");
+            if (clearBtn) {
+                clearBtn.addEventListener("click", clearAllCache);
+            }
+
             loadSettings();
 
             // Initialize speech order toggle
             const orderBtn = document.getElementById('speechOrderToggle');
             if (orderBtn) {
-                const stored = localStorage.getItem('speechOrder');
+                const stored = safeGetItem('speechOrder', 'zh_first');
                 speechOrder = (stored === 'km_first') ? 'km_first' : 'zh_first';
                 orderBtn.textContent = speechOrder === 'zh_first' ? 'ZH → KM' : 'KM → ZH';
                 orderBtn.addEventListener('click', toggleSpeechOrder);
             }
 
-            const list = localStorage.getItem("vocabMaster_List");
-            if (list) {
-                vocabList = JSON.parse(list);
+            // Check if we have vocabulary loaded from storage
+            if (vocabList.length === 0) {
+                // Try to load from sheet
+                await initializeSheet();
+            } else {
                 buildFirstCharCache();
-                if (vocabList.length) {
-                    if (appMode === "random") pickRandom();
-                    else {
-                        normalCurrentIdx = 0;
-                        normalCurrentPage = 0;
-                        renderNormalSidebar();
+                if (appMode === "random") {
+                    if (history.length === 0 && vocabList.length > 0) {
+                        history = [0];
+                        historyIndex = 0;
                     }
+                    if (sidebarIndices.length === 0 && vocabList.length > 0) {
+                        renderRandomSidebar(0);
+                    } else if (sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
+                        loadWordByMode(sidebarIndices[sidebarFocusIdx], true);
+                    } else if (vocabList.length > 0) {
+                        pickRandom();
+                    }
+                } else {
+                    if (normalCurrentIdx >= vocabList.length) normalCurrentIdx = 0;
+                    renderNormalSidebar();
                 }
             }
+
             initNightMode();
             applyStyles();
             initGearDrag();
@@ -4402,7 +4713,6 @@
             initSwipeNavigation();
             initGearLongPress();
             setupSidebarWheelNavigation();
-            await initializeSheet();
 
             const trigger = document.getElementById("minimizedTrigger");
             if (trigger) {
@@ -4462,8 +4772,8 @@
             const topToggle = document.getElementById("toggleTopPinyinSectionBtn");
             const bottomSec = document.getElementById("bottomSection");
             const bottomToggle = document.getElementById("toggleBottomSectionBtn");
-            const topHidden = localStorage.getItem("topPinyinSectionHidden") === "true";
-            const bottomHidden = localStorage.getItem("bottomSectionHidden") === "true";
+            const topHidden = safeGetItem("topPinyinSectionHidden", "false") === "true";
+            const bottomHidden = safeGetItem("bottomSectionHidden", "false") === "true";
 
             if (topHidden) {
                 topSec.classList.add("hidden");
@@ -4489,7 +4799,7 @@
                 topToggle.innerText = hidden ? "🫣" : "😱";
                 topPinyinVisible = !hidden;
                 applyTextVisibility();
-                localStorage.setItem("topPinyinSectionHidden", hidden);
+                safeSetItem("topPinyinSectionHidden", hidden);
                 saveAllData();
             });
 
@@ -4499,7 +4809,7 @@
                 bottomToggle.innerText = hidden ? "🫣" : "😱";
                 bottomCharVisible = !hidden;
                 applyTextVisibility();
-                localStorage.setItem("bottomSectionHidden", hidden);
+                safeSetItem("bottomSectionHidden", hidden);
                 saveAllData();
             });
 
