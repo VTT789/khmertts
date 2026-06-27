@@ -812,6 +812,22 @@
                 font-size: 0.75rem;
             }
         }
+        /* Mobile Portrait: 75% Sidebar, 25% Main */
+        @media (max-width: 700px) and (orientation: portrait) {
+            .main-layout .sidebar:not(.hidden) {
+                width: 75vw !important;
+                min-width: 75vw !important;
+                flex-shrink: 0 !important;
+            }
+            .main-layout .content-area {
+                min-width: 25vw !important;
+                flex: 1 1 25vw !important;
+                flex-shrink: 1 !important;
+            }
+            .main-layout .resizer {
+                display: none !important;
+            }
+        }
         .sidebar.hidden {
             width: 0 !important;
             min-width: 0 !important;
@@ -3033,12 +3049,26 @@
                 e.classList.remove("hidden");
                 t.classList.remove("hidden");
                 document.getElementById("sidebarToggleBtn").innerText = "HIDE SIDEBAR";
+
                 // On mobile, ensure sidebar is visible with proper width
                 setTimeout(() => {
                     if (window.innerWidth <= 700) {
-                        const w = Math.min(window.innerWidth * 0.7, 280);
-                        document.documentElement.style.setProperty("--sidebar-width", w + "px");
-                        e.style.width = w + "px";
+                        // Check orientation
+                        if (window.matchMedia("(orientation: portrait)").matches) {
+                            // Portrait: 75% sidebar, 25% main
+                            const w = window.innerWidth * 0.75;
+                            document.documentElement.style.setProperty("--sidebar-width", w + "px");
+                            e.style.width = w + "px";
+                            e.style.minWidth = w + "px";
+                            // Hide resizer on portrait mobile
+                            t.style.display = "none";
+                        } else {
+                            // Landscape: 70% sidebar max 280px
+                            const w = Math.min(window.innerWidth * 0.7, 280);
+                            document.documentElement.style.setProperty("--sidebar-width", w + "px");
+                            e.style.width = w + "px";
+                            t.style.display = "flex";
+                        }
                     }
                     forceShrink();
                 }, 50);
@@ -3046,9 +3076,39 @@
                 e.classList.add("hidden");
                 t.classList.add("hidden");
                 document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
+                if (window.innerWidth <= 700) {
+                    t.style.display = "flex"; // Reset display
+                }
             }
             saveAllData()
         }
+
+        // Handle orientation changes dynamically
+        function handleOrientationChange() {
+            if (sidebarVisible && window.innerWidth <= 700) {
+                const e = document.getElementById("rightSide");
+                const t = document.getElementById("dragResizer");
+                if (window.matchMedia("(orientation: portrait)").matches) {
+                    const w = window.innerWidth * 0.75;
+                    document.documentElement.style.setProperty("--sidebar-width", w + "px");
+                    e.style.width = w + "px";
+                    e.style.minWidth = w + "px";
+                    t.style.display = "none";
+                } else {
+                    const w = Math.min(window.innerWidth * 0.7, 280);
+                    document.documentElement.style.setProperty("--sidebar-width", w + "px");
+                    e.style.width = w + "px";
+                    t.style.display = "flex";
+                }
+                forceShrink();
+            }
+        }
+
+        // Add event listeners for orientation/resize
+        window.addEventListener("resize", handleOrientationChange);
+        window.addEventListener("orientationchange", function() {
+            setTimeout(handleOrientationChange, 300);
+        });
 
         function escapeHtml(e) { return e ? e.replace(/[&<>]/g, (function(e) { return "&" === e ? "&amp;" : "<" === e ?
                     "&lt;" : ">" === e ? "&gt;" : e })) : "" }
