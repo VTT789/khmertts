@@ -1162,15 +1162,17 @@
             border-color: #475569;
             color: #94a3b8;
         }
+        /* Mode toggle - NORMAL mode: BLUE background */
         .mode-normal-active {
             background: #2563eb !important;
             color: #fff !important;
             border: 1px solid #2563eb !important;
         }
+        /* Mode toggle - RANDOM mode: GRAY background */
         .mode-random-active {
-            background: transparent !important;
-            color: var(--text-primary) !important;
-            border: 1px solid var(--border) !important;
+            background: #94a3b8 !important;
+            color: #fff !important;
+            border: 1px solid #94a3b8 !important;
         }
         body.night-mode .mode-normal-active {
             background: #3b82f6 !important;
@@ -1178,7 +1180,7 @@
             color: #fff !important;
         }
         body.night-mode .mode-random-active {
-            background: transparent !important;
+            background: #475569 !important;
             border-color: #475569 !important;
             color: #e2e8f0 !important;
         }
@@ -1332,6 +1334,23 @@
             background: #334155;
             color: #fff;
             border-color: #475569;
+        }
+        .file-source-card .cache-clear-btn-modal {
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            border-radius: 40px;
+            padding: 10px 16px;
+            font-size: .75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+            margin-top: 12px;
+            width: 100%;
+        }
+        .file-source-card .cache-clear-btn-modal:hover {
+            background: #dc2626;
+            transform: scale(.98);
         }
         .search-popup {
             background: var(--card-bg);
@@ -1961,29 +1980,24 @@
         .big-edit-input {
             flex: 1
         }
-        .cache-clear-btn {
-            background: #ef4444;
-            color: #fff;
-            border: none;
-            border-radius: 40px;
-            padding: 8px 16px;
-            font-size: .7rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all .2s;
-            margin-top: 6px;
-            width: 100%
-        }
-        .cache-clear-btn:hover {
-            background: #dc2626;
-            transform: scale(.98)
-        }
         .cache-warning {
             font-size: .65rem;
             color: #ef4444;
             text-align: center;
             margin-top: 4px;
             display: none
+        }
+        /* Search result scroll improvements */
+        #vocabSearchResults,
+        #vocabSearchResultsEdit,
+        .sidebar-search-results {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .sidebar-search-results .result-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
         }
     </style>
     <style>
@@ -2052,9 +2066,9 @@
             border-color: #2563eb !important;
         }
         #floatingMenu .mode-random-active {
-            background: transparent !important;
-            color: #94a3b8 !important;
-            border-color: rgba(255,255,255,0.2) !important;
+            background: #94a3b8 !important;
+            color: #fff !important;
+            border-color: #94a3b8 !important;
         }
         #floatingMenu .btn-accent {
             background: var(--accent) !important
@@ -2185,7 +2199,6 @@
                             <div class=size-row><label>KM Side Size</label><input type=range id=sKmSize min=0.5 max=4 step=0.1 value=0.9></div>
                             <div class=size-row><label>📋 Vocab Spacing</label><input type=range id=sVocabSpacing min=0 max=30 step=1 value=8><span id=vocabSpacingVal>8px</span></div>
                         </div>
-                        <button id=clearCacheBtn class="cache-clear-btn" style="margin-top:8px;">🗑️ Clear Cache & Reset</button>
                         <div id=cacheWarning class=cache-warning>⚠️ Storage full — clear cache to continue</div>
                     </div>
                     <div id=pinyinControls class=control-group>
@@ -2279,7 +2292,7 @@
                     console.warn('localStorage quota exceeded for key:', key);
                     const warn = document.getElementById('cacheWarning');
                     if (warn) warn.style.display = 'block';
-                    showToast('⚠️ Storage full! Tap "Clear Cache" in Sidebar tab.');
+                    showToast('⚠️ Storage full! Tap "Clear Cache" in Load Vocabulary modal.');
                     return false;
                 }
                 console.warn('localStorage error:', e);
@@ -2780,6 +2793,7 @@
                         </select>
                         <button id="confirmUrlLoad" class="confirm-url-btn">Load Sheet</button>
                     </div>
+                    <button id="clearCacheBtn" class="cache-clear-btn-modal">🗑️ Clear Cache & Reset</button>
                     <button class="close-modal" id="closeLoadSheetBtn">Cancel</button>
                 </div>`,
                 document.body.appendChild(e);
@@ -2787,7 +2801,16 @@
                 n = e.querySelector("#confirmUrlLoad"),
                 o = e.querySelector("#closeLoadSheetBtn"),
                 clearBtn = e.querySelector("#clearUrlBtn"),
-                historySelect = e.querySelector("#sheetHistorySelect");
+                historySelect = e.querySelector("#sheetHistorySelect"),
+                cacheBtn = e.querySelector("#clearCacheBtn");
+
+            // Attach clear cache event listener
+            if (cacheBtn) {
+                cacheBtn.addEventListener("click", function(ev) {
+                    ev.stopPropagation();
+                    clearAllCache();
+                });
+            }
 
             clearBtn.addEventListener('click', function() {
                 t.value = '';
@@ -3009,7 +3032,6 @@
                 autoTimer = setTimeout((() => { autoActive && pickRandom(), autoTimer = null }), e) }
         }
 
-        // ===== FIXED: toggleSidebar - both sidebar and resizer hidden by default =====
         function toggleSidebar() {
             sidebarVisible = !sidebarVisible;
             const sidebar = document.getElementById('rightSide');
@@ -3017,10 +3039,8 @@
             const toggleBtn = document.getElementById('sidebarToggleBtn');
 
             if (sidebarVisible) {
-                // Show both sidebar and resizer
                 sidebar.classList.remove('hidden');
                 resizer.classList.remove('hidden');
-                // On mobile, adjust width
                 if (window.innerWidth <= 700) {
                     if (window.matchMedia("(orientation: portrait)").matches) {
                         const w = window.innerWidth * 0.75;
@@ -3032,21 +3052,17 @@
                         document.documentElement.style.setProperty("--sidebar-width", w + "px");
                         sidebar.style.width = w + "px";
                     }
-                    // On mobile, resizer is a thin strip
                     resizer.style.width = '6px';
                 }
                 toggleBtn.innerText = 'HIDE SIDEBAR';
-                // Force resize after showing
                 setTimeout(() => {
                     forceShrink();
                     applyBottomAutoScale();
                 }, 100);
             } else {
-                // Hide both sidebar and resizer
                 sidebar.classList.add('hidden');
                 resizer.classList.add('hidden');
                 toggleBtn.innerText = 'SHOW SIDEBAR';
-                // Refresh main content text size when sidebar is hidden (full screen)
                 setTimeout(() => {
                     forceShrink();
                     applyBottomAutoScale();
@@ -3073,7 +3089,6 @@
                 }
                 forceShrink();
             } else if (!sidebarVisible) {
-                // Sidebar hidden: ensure resizer is also hidden
                 const resizer = document.getElementById('dragResizer');
                 resizer.classList.add('hidden');
             }
@@ -3133,8 +3148,9 @@
                     const e = i.value.trim().toLowerCase();
                     if (!e) { s.style.display = "none";
                         s.innerHTML = ""; return }
+                    // Show ALL matching results
                     const t = vocabList.filter((t => t.chinese.toLowerCase().includes(e) || t.khmer.toLowerCase()
-                        .includes(e))).slice(0, 10);
+                        .includes(e)));
                     if (0 === t.length) { s.innerHTML =
                             '<div class="result-item" style="opacity:0.7;">No matches</div>';
                         s.style.display = "block"; return }
@@ -3314,9 +3330,13 @@
             } else e.style.display = "none", e.innerHTML = ""
         }
 
+        // ===== FIXED: delete functions with single confirmation =====
         window.deleteFromAddSearch = function(idx, row, searchQuery) {
             const item = vocabList[idx];
             if (!item) { showToast("Item not found"); return }
+            const displayNum = getDisplayNumberFromArrayIndex(idx);
+            // Only ONE confirmation here (inline confirm is removed)
+            if (!confirm(`⚠️ Delete Display #${displayNum} (${item.chinese || item.khmer})?`)) return;
             const rowToDelete = item.sheetRow;
             showPasswordProtectionModal(async function() {
                 const success = await deleteVocabByRow(rowToDelete);
@@ -3335,9 +3355,11 @@
                         updateChineseDisplay("");
                         document.getElementById("khmerWord").innerText = "";
                     }
+                    // Refresh Add modal search results
                     const addSearchInput = document.getElementById('vocabSearchInput');
-                    if (addSearchInput && window.addModalPerformSearch) { window.addModalPerformSearch(addSearchInput
-                            .value); }
+                    if (addSearchInput && window.addModalPerformSearch) {
+                        window.addModalPerformSearch(addSearchInput.value);
+                    }
                     showToast("✅ Deleted successfully");
                 } else { showToast("❌ Deletion failed"); }
             }, "delete vocabulary");
@@ -3346,6 +3368,9 @@
         window.deleteFromEditSearch = function(idx, row, searchQuery) {
             const item = vocabList[idx];
             if (!item) { showToast("Item not found"); return }
+            const displayNum = getDisplayNumberFromArrayIndex(idx);
+            // Only ONE confirmation here
+            if (!confirm(`⚠️ Delete Display #${displayNum} (${item.chinese || item.khmer})?`)) return;
             const rowToDelete = item.sheetRow;
             showPasswordProtectionModal(async function() {
                 const success = await deleteVocabByRow(rowToDelete);
@@ -3364,9 +3389,12 @@
                         updateChineseDisplay("");
                         document.getElementById("khmerWord").innerText = "";
                     }
+                    // Refresh Edit modal search results
                     const editSearchInput = document.getElementById('vocabSearchInputEdit');
-                    if (editSearchInput && window.editModalPerformSearch) { window.editModalPerformSearch(
-                            editSearchInput.value); }
+                    if (editSearchInput && window.editModalPerformSearch) {
+                        window.editModalPerformSearch(editSearchInput.value);
+                    }
+                    // Also refresh Add modal search results
                     refreshAddModalSearch();
                     showToast("✅ Deleted successfully");
                 } else { showToast("❌ Deletion failed"); }
@@ -3404,11 +3432,12 @@
             const addSearchInput = document.getElementById("vocabSearchInput");
             const addResultsContainer = document.getElementById("vocabSearchResults");
 
+            // Show ALL results
             window.addModalPerformSearch = function(query) {
                 const q = query.trim().toLowerCase();
                 if (!q) { addResultsContainer.innerHTML = ""; return; }
                 const matches = vocabList.filter(v => v.chinese.toLowerCase().includes(q) || v.khmer.toLowerCase()
-                    .includes(q)).slice(0, 10);
+                    .includes(q));
                 if (matches.length) {
                     addResultsContainer.innerHTML = matches.map(v => {
                         const index = vocabList.findIndex(t => t === v);
@@ -3417,6 +3446,7 @@
                         const chineseEsc = escapeHtml(v.chinese);
                         const chineseJs = jsEscape(chineseEsc);
                         const khmerJs = jsEscape(khmerEsc);
+                        // Delete function WITHOUT inline confirm – confirmation is inside the function
                         const deleteOnclick =
                             `event.stopPropagation(); window.deleteFromAddSearch(${index}, ${row}, '${jsEscape(q)}');`;
                         return `<div style="padding:8px; border-bottom:1px solid #ccc; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px; color:#fff; display:flex; justify-content:space-between; align-items:center;" 
@@ -3523,8 +3553,9 @@
                 n.addEventListener("input", (() => {
                     const e = n.value.trim().toLowerCase();
                     if (!e) return void(o.innerHTML = "");
+                    // Show ALL matches
                     const t = vocabList.filter((t => t.chinese.toLowerCase().includes(e) || t.khmer
-                        .toLowerCase().includes(e))).slice(0, 8);
+                        .toLowerCase().includes(e)));
                     0 !== t.length ? o.innerHTML = t.map((e =>
                             `<div style="padding:8px; border-bottom:1px solid #555; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px; color:white;" onclick="loadWordByMode(${vocabList.findIndex((t=>t===e))}, true); document.querySelector('.modal-overlay')?.remove();"><strong>${escapeHtml(e.chinese)}</strong> — ${escapeHtml(e.khmer)}</div>`
                         )).join("") : o.innerHTML =
@@ -3652,11 +3683,12 @@
 
             window.currentEdit = { idx: e, row: t };
 
+            // Show ALL results
             window.editModalPerformSearch = function(query) {
                 const q = query.trim().toLowerCase();
                 if (!q) { resultsEdit.innerHTML = ""; return; }
                 const matches = vocabList.filter(v => v.chinese.toLowerCase().includes(q) || v.khmer.toLowerCase()
-                    .includes(q)).slice(0, 8);
+                    .includes(q));
                 if (matches.length) {
                     resultsEdit.innerHTML = matches.map(v => {
                         const idx = vocabList.findIndex(t => t === v);
@@ -3665,6 +3697,7 @@
                         const chineseEsc = escapeHtml(v.chinese);
                         const khmerJs = jsEscape(khmerEsc);
                         const chineseJs = jsEscape(chineseEsc);
+                        // Delete function WITHOUT inline confirm
                         const deleteOnclick =
                             `event.stopPropagation(); window.deleteFromEditSearch(${idx}, ${row}, '${jsEscape(q)}');`;
                         return `<div style="padding:8px; border-bottom:1px solid #ccc; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px; color:#fff; display:flex; justify-content:space-between; align-items:center;" 
@@ -3711,62 +3744,63 @@
                 "update vocabulary");
 
             const deleteAction = async () => {
-                if (confirm(`⚠️ DELETE Display #${getDisplayNumberFromArrayIndex(window.currentEdit.idx)}?`)) {
-                    a.remove();
-                    if (await deleteVocabByRow(window.currentEdit.row)) {
-                        const idx = window.currentEdit.idx;
-                        const oldIndices = [...sidebarIndices];
-                        vocabList.splice(idx, 1);
-                        const deletedRow = window.currentEdit.row;
-                        for (let i = 0; i < vocabList.length; i++) {
-                            if (vocabList[i].sheetRow > deletedRow) {
-                                vocabList[i].sheetRow--;
+                const displayNum = getDisplayNumberFromArrayIndex(window.currentEdit.idx);
+                const item = vocabList[window.currentEdit.idx];
+                if (!confirm(`⚠️ Delete Display #${displayNum} (${item?.chinese || item?.khmer || 'unknown'})?`)) return;
+                a.remove();
+                if (await deleteVocabByRow(window.currentEdit.row)) {
+                    const idx = window.currentEdit.idx;
+                    const oldIndices = [...sidebarIndices];
+                    vocabList.splice(idx, 1);
+                    const deletedRow = window.currentEdit.row;
+                    for (let i = 0; i < vocabList.length; i++) {
+                        if (vocabList[i].sheetRow > deletedRow) {
+                            vocabList[i].sheetRow--;
+                        }
+                    }
+                    buildFirstCharCache();
+                    saveAllData();
+                    if (vocabList.length === 0) {
+                        sidebarIndices = [];
+                        renderSidebarUI();
+                        updateChineseDisplay("");
+                        document.getElementById("khmerWord").innerText = "";
+                        showToast("All vocabulary deleted");
+                    } else {
+                        let newIdx = -1;
+                        if (oldIndices.length > 0) {
+                            const pos = oldIndices.indexOf(idx);
+                            if (pos !== -1) {
+                                if (pos + 1 < oldIndices.length) {
+                                    let cand = oldIndices[pos + 1];
+                                    if (cand > idx) cand--;
+                                    if (cand >= 0 && cand < vocabList.length) newIdx = cand;
+                                }
+                                if (newIdx === -1 && pos - 1 >= 0) {
+                                    let cand = oldIndices[pos - 1];
+                                    if (cand > idx) cand--;
+                                    if (cand >= 0 && cand < vocabList.length) newIdx = cand;
+                                }
                             }
                         }
-                        buildFirstCharCache();
-                        saveAllData();
-                        if (vocabList.length === 0) {
-                            sidebarIndices = [];
+                        if (newIdx === -1 && vocabList.length > 0) newIdx = 0;
+                        if (appMode === "normal") {
+                            normalCurrentIdx = newIdx;
+                            normalCurrentPage = getNormalPageForIndex(newIdx);
+                            renderNormalSidebar();
+                        } else if (newIdx >= 0 && vocabList[newIdx]) {
+                            history = [newIdx];
+                            historyIndex = 0;
+                            renderRandomSidebar(newIdx);
+                        } else if (vocabList.length) pickRandom();
+                        else {
                             renderSidebarUI();
                             updateChineseDisplay("");
                             document.getElementById("khmerWord").innerText = "";
-                            showToast("All vocabulary deleted");
-                        } else {
-                            let newIdx = -1;
-                            if (oldIndices.length > 0) {
-                                const pos = oldIndices.indexOf(idx);
-                                if (pos !== -1) {
-                                    if (pos + 1 < oldIndices.length) {
-                                        let cand = oldIndices[pos + 1];
-                                        if (cand > idx) cand--;
-                                        if (cand >= 0 && cand < vocabList.length) newIdx = cand;
-                                    }
-                                    if (newIdx === -1 && pos - 1 >= 0) {
-                                        let cand = oldIndices[pos - 1];
-                                        if (cand > idx) cand--;
-                                        if (cand >= 0 && cand < vocabList.length) newIdx = cand;
-                                    }
-                                }
-                            }
-                            if (newIdx === -1 && vocabList.length > 0) newIdx = 0;
-                            if (appMode === "normal") {
-                                normalCurrentIdx = newIdx;
-                                normalCurrentPage = getNormalPageForIndex(newIdx);
-                                renderNormalSidebar();
-                            } else if (newIdx >= 0 && vocabList[newIdx]) {
-                                history = [newIdx];
-                                historyIndex = 0;
-                                renderRandomSidebar(newIdx);
-                            } else if (vocabList.length) pickRandom();
-                            else {
-                                renderSidebarUI();
-                                updateChineseDisplay("");
-                                document.getElementById("khmerWord").innerText = "";
-                            }
                         }
-                        showToast("✅ Deleted successfully");
-                        refreshAddModalSearch();
                     }
+                    showToast("✅ Deleted successfully");
+                    refreshAddModalSearch();
                 }
             };
             document.getElementById("deleteRowBtn").onclick = () => showPasswordProtectionModal(deleteAction,
@@ -5019,11 +5053,6 @@
                 emojiContainer.addEventListener("wheel", handleEmojiWheel, { passive: false });
                 initEmojiDrag();
                 loadEmojiPosition();
-            }
-
-            const clearBtn = document.getElementById("clearCacheBtn");
-            if (clearBtn) {
-                clearBtn.addEventListener("click", clearAllCache);
             }
 
             loadSettings();
