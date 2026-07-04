@@ -1829,6 +1829,27 @@
             opacity: .9;
             white-space: nowrap
         }
+        .copy-toast.clickable {
+            pointer-events: auto;
+            cursor: pointer;
+            background: #1e293b;
+            border: 1px solid #ef4444;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 30001;
+        }
+        .copy-toast.clickable .retry-icon {
+            color: #ef4444;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+        .copy-toast.clickable .retry-icon:hover {
+            transform: scale(1.2);
+        }
         .edit-group-buttons {
             display: flex;
             gap: 16px;
@@ -2724,10 +2745,82 @@
             return !1
         }
 
+        // ---- RETRY TOAST ----
+        let retryToastElement = null;
+        let retryResolve = null;
+
+        function showRetryToast(message, retryFn) {
+            // Remove any existing retry toast
+            if (retryToastElement) {
+                retryToastElement.remove();
+                retryToastElement = null;
+            }
+            if (retryResolve) {
+                retryResolve = null;
+            }
+
+            const toast = document.createElement("div");
+            toast.className = "copy-toast clickable";
+            toast.style.display = "block";
+            toast.innerHTML = `
+                <span>${message}</span>
+                <span class="retry-icon" title="Retry">⟳</span>
+            `;
+            document.body.appendChild(toast);
+            retryToastElement = toast;
+
+            const retryIcon = toast.querySelector(".retry-icon");
+            retryIcon.addEventListener("click", async function(e) {
+                e.stopPropagation();
+                toast.style.opacity = "0.6";
+                toast.style.pointerEvents = "none";
+                toast.querySelector("span").innerHTML = "⏳ Retrying...";
+                try {
+                    const result = await retryFn();
+                    // If we get here, success
+                    toast.remove();
+                    retryToastElement = null;
+                    showToast("✅ Retry successful!");
+                    if (retryResolve) {
+                        retryResolve(result);
+                        retryResolve = null;
+                    }
+                } catch (err) {
+                    // Failed again
+                    toast.style.opacity = "1";
+                    toast.style.pointerEvents = "auto";
+                    toast.querySelector("span").innerHTML = `⚠️ ${err.message || 'Failed again'}. Tap ⟳ to retry`;
+                    // Keep toast visible
+                }
+            });
+
+            // Also allow clicking on the toast background to retry
+            toast.addEventListener("click", function(e) {
+                if (e.target === toast || e.target === toast.querySelector("span")) {
+                    retryIcon.click();
+                }
+            });
+
+            // Return a promise that resolves on success
+            return new Promise((resolve, reject) => {
+                retryResolve = resolve;
+                // If the user manually closes? Not needed – keep until success.
+            });
+        }
+
         function showToast(e) {
-            let t = document.querySelector(".copy-toast");
-            t || (t = document.createElement("div"), t.className = "copy-toast", document.body.appendChild(t)),
-                t.innerText = e, t.style.display = "block", setTimeout((() => { t.style.display = "none" }), 1500)
+            let t = document.querySelector(".copy-toast:not(.clickable)");
+            if (!t) {
+                t = document.createElement("div");
+                t.className = "copy-toast";
+                document.body.appendChild(t);
+            }
+            t.innerText = e;
+            t.style.display = "block";
+            t.style.opacity = "1";
+            t.style.pointerEvents = "none";
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => { t.style.display = "none"; }, 1500);
         }
 
         async function copyTextDirectly(e, t) {
@@ -2754,60 +2847,47 @@
                 }))
         }
 
-        // ===== MODIFIED: showCopyPopupWithButton – added iOS outside-tap dismiss =====
         function showCopyPopupWithButton(e, t) {
             copyLocked || (copyLocked = !0, pendingCopyText = e, popupMessageSpan.innerText = `📋 Copy ${t}`,
                 copyBtn.innerText = "Copy", copyPopup.style.display = "flex", copyTimer && clearTimeout(copyTimer),
                 copyTimer = setTimeout((() => { copyPopup && "flex" === copyPopup.style.display && (copyPopup.style
                         .display = "none", copyLocked = !1, pendingCopyText = "",
                         popupMessageSpan.innerText = "📋 Ready to copy", copyBtn.innerText = "Copy") }), 1200));
-            // iOS: hide copy popup immediately when tapping outside
-            const outsideHandler = function(ev) {
-                if (!copyPopup) return;
-                if (copyPopup.style.display === 'flex') {
-                    const target = ev.target;
-                    if (target && !copyPopup.contains(target)) {
-                        copyPopup.style.display = 'none';
-                        copyLocked = false;
-                        pendingCopyText = '';
-                        popupMessageSpan.innerText = '📋 Ready to copy';
-                        copyBtn.innerText = 'Copy';
-                        if (copyTimer) clearTimeout(copyTimer);
-                        document.removeEventListener('touchstart', outsideHandler);
-                        document.removeEventListener('mousedown', outsideHandler);
-                    }
-                }
-            };
-            // Add the listener only for iOS; for safety we attach both touch and mouse
             if (isIOS) {
-                // Use a short delay so the popup doesn't immediately get closed by the same tap that opened it
                 setTimeout(() => {
+                    const outsideHandler = function(ev) {
+                        if (!copyPopup) return;
+                        if (copyPopup.style.display === 'flex') {
+                            const target = ev.target;
+                            if (target && !copyPopup.contains(target)) {
+                                copyPopup.style.display = 'none';
+                                copyLocked = false;
+                                pendingCopyText = '';
+                                popupMessageSpan.innerText = '📋 Ready to copy';
+                                copyBtn.innerText = 'Copy';
+                                if (copyTimer) clearTimeout(copyTimer);
+                                document.removeEventListener('touchstart', outsideHandler);
+                                document.removeEventListener('mousedown', outsideHandler);
+                            }
+                        }
+                    };
                     document.addEventListener('touchstart', outsideHandler, { passive: true });
                     document.addEventListener('mousedown', outsideHandler);
+                    copyPopup._outsideHandler = outsideHandler;
+                    const superTimer = copyTimer;
+                    copyTimer = setTimeout(() => {
+                        if (copyPopup && copyPopup.style.display === 'flex') {
+                            copyPopup.style.display = 'none';
+                            copyLocked = false;
+                            pendingCopyText = '';
+                            popupMessageSpan.innerText = '📋 Ready to copy';
+                            copyBtn.innerText = 'Copy';
+                        }
+                        document.removeEventListener('touchstart', outsideHandler);
+                        document.removeEventListener('mousedown', outsideHandler);
+                    }, 1200);
+                    if (superTimer) clearTimeout(superTimer);
                 }, 50);
-                // Store the handler so we can clean it up when the popup auto-closes
-                copyPopup._outsideHandler = outsideHandler;
-                // Clean up when popup closes via timer
-                const origTimer = copyTimer;
-                const timerId = setTimeout(() => {
-                    document.removeEventListener('touchstart', outsideHandler);
-                    document.removeEventListener('mousedown', outsideHandler);
-                }, 1250);
-                // Override the timer cleanup to also remove the outside handler
-                const superTimer = copyTimer;
-                copyTimer = setTimeout(() => {
-                    if (copyPopup && copyPopup.style.display === 'flex') {
-                        copyPopup.style.display = 'none';
-                        copyLocked = false;
-                        pendingCopyText = '';
-                        popupMessageSpan.innerText = '📋 Ready to copy';
-                        copyBtn.innerText = 'Copy';
-                    }
-                    document.removeEventListener('touchstart', outsideHandler);
-                    document.removeEventListener('mousedown', outsideHandler);
-                }, 1200);
-                // Cancel the original timer if it was set
-                if (superTimer) clearTimeout(superTimer);
             }
         }
 
@@ -2864,8 +2944,6 @@
                     null } catch (e) { return console.warn("getFileName error:", e), null }
         }
 
-        // ===== REMOVED all auto-reload logic =====
-        // loadSheetData no longer reloads automatically.
         let lastSheetDataHash = '';
 
         function computeSheetHash(data) {
@@ -2879,11 +2957,8 @@
             return hash.toString();
         }
 
-        // loadSheetData now only loads when explicitly told (forceReload = true)
         async function loadSheetData(forceReload = false) {
-            if (!forceReload) {
-                return;
-            }
+            if (!forceReload) return;
             if (!currentSheetId) return void showToast("❌ Please enter a Google Sheet URL");
             const e = `https://opensheet.elk.sh/${currentSheetId}/Sheet1`;
             try {
@@ -2891,9 +2966,7 @@
                 if (!t.ok) throw new Error(`HTTP ${t.status}`);
                 const n = await t.json();
                 if (!Array.isArray(n) || 0 === n.length) throw new Error("No data found in sheet");
-
                 lastSheetDataHash = computeSheetHash(n);
-
                 const o = n[0],
                     i = Object.keys(o);
                 let a = -1,
@@ -2933,7 +3006,6 @@
             } catch (e) { console.error("Error loading sheet:", e), showToast(`❌ Error: ${e.message}`) }
         }
 
-        // ---- callApi now NEVER triggers reload ----
         async function callApi(e, t) {
             if (!editUnlocked) return showPasswordModal((async n => { n && await callApi(e, t) })), !1;
             if (!detectedApiUrl || !detectedApiUrl.startsWith("http")) return showToast("❌ No valid API URL found."),
@@ -2951,27 +3023,63 @@
                     showToast(`✅ ${t} successful`);
                     return !0;
                 } else {
-                    showToast(`❌ ${t} failed: ${i.message||i.result}`);
-                    return !1;
+                    const errMsg = i.message || i.result || 'Unknown error';
+                    showToast(`❌ ${t} failed: ${errMsg}`);
+                    throw new Error(errMsg);
                 }
-            } catch (e) { return showToast(`❌ Error: ${e.message}`), !1 }
+            } catch (e) { 
+                const errMsg = e.message || 'Network error';
+                showToast(`❌ ${t} failed: ${errMsg}`);
+                throw new Error(errMsg);
+            }
         }
 
         async function addVocabToSheet(e, t) {
-            return editUnlocked ? e || t ? await callApi({ action: "add", vocab: e, chinese: t }, "ADD") : (showToast(
-                "⚠️ Please enter Khmer or Chinese"), !1) : (showPasswordModal((async n => { n && await addVocabToSheet(
-                e, t) })), !1)
+            if (!editUnlocked) {
+                return new Promise((resolve, reject) => {
+                    showPasswordModal(async (n) => {
+                        if (n) {
+                            try { const res = await addVocabToSheet(e, t);
+                                resolve(res); } catch (err) { reject(err); }
+                        } else reject(new Error('Password required'));
+                    });
+                });
+            }
+            if (!e && !t) { showToast("⚠️ Please enter Khmer or Chinese");
+                throw new Error('Empty fields'); }
+            return await callApi({ action: "add", vocab: e, chinese: t }, "ADD");
         }
 
         async function updateVocabByRow(e, t, n) {
-            return editUnlocked ? void 0 === e || e < 1 ? (showToast("❌ Invalid row number"), !1) : await callApi({ action: "update",
-                    row: e - 1, vocab: t, chinese: n }, "UPDATE") : (showPasswordModal((async o => { o &&
-                        await updateVocabByRow(e, t, n) })), !1)
+            if (!editUnlocked) {
+                return new Promise((resolve, reject) => {
+                    showPasswordModal(async (o) => {
+                        if (o) {
+                            try { const res = await updateVocabByRow(e, t, n);
+                                resolve(res); } catch (err) { reject(err); }
+                        } else reject(new Error('Password required'));
+                    });
+                });
+            }
+            if (e === undefined || e < 1) { showToast("❌ Invalid row number");
+                throw new Error('Invalid row'); }
+            return await callApi({ action: "update", row: e - 1, vocab: t, chinese: n }, "UPDATE");
         }
 
         async function deleteVocabByRow(e) {
-            return editUnlocked ? void 0 === e || e < 1 ? (showToast("❌ Invalid row number"), !1) : await callApi({ action: "delete",
-                    row: e - 1 }, "DELETE") : (showPasswordModal((async t => { t && await deleteVocabByRow(e) })), !1)
+            if (!editUnlocked) {
+                return new Promise((resolve, reject) => {
+                    showPasswordModal(async (t) => {
+                        if (t) {
+                            try { const res = await deleteVocabByRow(e);
+                                resolve(res); } catch (err) { reject(err); }
+                        } else reject(new Error('Password required'));
+                    });
+                });
+            }
+            if (e === undefined || e < 1) { showToast("❌ Invalid row number");
+                throw new Error('Invalid row'); }
+            return await callApi({ action: "delete", row: e - 1 }, "DELETE");
         }
 
         function scrollToSidebarItem() { setTimeout((() => { const e = document.querySelector(".vocab-item.active");
@@ -3005,7 +3113,6 @@
                 historySelect = e.querySelector("#sheetHistorySelect"),
                 cacheBtn = e.querySelector("#clearCacheBtn");
 
-            // Attach clear cache event listener
             if (cacheBtn) {
                 cacheBtn.addEventListener("click", function(ev) {
                     ev.stopPropagation();
@@ -3471,7 +3578,6 @@
                     const e = i.value.trim().toLowerCase();
                     if (!e) { s.style.display = "none";
                         s.innerHTML = ""; return }
-                    // Show ALL matching results
                     const t = vocabList.filter((t => t.chinese.toLowerCase().includes(e) || t.khmer.toLowerCase()
                         .includes(e)));
                     if (0 === t.length) { s.innerHTML =
@@ -3661,8 +3767,8 @@
             if (!confirm(`⚠️ Delete Display #${displayNum} (${item.chinese || item.khmer})?`)) return;
             const rowToDelete = item.sheetRow;
             showPasswordProtectionModal(async function() {
-                const success = await deleteVocabByRow(rowToDelete);
-                if (success) {
+                try {
+                    await deleteVocabByRow(rowToDelete);
                     vocabList.splice(idx, 1);
                     for (let i = 0; i < vocabList.length; i++) {
                         if (vocabList[i].sheetRow > rowToDelete) {
@@ -3677,18 +3783,22 @@
                         updateChineseDisplay("");
                         document.getElementById("khmerWord").innerText = "";
                     }
-                    // Refresh Add modal search results (use the actual Chinese input)
                     const addChineseInput = document.getElementById('addChineseInput');
                     if (addChineseInput && window.addModalPerformSearch) {
                         window.addModalPerformSearch(addChineseInput.value);
                     }
-                    // Also refresh edit modal if open (optional)
                     const editChineseInput = document.getElementById('editChineseInput');
                     if (editChineseInput && window.editModalPerformSearch) {
                         window.editModalPerformSearch(editChineseInput.value);
                     }
                     showToast("✅ Deleted successfully");
-                } else { showToast("❌ Deletion failed"); }
+                } catch (err) {
+                    // Show retry toast
+                    const retryFn = () => {
+                        return deleteVocabByRow(rowToDelete);
+                    };
+                    showRetryToast(`⚠️ Delete failed: ${err.message}. Tap ⟳ to retry`, retryFn);
+                }
             }, "delete vocabulary");
         };
 
@@ -3699,8 +3809,8 @@
             if (!confirm(`⚠️ Delete Display #${displayNum} (${item.chinese || item.khmer})?`)) return;
             const rowToDelete = item.sheetRow;
             showPasswordProtectionModal(async function() {
-                const success = await deleteVocabByRow(rowToDelete);
-                if (success) {
+                try {
+                    await deleteVocabByRow(rowToDelete);
                     vocabList.splice(idx, 1);
                     for (let i = 0; i < vocabList.length; i++) {
                         if (vocabList[i].sheetRow > rowToDelete) {
@@ -3715,18 +3825,21 @@
                         updateChineseDisplay("");
                         document.getElementById("khmerWord").innerText = "";
                     }
-                    // Refresh Edit modal search results (use the actual Chinese input)
                     const editChineseInput = document.getElementById('editChineseInput');
                     if (editChineseInput && window.editModalPerformSearch) {
                         window.editModalPerformSearch(editChineseInput.value);
                     }
-                    // Also refresh Add modal search results
                     const addChineseInput = document.getElementById('addChineseInput');
                     if (addChineseInput && window.addModalPerformSearch) {
                         window.addModalPerformSearch(addChineseInput.value);
                     }
                     showToast("✅ Deleted successfully");
-                } else { showToast("❌ Deletion failed"); }
+                } catch (err) {
+                    const retryFn = () => {
+                        return deleteVocabByRow(rowToDelete);
+                    };
+                    showRetryToast(`⚠️ Delete failed: ${err.message}. Tap ⟳ to retry`, retryFn);
+                }
             }, "delete vocabulary");
         };
 
@@ -3741,14 +3854,12 @@
         // --- Top pinyin uses ORIGINAL transform, Bottom uses margin (last fix) ---
         function applyLayerTransforms() {
             if (!chineseElement) return;
-            // Top pinyin: use transform (original)
             const tops = chineseElement.querySelectorAll(".pinyin-top");
             tops.forEach((el) => {
                 el.style.transform = `translate(${topLayerX}px, ${topLayerY}px)`;
                 el.style.marginTop = '';
                 el.style.marginLeft = '';
             });
-            // Bottom char: use margin (last fix - works correctly)
             const bottoms = chineseElement.querySelectorAll(".chinese-bottom");
             bottoms.forEach((el) => {
                 el.style.marginTop = bottomLayerY + 'px';
@@ -3784,7 +3895,6 @@
                 </div>`,
                 document.body.appendChild(e);
             e.onclick = function(event) { if (event.target === e) { e.remove(); } };
-            // Insert "/" buttons
             e.querySelectorAll(".insert-symbol-icon-inside").forEach((el) => {
                 const target = el.getAttribute("data-target");
                 if (target) {
@@ -3807,7 +3917,6 @@
 
             const chineseInput = document.getElementById("addChineseInput");
             const khmerInput = document.getElementById("addKhmerInput");
-            // Enter key submits
             const enterHandler = (ev) => { if (ev.key === "Enter") { ev.preventDefault();
                     document.getElementById("confirmAddBtn").click(); } };
             chineseInput.addEventListener("keypress", enterHandler);
@@ -3819,20 +3928,17 @@
                 performSearch(query, addResultsContainer, false);
             };
 
-            // Chinese input triggers search on input
             chineseInput.addEventListener('input', function() {
                 const val = this.value.trim();
                 window.addModalPerformSearch(val);
             });
 
-            // Search icon button: trigger search immediately
             document.getElementById("addChineseSearchBtn").addEventListener("click", function() {
                 const val = chineseInput.value.trim();
                 window.addModalPerformSearch(val);
                 showToast("🔍 Searching...");
             });
 
-            // Open sheet button
             document.getElementById("openGoogleSheetBtnModal").onclick = () => {
                 if (vocabList.length > 0) {
                     const lastRow = vocabList[vocabList.length - 1].sheetRow;
@@ -3842,7 +3948,7 @@
                 }
             };
 
-            // ===== MODIFIED: confirmAddBtn with optimistic update =====
+            // ===== MODIFIED: confirmAddBtn with optimistic update and retry =====
             document.getElementById("confirmAddBtn").onclick = () => {
                 const chinese = chineseInput.value.trim();
                 const khmer = khmerInput.value.trim();
@@ -3851,12 +3957,10 @@
                     chineseInput.focus();
                     return;
                 }
-                // Clear inputs immediately
                 chineseInput.value = '';
                 khmerInput.value = '';
                 chineseInput.focus();
 
-                // Optimistic update: immediately add to local list
                 const newRow = vocabList.length > 0 ? vocabList[vocabList.length - 1].sheetRow + 1 : 2;
                 const newEntry = { khmer: khmer || '', chinese: chinese || '', sheetRow: newRow };
                 vocabList.push(newEntry);
@@ -3881,15 +3985,17 @@
                     window.addModalPerformSearch(chineseInput.value.trim());
                 }
 
-                // Fire-and-forget API call (no await, don't block UI)
+                // Fire-and-forget API call with retry on failure
                 addVocabToSheet(khmer, chinese).catch(err => {
-                    showToast('⚠️ API add failed: ' + err.message);
+                    const retryFn = () => {
+                        return addVocabToSheet(khmer, chinese);
+                    };
+                    showRetryToast(`⚠️ Add failed: ${err.message}. Tap ⟳ to retry`, retryFn);
                 });
             };
 
             document.getElementById("closeAddModalBtn").onclick = () => e.remove();
 
-            // Edit icon from Add modal
             document.getElementById("editIconFromAdd").addEventListener("click", () => {
                 e.remove();
                 if (sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
@@ -3921,7 +4027,6 @@
                 n.addEventListener("input", (() => {
                     const e = n.value.trim().toLowerCase();
                     if (!e) return void(o.innerHTML = "");
-                    // Show ALL matches
                     const t = vocabList.filter((t => t.chinese.toLowerCase().includes(e) || t.khmer
                         .toLowerCase().includes(e)));
                     0 !== t.length ? o.innerHTML = t.map((e =>
@@ -4021,7 +4126,6 @@
                     requestAddNewVocab();
                 };
             }
-            // Also trigger search after updating state
             setTimeout(() => {
                 const val = document.getElementById('editChineseInput').value.trim();
                 if (val && window.editModalPerformSearch) {
@@ -4059,7 +4163,6 @@
                 </div>`,
                 document.body.appendChild(a);
             a.onclick = function(event) { if (event.target === a) { a.remove(); } };
-            // Insert "/" buttons
             a.querySelectorAll(".insert-symbol-icon-inside").forEach((el) => {
                 const target = el.getAttribute("data-target");
                 if (target) {
@@ -4095,13 +4198,11 @@
                 performSearch(query, resultsEdit, true);
             };
 
-            // Chinese input triggers search on input
             editChineseInput.addEventListener('input', function() {
                 const val = this.value.trim();
                 window.editModalPerformSearch(val);
             });
 
-            // Search icon button: trigger search immediately
             document.getElementById("editChineseSearchBtn").addEventListener("click", function() {
                 const val = editChineseInput.value.trim();
                 window.editModalPerformSearch(val);
@@ -4112,7 +4213,7 @@
                 requestOpenSheetRow(window.currentEdit.row);
             };
 
-            // ===== MODIFIED: confirmUpdate with optimistic update =====
+            // ===== MODIFIED: confirmUpdate with optimistic update and retry =====
             const confirmUpdate = () => {
                 const ch = editChineseInput.value.trim();
                 const km = editKhmerInput.value.trim();
@@ -4120,13 +4221,12 @@
                     showToast("⚠️ At least one field required");
                     return;
                 }
-                a.remove(); // close modal immediately
+                a.remove();
                 const idx = window.currentEdit.idx;
                 const row = window.currentEdit.row;
                 const oldKhmer = vocabList[idx]?.khmer || '';
                 const oldChinese = vocabList[idx]?.chinese || '';
 
-                // Optimistic update: immediately update local list
                 vocabList[idx] = { khmer: km || oldKhmer, chinese: ch || oldChinese, sheetRow: row };
                 buildFirstCharCache();
                 saveAllData();
@@ -4135,9 +4235,11 @@
                 showToast("✅ Updated successfully");
                 refreshAddModalSearch();
 
-                // Fire-and-forget API call (no await, don't block UI)
                 updateVocabByRow(row, km || oldKhmer, ch || oldChinese).catch(err => {
-                    showToast('⚠️ API update failed: ' + err.message);
+                    const retryFn = () => {
+                        return updateVocabByRow(row, km || oldKhmer, ch || oldChinese);
+                    };
+                    showRetryToast(`⚠️ Update failed: ${err.message}. Tap ⟳ to retry`, retryFn);
                 });
             };
             document.getElementById("confirmUpdateBtn").onclick = () => showPasswordProtectionModal(confirmUpdate,
@@ -4148,7 +4250,8 @@
                 const item = vocabList[window.currentEdit.idx];
                 if (!confirm(`⚠️ Delete Display #${displayNum} (${item?.chinese || item?.khmer || 'unknown'})?`)) return;
                 a.remove();
-                if (await deleteVocabByRow(window.currentEdit.row)) {
+                try {
+                    await deleteVocabByRow(window.currentEdit.row);
                     const idx = window.currentEdit.idx;
                     const oldIndices = [...sidebarIndices];
                     vocabList.splice(idx, 1);
@@ -4201,6 +4304,11 @@
                     }
                     showToast("✅ Deleted successfully");
                     refreshAddModalSearch();
+                } catch (err) {
+                    const retryFn = () => {
+                        return deleteVocabByRow(window.currentEdit.row);
+                    };
+                    showRetryToast(`⚠️ Delete failed: ${err.message}. Tap ⟳ to retry`, retryFn);
                 }
             };
             document.getElementById("deleteRowBtn").onclick = () => showPasswordProtectionModal(deleteAction,
@@ -4215,7 +4323,6 @@
                 });
             }
 
-            // Trigger auto-search with current value after modal renders
             setTimeout(() => {
                 const val = editChineseInput.value.trim();
                 if (val) {
@@ -4679,7 +4786,6 @@
                 } catch (e) { console.warn("Vocab list parse error:", e); }
             }
 
-            // Check session password
             checkPasswordVerifiedSession();
 
             applyChineseMainStyle();
@@ -4703,7 +4809,6 @@
                 "side" !== e || sidebarVisible || toggleSidebar()
         }
 
-        // ---- FIX: background click - now reliably prevents double-firing on mobile (time-based) ----
         function setupBackgroundClick() {
             const area = document.getElementById("bgClickArea");
             let longPressTimer = null;
@@ -4713,7 +4818,7 @@
                 pressStartY = 0;
             let tapProcessed = false;
             let touchInProgress = false;
-            let lastTouchEndTime = 0; // NEW: timestamp of last touchend
+            let lastTouchEndTime = 0;
 
             const shouldHandle = (target) => {
                 return !target.closest('#floatingMenu') &&
@@ -4727,24 +4832,17 @@
             };
 
             const startPress = (e) => {
-                // If this is a mouse event and a touch ended recently (within 300ms), ignore it
                 if (e.type === 'mousedown' && Date.now() - lastTouchEndTime < 300) {
                     return;
                 }
-
                 const touch = e.touches ? e.touches[0] : e;
                 const target = e.target;
                 if (!shouldHandle(target)) return;
-
                 if (e.type === 'mousedown' && touchInProgress) return;
-
-                // Reset processed flag only on fresh touch/mouse start
                 tapProcessed = false;
-
                 if (e.type === 'touchstart') {
                     touchInProgress = true;
                 }
-
                 pressStartX = touch.clientX;
                 pressStartY = touch.clientY;
                 hasMoved = false;
@@ -4775,22 +4873,17 @@
             };
 
             const endPress = (e) => {
-                // If this is a mouse event and a touch ended recently (within 300ms), ignore it
                 if (e.type === 'mouseup' && Date.now() - lastTouchEndTime < 300) {
                     return;
                 }
-
                 if (tapProcessed) return;
-
                 if (e.type === 'mouseup' && touchInProgress) {
                     return;
                 }
-
                 if (longPressTimer) {
                     clearTimeout(longPressTimer);
                     longPressTimer = null;
                 }
-
                 if (isLongPress || isSwiping || hasMoved) {
                     isLongPress = false;
                     isSwiping = false;
@@ -4802,7 +4895,6 @@
                     }
                     return;
                 }
-
                 const target = e.target;
                 if (!shouldHandle(target)) {
                     tapProcessed = true;
@@ -4812,23 +4904,18 @@
                     }
                     return;
                 }
-
                 const floatingMenu = document.getElementById('floatingMenu');
                 const isMenuVisible = floatingMenu && floatingMenu.style.display !== 'none';
-
                 if (isMenuVisible) {
                     toggleMenu(true);
                 } else {
                     pickRandom();
                 }
-
                 if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement
                         .tagName === 'TEXTAREA')) {
                     document.activeElement.blur();
                 }
-
                 tapProcessed = true;
-
                 if (e.type === 'touchend') {
                     touchInProgress = false;
                     lastTouchEndTime = Date.now();
@@ -4841,7 +4928,6 @@
             area.addEventListener('touchmove', movePress, { passive: true });
             area.addEventListener('mouseup', endPress);
             area.addEventListener('touchend', endPress);
-            // Keep wheel for prev/next
             area.addEventListener('wheel', (e) => {
                 if (!e.ctrlKey) {
                     if (e.deltaY < 0) {
@@ -4918,8 +5004,6 @@
                         setKhmerFontSize(Math.round(e)) } } }
 
         function handlePinchEnd() { isPinching = !1, initialPinchDistance = 0 }
-
-        // applyLayerTransforms already defined above
 
         function saveAllDragPositions() {
             safeSetItem("drag_chineseX", chineseX);
@@ -5305,7 +5389,6 @@
             }
         }
 
-        // ===== FIXED: Swipe navigation – ignore touches near bottom edge, prevent conflicts =====
         function initSwipeNavigation() {
             const area = document.getElementById("displayArea");
             if (!area) return;
@@ -5315,7 +5398,6 @@
 
             area.addEventListener("touchstart", function(e) {
                 const touch = e.touches[0];
-                // Ignore if touch starts within 80px of bottom (avoids system gesture conflict)
                 if (window.innerHeight - touch.clientY < 80) {
                     startY = 0;
                     startX = 0;
@@ -5325,7 +5407,6 @@
                 startY = touch.clientY;
                 startX = touch.clientX;
                 moved = false;
-                // Reset global swiping flag when a new touch starts
                 isSwiping = false;
             }, { passive: true });
 
@@ -5334,30 +5415,23 @@
                 const touch = e.touches[0];
                 const deltaY = touch.clientY - startY;
                 const deltaX = touch.clientX - startX;
-                // Vertical swipe (up/down) – prev/next word
                 if (Math.abs(deltaY) > 30 && !moved) {
                     moved = true;
-                    isSwiping = true; // mark as swipe to prevent background tap
+                    isSwiping = true;
                     if (deltaY > 0) {
-                        // swipe down -> next
                         if (appMode === "random") historyNext();
                         else goNextNormal();
                     } else {
-                        // swipe up -> prev
                         if (appMode === "random") historyPrev();
                         else goPrevNormal();
                     }
                     e.preventDefault();
-                }
-                // Horizontal swipe (left/right) – sidebar navigation
-                else if (Math.abs(deltaX) > 30 && !moved && Math.abs(deltaX) > Math.abs(deltaY)) {
+                } else if (Math.abs(deltaX) > 30 && !moved && Math.abs(deltaX) > Math.abs(deltaY)) {
                     moved = true;
                     isSwiping = true;
                     if (deltaX > 0) {
-                        // swipe right -> next sidebar item
                         moveSidebarFocus(1);
                     } else {
-                        // swipe left -> prev sidebar item
                         moveSidebarFocus(-1);
                     }
                     e.preventDefault();
@@ -5368,7 +5442,6 @@
                 startY = 0;
                 startX = 0;
                 moved = false;
-                // Reset swiping flag after a short delay to avoid interfering with next tap
                 setTimeout(() => { isSwiping = false; }, 100);
             });
         }
@@ -5487,17 +5560,14 @@
             safeSetItem('vocabMaster_NightMode', document.body.classList.contains('night-mode'));
             const e = document.getElementById('dragDarkModeBtn');
             e && (e.innerHTML = document.body.classList.contains('night-mode') ? "☀️" : "🌙");
-
             const isNight = document.body.classList.contains('night-mode');
             const color = isNight ? '#ffffff' : '#000000';
-
             document.getElementById('mZhColor').value = color;
             document.getElementById('mKmColor').value = color;
             document.getElementById('sZhColor').value = color;
             document.getElementById('sKmColor').value = color;
             document.getElementById('pinyinColor').value = color;
             document.getElementById('bottomCharColor').value = color;
-
             applyStyles();
             renderSidebarUI();
         }
