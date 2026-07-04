@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes" />
     <title>📖 Vocab Master – Fixed Auto Timer</title>
-    <link rel="icon" href="/static/ABAicon.png" type="image/png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/ABAicon.png">
+    <link rel="icon" href="/static/ABAicon.png" type="image/png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/ABAicon.png" />
     <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js">
     </script>
     <style>
@@ -669,7 +669,8 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            white-space: nowrap
+            white-space: nowrap;
+            position: relative;
         }
         .pinyin-top {
             font-size: .35em;
@@ -1310,14 +1311,14 @@
             line-height: 1;
         }
         .file-source-card .url-clear-btn:hover {
-            background: rgba(0,0,0,0.1);
+            background: rgba(0, 0, 0, 0.1);
             color: #333;
         }
         body.night-mode .file-source-card .url-clear-btn {
             color: #aaa;
         }
         body.night-mode .file-source-card .url-clear-btn:hover {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             color: #fff;
         }
         .file-source-card select {
@@ -1999,6 +2000,94 @@
             cursor: pointer;
             border-bottom: 1px solid var(--border);
         }
+
+        /* New style for search icon inside Chinese input */
+        .input-with-search {
+            display: flex;
+            align-items: center;
+            background: rgba(51, 65, 85, 0.95);
+            border-radius: 60px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(8px);
+            padding: 0 4px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .input-with-search .search-icon-btn {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+            padding: 8px 12px;
+            cursor: pointer;
+            flex-shrink: 0;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .input-with-search .search-icon-btn:hover {
+            opacity: 1;
+        }
+        .input-with-search .big-edit-input-icon {
+            border: none !important;
+            background: transparent !important;
+            padding: 16px 12px 16px 4px !important;
+            margin: 0;
+            flex: 1;
+            border-radius: 60px !important;
+            backdrop-filter: none;
+        }
+        .input-with-search .big-edit-input-icon:focus {
+            outline: none;
+        }
+        .input-with-search .insert-symbol-icon-inside {
+            position: relative;
+            right: auto;
+            top: auto;
+            transform: none;
+            background: rgba(255, 255, 255, 0.15);
+            margin-right: 4px;
+        }
+
+        /* Heading row with button outside h3 */
+        .modal-heading-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+        .modal-heading-row h3 {
+            margin: 0;
+            color: #fff;
+            font-size: 1.6rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 20px;
+            border-radius: 60px;
+            backdrop-filter: blur(4px);
+            flex: 1;
+        }
+        .modal-heading-row .sheet-btn {
+            background: #3b82f6;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 16px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            flex-shrink: 0;
+            height: fit-content;
+        }
+        .modal-heading-row .sheet-btn:hover {
+            background: #2563eb;
+        }
+        body.night-mode .modal-heading-row h3 {
+            background: rgba(0, 0, 0, 0.6);
+        }
     </style>
     <style>
         #floatingMenu {
@@ -2052,7 +2141,7 @@
         }
         #floatingMenu .btn-main.off {
             background: transparent !important;
-            border-color: rgba(255,255,255,0.2) !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
             color: #94a3b8 !important;
         }
         #floatingMenu .btn-main.active {
@@ -2352,13 +2441,46 @@
         // ======================== PASSWORD PROTECTION =========================
         let passwordVerified = false;
         let dynamicPassword = "012891556";
+        // --- password verification persists across reloads within same session ---
+        // We store a session flag in sessionStorage so sheet reload doesn't ask again.
+        function checkPasswordVerifiedSession() {
+            try {
+                const v = sessionStorage.getItem('vocabMaster_passwordVerified');
+                if (v === 'true') {
+                    passwordVerified = true;
+                    return true;
+                }
+            } catch (e) {}
+            return false;
+        }
+
+        function setPasswordVerifiedSession() {
+            try {
+                sessionStorage.setItem('vocabMaster_passwordVerified', 'true');
+                passwordVerified = true;
+            } catch (e) {}
+        }
+
+        // call this on successful password entry
+        function markPasswordVerified() {
+            setPasswordVerifiedSession();
+        }
+
+        // Override the password verification to check session storage first
+        const origShowPasswordProtectionModal = window.showPasswordProtectionModal;
 
         function closeAllModals() {
             document.querySelectorAll('.modal-overlay').forEach(modal => modal.remove());
         }
 
         function showPasswordProtectionModal(callback, actionName = "this action") {
+            // If already verified in this session, skip password
             if (passwordVerified) {
+                if (callback) callback();
+                return;
+            }
+            // check session storage
+            if (checkPasswordVerifiedSession()) {
                 if (callback) callback();
                 return;
             }
@@ -2386,6 +2508,7 @@
                 const entered = inputField.value.trim();
                 if (entered === dynamicPassword) {
                     passwordVerified = true;
+                    markPasswordVerified();
                     cleanup();
                     if (callback) callback();
                     showToast("✅ Password correct. Action authorized.");
@@ -2610,7 +2733,8 @@
         async function copyTextDirectly(e, t) {
             try { return await navigator.clipboard.writeText(e), showToast(
                     `📋 Copied ${t}: ${e.substring(0,30)}${e.length>30?"...":""}`), !0 } catch (n) { const o =
-                    document.createElement("textarea"); return o.value = e, document.body.appendChild(o), o.select(),
+                    document.createElement("textarea");
+                return o.value = e, document.body.appendChild(o), o.select(),
                     document.execCommand("copy"), document.body.removeChild(o), showToast(
                         `📋 Copied ${t}: ${e.substring(0,30)}${e.length>30?"...":""}`), !0 }
         }
@@ -2630,12 +2754,61 @@
                 }))
         }
 
+        // ===== MODIFIED: showCopyPopupWithButton – added iOS outside-tap dismiss =====
         function showCopyPopupWithButton(e, t) {
             copyLocked || (copyLocked = !0, pendingCopyText = e, popupMessageSpan.innerText = `📋 Copy ${t}`,
                 copyBtn.innerText = "Copy", copyPopup.style.display = "flex", copyTimer && clearTimeout(copyTimer),
                 copyTimer = setTimeout((() => { copyPopup && "flex" === copyPopup.style.display && (copyPopup.style
                         .display = "none", copyLocked = !1, pendingCopyText = "",
-                        popupMessageSpan.innerText = "📋 Ready to copy", copyBtn.innerText = "Copy") }), 1200))
+                        popupMessageSpan.innerText = "📋 Ready to copy", copyBtn.innerText = "Copy") }), 1200));
+            // iOS: hide copy popup immediately when tapping outside
+            const outsideHandler = function(ev) {
+                if (!copyPopup) return;
+                if (copyPopup.style.display === 'flex') {
+                    const target = ev.target;
+                    if (target && !copyPopup.contains(target)) {
+                        copyPopup.style.display = 'none';
+                        copyLocked = false;
+                        pendingCopyText = '';
+                        popupMessageSpan.innerText = '📋 Ready to copy';
+                        copyBtn.innerText = 'Copy';
+                        if (copyTimer) clearTimeout(copyTimer);
+                        document.removeEventListener('touchstart', outsideHandler);
+                        document.removeEventListener('mousedown', outsideHandler);
+                    }
+                }
+            };
+            // Add the listener only for iOS; for safety we attach both touch and mouse
+            if (isIOS) {
+                // Use a short delay so the popup doesn't immediately get closed by the same tap that opened it
+                setTimeout(() => {
+                    document.addEventListener('touchstart', outsideHandler, { passive: true });
+                    document.addEventListener('mousedown', outsideHandler);
+                }, 50);
+                // Store the handler so we can clean it up when the popup auto-closes
+                copyPopup._outsideHandler = outsideHandler;
+                // Clean up when popup closes via timer
+                const origTimer = copyTimer;
+                const timerId = setTimeout(() => {
+                    document.removeEventListener('touchstart', outsideHandler);
+                    document.removeEventListener('mousedown', outsideHandler);
+                }, 1250);
+                // Override the timer cleanup to also remove the outside handler
+                const superTimer = copyTimer;
+                copyTimer = setTimeout(() => {
+                    if (copyPopup && copyPopup.style.display === 'flex') {
+                        copyPopup.style.display = 'none';
+                        copyLocked = false;
+                        pendingCopyText = '';
+                        popupMessageSpan.innerText = '📋 Ready to copy';
+                        copyBtn.innerText = 'Copy';
+                    }
+                    document.removeEventListener('touchstart', outsideHandler);
+                    document.removeEventListener('mousedown', outsideHandler);
+                }, 1200);
+                // Cancel the original timer if it was set
+                if (superTimer) clearTimeout(superTimer);
+            }
         }
 
         function showPasswordModal(e) { if (e) e(!0);
@@ -2691,7 +2864,26 @@
                     null } catch (e) { return console.warn("getFileName error:", e), null }
         }
 
-        async function loadSheetData() {
+        // ===== REMOVED all auto-reload logic =====
+        // loadSheetData no longer reloads automatically.
+        let lastSheetDataHash = '';
+
+        function computeSheetHash(data) {
+            let str = JSON.stringify(data);
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const c = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + c;
+                hash |= 0;
+            }
+            return hash.toString();
+        }
+
+        // loadSheetData now only loads when explicitly told (forceReload = true)
+        async function loadSheetData(forceReload = false) {
+            if (!forceReload) {
+                return;
+            }
             if (!currentSheetId) return void showToast("❌ Please enter a Google Sheet URL");
             const e = `https://opensheet.elk.sh/${currentSheetId}/Sheet1`;
             try {
@@ -2699,6 +2891,9 @@
                 if (!t.ok) throw new Error(`HTTP ${t.status}`);
                 const n = await t.json();
                 if (!Array.isArray(n) || 0 === n.length) throw new Error("No data found in sheet");
+
+                lastSheetDataHash = computeSheetHash(n);
+
                 const o = n[0],
                     i = Object.keys(o);
                 let a = -1,
@@ -2717,9 +2912,8 @@
                         i = -1 !== a && o.length > a && o[a] || "",
                         l = -1 !== r && o.length > r && o[r] || "";
                     (i || l) && s.push({ khmer: i.toString().trim(), chinese: l.toString().trim(), sheetRow: e + 2 }) }
-                vocabList = s, vocabularyData = vocabList, editUnlocked = !0, updateEditButtonsState(), showToast(
-                    `✅ Loaded ${vocabList.length} words (Display #2 = sheet row 2)`), await loadApiAndPasswordFromSheet();
-                passwordVerified = false;
+                vocabList = s, vocabularyData = vocabList, editUnlocked = !0, updateEditButtonsState();
+                await loadApiAndPasswordFromSheet();
                 buildFirstCharCache();
                 saveAllData(), "random" === appMode ? (historyIndex >= 0 && history[historyIndex] < vocabList.length ||
                     pickRandom(), sidebarIndices.length > 0 ? renderRandomSidebar(sidebarIndices[sidebarFocusIdx] || 0) :
@@ -2735,9 +2929,11 @@
                         u.innerText = "Vocab Master";
                     }
                 }
+                showToast(`✅ Loaded ${vocabList.length} words`);
             } catch (e) { console.error("Error loading sheet:", e), showToast(`❌ Error: ${e.message}`) }
         }
 
+        // ---- callApi now NEVER triggers reload ----
         async function callApi(e, t) {
             if (!editUnlocked) return showPasswordModal((async n => { n && await callApi(e, t) })), !1;
             if (!detectedApiUrl || !detectedApiUrl.startsWith("http")) return showToast("❌ No valid API URL found."),
@@ -2751,9 +2947,14 @@
                     o = await e.text();
                 let i = o;
                 try { i = JSON.parse(o) } catch (e) {}
-                return e.ok && "success" === i.result ? (showToast(`✅ ${t} successful`), !0) : (showToast(
-                    `❌ ${t} failed: ${i.message||i.result}`), !1) } catch (e) { return showToast(
-                    `❌ Error: ${e.message}`), !1 }
+                if (e.ok && "success" === i.result) {
+                    showToast(`✅ ${t} successful`);
+                    return !0;
+                } else {
+                    showToast(`❌ ${t} failed: ${i.message||i.result}`);
+                    return !1;
+                }
+            } catch (e) { return showToast(`❌ Error: ${e.message}`), !1 }
         }
 
         async function addVocabToSheet(e, t) {
@@ -2834,7 +3035,7 @@
                     currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`;
                     addSheetToHistory(o);
                     showToast(`📥 Loading sheet: ${currentSheetId}`);
-                    await loadSheetData();
+                    await loadSheetData(true);
                     e.remove();
                 } else {
                     showToast("❌ Invalid Google Sheet URL. Could not extract Sheet ID.", !0);
@@ -3118,6 +3319,128 @@
         function blurSearchInput() { currentSearchInputElement && document.activeElement === currentSearchInputElement &&
                 currentSearchInputElement.blur() }
 
+        function setupAutoSearch(inputField, performSearchFn) {
+            if (!inputField) return;
+            let debounceTimer = null;
+            let searchInProgress = false;
+            const doSearch = (val) => {
+                if (searchInProgress) return;
+                searchInProgress = true;
+                requestAnimationFrame(() => {
+                    if (performSearchFn) performSearchFn(val);
+                    searchInProgress = false;
+                });
+            };
+            const hasChinese = (str) => /[\u4e00-\u9fff]/.test(str);
+            inputField.addEventListener('input', function() {
+                const val = this.value.trim();
+                const containsChinese = hasChinese(val);
+                if (debounceTimer) { clearTimeout(debounceTimer);
+                    debounceTimer = null; }
+                if (containsChinese) {
+                    debounceTimer = setTimeout(() => {
+                        doSearch(val);
+                        debounceTimer = null;
+                    }, 100);
+                } else {
+                    if (val.length >= 3) {
+                        debounceTimer = setTimeout(() => {
+                            doSearch(val);
+                            debounceTimer = null;
+                        }, 100);
+                    } else if (val.length >= 1 && val.length <= 2) {
+                        debounceTimer = setTimeout(() => {
+                            doSearch(val);
+                            debounceTimer = null;
+                        }, 2000);
+                    } else {
+                        doSearch(val);
+                    }
+                }
+            });
+            inputField.addEventListener('paste', function() {
+                setTimeout(() => {
+                    const val = this.value.trim();
+                    const containsChinese = hasChinese(val);
+                    if (debounceTimer) { clearTimeout(debounceTimer);
+                        debounceTimer = null; }
+                    if (containsChinese) {
+                        debounceTimer = setTimeout(() => {
+                            doSearch(val);
+                            debounceTimer = null;
+                        }, 100);
+                    } else {
+                        if (val.length >= 3) {
+                            debounceTimer = setTimeout(() => {
+                                doSearch(val);
+                                debounceTimer = null;
+                            }, 100);
+                        } else if (val.length >= 1 && val.length <= 2) {
+                            debounceTimer = setTimeout(() => {
+                                doSearch(val);
+                                debounceTimer = null;
+                            }, 2000);
+                        } else {
+                            doSearch(val);
+                        }
+                    }
+                }, 50);
+            });
+        }
+
+        // Perform search with limit and optimized loop
+        function performSearch(query, container, isEdit = false) {
+            const q = query.trim().toLowerCase();
+            if (!q) { container.innerHTML = ""; return; }
+            const matches = [];
+            const limit = 30;
+            for (let i = 0; i < vocabList.length && matches.length < limit; i++) {
+                const v = vocabList[i];
+                if (v.chinese.toLowerCase().includes(q) || v.khmer.toLowerCase().includes(q)) {
+                    matches.push({ index: i, item: v });
+                }
+            }
+            if (matches.length === 0) {
+                container.innerHTML = '<div style="padding:8px; text-align:center; color:#aaa;">No matches</div>';
+                return;
+            }
+            let html = '';
+            for (const match of matches) {
+                const idx = match.index;
+                const v = match.item;
+                const row = v.sheetRow;
+                const khmerEsc = escapeHtml(v.khmer);
+                const chineseEsc = escapeHtml(v.chinese);
+                const chineseJs = jsEscape(chineseEsc);
+                const khmerJs = jsEscape(khmerEsc);
+                const deleteFn = isEdit ?
+                    `window.deleteFromEditSearch(${idx}, ${row}, '${jsEscape(q)}')` :
+                    `window.deleteFromAddSearch(${idx}, ${row}, '${jsEscape(q)}')`;
+                const onclickLoad = `loadWordByMode(${idx}, true); ${isEdit ? `window.updateEditModalState(${idx}, ${row}, '${chineseJs}', '${khmerJs}');` : `requestEditModal(${idx}, ${row}, '${khmerJs}', '${chineseJs}');`}`;
+                html += `<div style="padding:8px; border-bottom:1px solid #ccc; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px; color:#fff; display:flex; justify-content:space-between; align-items:center;" 
+                            onclick="${onclickLoad}">
+                            <span style="flex:1;"><strong>${chineseEsc}</strong> — ${khmerEsc}</span>
+                            <span class="search-delete-btn" style="cursor:pointer; padding:4px 10px; font-size:1.2rem; border-radius:20px; background:rgba(255,0,0,0.2);" 
+                                  onclick="event.stopPropagation(); ${deleteFn}" 
+                                  ontouchstart="event.preventDefault(); event.stopPropagation(); ${deleteFn}">🗑️</span>
+                        </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        // Modal search functions - triggered from Chinese input
+        window.addModalPerformSearch = function(query) {
+            const container = document.getElementById('vocabSearchResults');
+            if (!container) return;
+            performSearch(query, container, false);
+        };
+
+        window.editModalPerformSearch = function(query) {
+            const container = document.getElementById('vocabSearchResultsEdit');
+            if (!container) return;
+            performSearch(query, container, true);
+        };
+
         function renderSidebarUI(e = !0) {
             const t = document.getElementById("sidebarList"),
                 n = currentSearchInputElement ? currentSearchInputElement.value : searchTerm;
@@ -3330,12 +3653,11 @@
             } else e.style.display = "none", e.innerHTML = ""
         }
 
-        // ===== FIXED: delete functions with single confirmation =====
+        // ===== FIXED: delete functions with single confirmation + refresh search results =====
         window.deleteFromAddSearch = function(idx, row, searchQuery) {
             const item = vocabList[idx];
             if (!item) { showToast("Item not found"); return }
             const displayNum = getDisplayNumberFromArrayIndex(idx);
-            // Only ONE confirmation here (inline confirm is removed)
             if (!confirm(`⚠️ Delete Display #${displayNum} (${item.chinese || item.khmer})?`)) return;
             const rowToDelete = item.sheetRow;
             showPasswordProtectionModal(async function() {
@@ -3355,10 +3677,15 @@
                         updateChineseDisplay("");
                         document.getElementById("khmerWord").innerText = "";
                     }
-                    // Refresh Add modal search results
-                    const addSearchInput = document.getElementById('vocabSearchInput');
-                    if (addSearchInput && window.addModalPerformSearch) {
-                        window.addModalPerformSearch(addSearchInput.value);
+                    // Refresh Add modal search results (use the actual Chinese input)
+                    const addChineseInput = document.getElementById('addChineseInput');
+                    if (addChineseInput && window.addModalPerformSearch) {
+                        window.addModalPerformSearch(addChineseInput.value);
+                    }
+                    // Also refresh edit modal if open (optional)
+                    const editChineseInput = document.getElementById('editChineseInput');
+                    if (editChineseInput && window.editModalPerformSearch) {
+                        window.editModalPerformSearch(editChineseInput.value);
                     }
                     showToast("✅ Deleted successfully");
                 } else { showToast("❌ Deletion failed"); }
@@ -3369,7 +3696,6 @@
             const item = vocabList[idx];
             if (!item) { showToast("Item not found"); return }
             const displayNum = getDisplayNumberFromArrayIndex(idx);
-            // Only ONE confirmation here
             if (!confirm(`⚠️ Delete Display #${displayNum} (${item.chinese || item.khmer})?`)) return;
             const rowToDelete = item.sheetRow;
             showPasswordProtectionModal(async function() {
@@ -3389,151 +3715,193 @@
                         updateChineseDisplay("");
                         document.getElementById("khmerWord").innerText = "";
                     }
-                    // Refresh Edit modal search results
-                    const editSearchInput = document.getElementById('vocabSearchInputEdit');
-                    if (editSearchInput && window.editModalPerformSearch) {
-                        window.editModalPerformSearch(editSearchInput.value);
+                    // Refresh Edit modal search results (use the actual Chinese input)
+                    const editChineseInput = document.getElementById('editChineseInput');
+                    if (editChineseInput && window.editModalPerformSearch) {
+                        window.editModalPerformSearch(editChineseInput.value);
                     }
                     // Also refresh Add modal search results
-                    refreshAddModalSearch();
+                    const addChineseInput = document.getElementById('addChineseInput');
+                    if (addChineseInput && window.addModalPerformSearch) {
+                        window.addModalPerformSearch(addChineseInput.value);
+                    }
                     showToast("✅ Deleted successfully");
                 } else { showToast("❌ Deletion failed"); }
             }, "delete vocabulary");
         };
 
         function refreshAddModalSearch() {
-            const addSearchInput = document.getElementById('vocabSearchInput');
-            if (addSearchInput && window.addModalPerformSearch) { window.addModalPerformSearch(addSearchInput.value); }
+            const addChineseInput = document.getElementById('addChineseInput');
+            if (addChineseInput && window.addModalPerformSearch) {
+                window.addModalPerformSearch(addChineseInput.value);
+            }
         }
         window.refreshAddModalSearch = refreshAddModalSearch;
 
+        // --- Top pinyin uses ORIGINAL transform, Bottom uses margin (last fix) ---
+        function applyLayerTransforms() {
+            if (!chineseElement) return;
+            // Top pinyin: use transform (original)
+            const tops = chineseElement.querySelectorAll(".pinyin-top");
+            tops.forEach((el) => {
+                el.style.transform = `translate(${topLayerX}px, ${topLayerY}px)`;
+                el.style.marginTop = '';
+                el.style.marginLeft = '';
+            });
+            // Bottom char: use margin (last fix - works correctly)
+            const bottoms = chineseElement.querySelectorAll(".chinese-bottom");
+            bottoms.forEach((el) => {
+                el.style.marginTop = bottomLayerY + 'px';
+                el.style.marginLeft = bottomLayerX + 'px';
+                el.style.transform = 'none';
+            });
+        }
+
+        // ---- MODIFIED: showAddNewModal with heading row (button outside h3) and optimistic update ----
         function showAddNewModal() {
             if (!editUnlocked) return void showPasswordModal((() => { showAddNewModal() }));
             const e = document.createElement("div");
             e.className = "modal-overlay", e.innerHTML =
-                '<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3>➕ ADD NEW VOCABULARY (appends at the end) <span id="editIconFromAdd" style="font-size:1.2rem; cursor:pointer; margin-left:12px;">✏️</span></h3>\n            <div style="margin-bottom:16px;">\n                <div class="input-icon-wrapper"><input id="addChineseInput" placeholder="Chinese word" class="big-edit-input-icon"><button class="insert-symbol-icon-inside" data-target="addChineseInput"> / </button></div>\n                <div class="input-icon-wrapper"><input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input-icon"><button class="insert-symbol-icon-inside" data-target="addKhmerInput"> / </button></div>\n            </div>\n            <div class="choice-search-area" style="display: flex; justify-content: space-between; align-items: center;"><input type="text" id="vocabSearchInput" placeholder="🔍 Search vocabulary..." style="flex:1; margin-right:8px;"><button id="openGoogleSheetBtnModal" style="background:#3b82f6; border:none; border-radius:40px; padding:8px 16px; color:white; font-weight:bold; cursor:pointer;">📊 OPEN SHEET (last row Khmer)</button></div>\n            <div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>\n            <div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#10b981;">✅ ADD TO SHEET (last row)</button></div>\n            <button id="closeAddModalBtn" class="cancel-icon">✕</button></div>',
+                `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;">
+                    <div class="modal-heading-row">
+                        <h3>➕ ADD NEW <span id="editIconFromAdd" style="font-size:1.2rem; cursor:pointer; margin-left:12px;">✏️</span></h3>
+                        <button id="openGoogleSheetBtnModal" class="sheet-btn">📊</button>
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <div class="input-with-search" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
+                            <button class="search-icon-btn" id="addChineseSearchBtn">🔍</button>
+                            <input id="addChineseInput" placeholder="Chinese word" class="big-edit-input-icon" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
+                            <button class="insert-symbol-icon-inside" data-target="addChineseInput"> / </button>
+                        </div>
+                        <div class="input-icon-wrapper" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
+                            <input id="addKhmerInput" placeholder="Khmer word" class="big-edit-input-icon" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
+                            <button class="insert-symbol-icon-inside" data-target="addKhmerInput"> / </button>
+                        </div>
+                    </div>
+                    <div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>
+                    <div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#10b981;">✅ ADD TO SHEET (last row)</button></div>
+                    <button id="closeAddModalBtn" class="cancel-icon">✕</button>
+                </div>`,
                 document.body.appendChild(e);
             e.onclick = function(event) { if (event.target === e) { e.remove(); } };
-            e.querySelectorAll(".insert-symbol-icon-inside").forEach((e => { const t = e.getAttribute("data-target");
-                t && ((e, t) => { e.addEventListener("click", (e => { e.preventDefault(), e.stopPropagation();
-                        const n = document.getElementById(t); if (!n) return; const o = n.selectionStart || 0,
-                            i = n.selectionEnd || 0,
-                            a = n.value,
-                            r = a.substring(0, o) + " / " + a.substring(i);
-                        n.value = r, n.focus();
-                        const s = o + " / ".length;
-                        n.setSelectionRange(s, s), showToast("✓ inserted ' / '") })) })(e, t) }));
-            const t = document.getElementById("addChineseInput"),
-                n = document.getElementById("addKhmerInput");
-            const enterHandler = (e) => { if (e.key === "Enter") { e.preventDefault();
-                    document.getElementById("confirmAddBtn").click(); } };
-            t.addEventListener("keypress", enterHandler);
-            n.addEventListener("keypress", enterHandler);
-            const addSearchInput = document.getElementById("vocabSearchInput");
-            const addResultsContainer = document.getElementById("vocabSearchResults");
-
-            // Show ALL results
-            window.addModalPerformSearch = function(query) {
-                const q = query.trim().toLowerCase();
-                if (!q) { addResultsContainer.innerHTML = ""; return; }
-                const matches = vocabList.filter(v => v.chinese.toLowerCase().includes(q) || v.khmer.toLowerCase()
-                    .includes(q));
-                if (matches.length) {
-                    addResultsContainer.innerHTML = matches.map(v => {
-                        const index = vocabList.findIndex(t => t === v);
-                        const row = v.sheetRow;
-                        const khmerEsc = escapeHtml(v.khmer);
-                        const chineseEsc = escapeHtml(v.chinese);
-                        const chineseJs = jsEscape(chineseEsc);
-                        const khmerJs = jsEscape(khmerEsc);
-                        // Delete function WITHOUT inline confirm – confirmation is inside the function
-                        const deleteOnclick =
-                            `event.stopPropagation(); window.deleteFromAddSearch(${index}, ${row}, '${jsEscape(q)}');`;
-                        return `<div style="padding:8px; border-bottom:1px solid #ccc; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px; color:#fff; display:flex; justify-content:space-between; align-items:center;" 
-                                    onclick="loadWordByMode(${index}, true); requestEditModal(${index}, ${row}, '${khmerJs}', '${chineseJs}');">
-                                    <span style="flex:1;"><strong>${chineseEsc}</strong> — ${khmerEsc}</span>
-                                    <span style="cursor:pointer; padding:0 8px; font-size:1.2rem;" onclick="${deleteOnclick}">🗑️</span>
-                                </div>`;
-                    }).join("");
-                } else {
-                    addResultsContainer.innerHTML = '<div style="padding:8px; text-align:center; color:#aaa;">No matches</div>';
+            // Insert "/" buttons
+            e.querySelectorAll(".insert-symbol-icon-inside").forEach((el) => {
+                const target = el.getAttribute("data-target");
+                if (target) {
+                    el.addEventListener("click", (ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        const inp = document.getElementById(target);
+                        if (!inp) return;
+                        const start = inp.selectionStart || 0;
+                        const end = inp.selectionEnd || 0;
+                        const val = inp.value;
+                        inp.value = val.substring(0, start) + " / " + val.substring(end);
+                        inp.focus();
+                        const newPos = start + " / ".length;
+                        inp.setSelectionRange(newPos, newPos);
+                        showToast("✓ inserted ' / '");
+                    });
                 }
-            };
-
-            addSearchInput.addEventListener("input", () => {
-                window.addModalPerformSearch(addSearchInput.value);
             });
 
-            t.addEventListener("input", () => {
-                const val = t.value;
-                addSearchInput.value = val;
+            const chineseInput = document.getElementById("addChineseInput");
+            const khmerInput = document.getElementById("addKhmerInput");
+            // Enter key submits
+            const enterHandler = (ev) => { if (ev.key === "Enter") { ev.preventDefault();
+                    document.getElementById("confirmAddBtn").click(); } };
+            chineseInput.addEventListener("keypress", enterHandler);
+            khmerInput.addEventListener("keypress", enterHandler);
+
+            const addResultsContainer = document.getElementById("vocabSearchResults");
+
+            window.addModalPerformSearch = function(query) {
+                performSearch(query, addResultsContainer, false);
+            };
+
+            // Chinese input triggers search on input
+            chineseInput.addEventListener('input', function() {
+                const val = this.value.trim();
                 window.addModalPerformSearch(val);
             });
 
+            // Search icon button: trigger search immediately
+            document.getElementById("addChineseSearchBtn").addEventListener("click", function() {
+                const val = chineseInput.value.trim();
+                window.addModalPerformSearch(val);
+                showToast("🔍 Searching...");
+            });
+
+            // Open sheet button
             document.getElementById("openGoogleSheetBtnModal").onclick = () => {
-                if (vocabList.length > 0) { const e = vocabList[vocabList.length - 1].sheetRow;
-                    openSheetToKhmerColumn(e) } else currentSheetUrl && window.open(currentSheetUrl +
-                    "/edit#gid=0&range=D2", "_blank")
+                if (vocabList.length > 0) {
+                    const lastRow = vocabList[vocabList.length - 1].sheetRow;
+                    openSheetToKhmerColumn(lastRow);
+                } else if (currentSheetUrl) {
+                    window.open(currentSheetUrl + "/edit#gid=0&range=D2", "_blank");
+                }
             };
-            document.getElementById("confirmAddBtn").onclick = async () => {
-                const chinese = t.value.trim();
-                const khmer = n.value.trim();
+
+            // ===== MODIFIED: confirmAddBtn with optimistic update =====
+            document.getElementById("confirmAddBtn").onclick = () => {
+                const chinese = chineseInput.value.trim();
+                const khmer = khmerInput.value.trim();
                 if (!chinese && !khmer) {
                     showToast('⚠️ Enter at least one value');
-                    t.focus();
+                    chineseInput.focus();
                     return;
                 }
-                t.value = '';
-                n.value = '';
-                t.focus();
-                try {
-                    const success = await addVocabToSheet(khmer, chinese);
-                    if (success) {
-                        const newRow = vocabList.length > 0 ? vocabList[vocabList.length - 1].sheetRow + 1 : 2;
-                        const newEntry = { khmer: khmer || '', chinese: chinese || '', sheetRow: newRow };
-                        vocabList.push(newEntry);
-                        buildFirstCharCache();
-                        saveAllData();
-                        const newIdx = vocabList.length - 1;
-                        if (appMode === 'random') {
-                            history = [newIdx];
-                            historyIndex = 0;
-                            renderRandomSidebar(newIdx);
-                        } else {
-                            normalCurrentIdx = newIdx;
-                            const filtered = filterVocabBySearch(vocabList);
-                            const page = Math.floor(filtered.findIndex(v => v === vocabList[newIdx]) / 40);
-                            if (page >= 0) normalCurrentPage = page;
-                            renderNormalSidebar();
-                        }
-                        updateDisplay();
-                        showToast(`✅ Added "${chinese || khmer}" as #${getDisplayNumberFromArrayIndex(newIdx)}`);
-                        scrollToSidebarItem();
-                        if (window.addModalPerformSearch) {
-                            window.addModalPerformSearch(addSearchInput.value);
-                        }
-                    }
-                } catch (err) {
-                    showToast('❌ Add failed: ' + err.message);
+                // Clear inputs immediately
+                chineseInput.value = '';
+                khmerInput.value = '';
+                chineseInput.focus();
+
+                // Optimistic update: immediately add to local list
+                const newRow = vocabList.length > 0 ? vocabList[vocabList.length - 1].sheetRow + 1 : 2;
+                const newEntry = { khmer: khmer || '', chinese: chinese || '', sheetRow: newRow };
+                vocabList.push(newEntry);
+                buildFirstCharCache();
+                saveAllData();
+                const newIdx = vocabList.length - 1;
+                if (appMode === 'random') {
+                    history = [newIdx];
+                    historyIndex = 0;
+                    renderRandomSidebar(newIdx);
+                } else {
+                    normalCurrentIdx = newIdx;
+                    const filtered = filterVocabBySearch(vocabList);
+                    const page = Math.floor(filtered.findIndex(v => v === vocabList[newIdx]) / 40);
+                    if (page >= 0) normalCurrentPage = page;
+                    renderNormalSidebar();
                 }
-            };
-            document.getElementById("closeAddModalBtn").onclick = () => e.remove();
-            const editIconAdd = document.getElementById("editIconFromAdd");
-            if (editIconAdd) {
-                editIconAdd.addEventListener("click", () => {
-                    e.remove();
-                    if (sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
-                        const currentIdx = sidebarIndices[sidebarFocusIdx];
-                        const word = vocabList[currentIdx];
-                        if (word) requestEditModal(currentIdx, word.sheetRow, word.khmer, word.chinese);
-                        else showToast("No vocabulary to edit");
-                    } else if (vocabList.length > 0) {
-                        requestEditModal(0, vocabList[0].sheetRow, vocabList[0].khmer, vocabList[0].chinese);
-                    } else {
-                        showToast("No vocabulary loaded to edit");
-                    }
+                updateDisplay();
+                showToast(`✅ Added "${chinese || khmer}" as #${getDisplayNumberFromArrayIndex(newIdx)}`);
+                scrollToSidebarItem();
+                if (window.addModalPerformSearch) {
+                    window.addModalPerformSearch(chineseInput.value.trim());
+                }
+
+                // Fire-and-forget API call (no await, don't block UI)
+                addVocabToSheet(khmer, chinese).catch(err => {
+                    showToast('⚠️ API add failed: ' + err.message);
                 });
-            }
+            };
+
+            document.getElementById("closeAddModalBtn").onclick = () => e.remove();
+
+            // Edit icon from Add modal
+            document.getElementById("editIconFromAdd").addEventListener("click", () => {
+                e.remove();
+                if (sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
+                    const idx = sidebarIndices[sidebarFocusIdx];
+                    const word = vocabList[idx];
+                    if (word) requestEditModal(idx, word.sheetRow, word.khmer, word.chinese);
+                } else if (vocabList.length > 0) {
+                    requestEditModal(0, vocabList[0].sheetRow, vocabList[0].khmer, vocabList[0].chinese);
+                } else {
+                    showToast("No vocabulary loaded to edit");
+                }
+            });
         }
 
         function resetTopLayer() { topLayerX = 0, topLayerY = 0, applyLayerTransforms(), saveAllDragPositions(), showToast(
@@ -3642,8 +4010,8 @@
             window.currentEdit.row = row;
             document.getElementById('editChineseInput').value = chinese;
             document.getElementById('editKhmerInput').value = khmer;
-            document.getElementById('editModalHeading').innerHTML = '✏️ EDIT Display #' + getDisplayNumberFromArrayIndex(idx) +
-                '  <span id="addIconInsideEdit" style="font-size:1.2rem; cursor:pointer; margin-left:12px;">➕</span>';
+            document.getElementById('editModalHeading').innerHTML =
+                `✏️ EDIT Display #${getDisplayNumberFromArrayIndex(idx)}  <span id="addIconInsideEdit" style="font-size:1.2rem; cursor:pointer; margin-left:12px;">➕</span>`;
             document.getElementById('deleteRowBtn').innerHTML = '🗑️ DELETE Display #' + getDisplayNumberFromArrayIndex(idx);
             const addIcon = document.getElementById('addIconInsideEdit');
             if (addIcon) {
@@ -3653,92 +4021,124 @@
                     requestAddNewVocab();
                 };
             }
+            // Also trigger search after updating state
+            setTimeout(() => {
+                const val = document.getElementById('editChineseInput').value.trim();
+                if (val && window.editModalPerformSearch) {
+                    window.editModalPerformSearch(val);
+                }
+            }, 50);
         };
 
+        // ---- MODIFIED: showEditModal with heading row (button outside h3) and optimistic update ----
         window.showEditModal = function(e, t, n, o) {
             if (!editUnlocked) return void showPasswordModal((() => { showEditModal(e, t, n, o) }));
             const i = getDisplayNumberFromArrayIndex(e),
                 a = document.createElement("div");
             a.className = "modal-overlay", a.innerHTML =
-                `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;"><h3 id="editModalHeading">✏️ EDIT Display #${i}  <span id="addIconInsideEdit" style="font-size:1.2rem; cursor:pointer; margin-left:12px;">➕</span></h3>\n            <div style="margin-bottom:16px;">\n                <div class="input-icon-wrapper"><input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(o)}" class="big-edit-input-icon"><button class="insert-symbol-icon-inside" data-target="editChineseInput"> / </button></div>\n                <div class="input-icon-wrapper"><input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(n)}" class="big-edit-input-icon"><button class="insert-symbol-icon-inside" data-target="editKhmerInput"> / </button></div>\n            </div>\n            <div style="display:flex; gap:8px; margin-bottom:12px;"><input type="text" id="vocabSearchInputEdit" placeholder="🔍 Search vocabulary..." style="flex:1; background:rgba(0,0,0,0.5); color:#fff; border-radius:40px; border:1px solid rgba(255,255,255,0.3); padding:8px 16px;"><button id="openSheetRowBtn" style="background:#3b82f6;">📊 OPEN SHEET (Khmer cell)</button></div>\n            <div id="vocabSearchResultsEdit" style="max-height:200px; overflow-y:auto; margin-top:8px; margin-bottom:12px;"></div>\n            <div class="edit-group-buttons" style="margin-bottom:12px;"><button id="confirmUpdateBtn" style="background:#10b981;">💾 UPDATE SHEET</button></div>\n            <div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${i}</button></div>\n            <button id="closeEditModalBtn" class="cancel-icon">✕</button></div>`,
+                `<div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;">
+                    <div class="modal-heading-row">
+                        <h3 id="editModalHeading">✏️ EDIT Display #${i}  <span id="addIconInsideEdit" style="font-size:1.2rem; cursor:pointer; margin-left:12px;">➕</span></h3>
+                        <button id="openSheetRowBtn" class="sheet-btn">📊</button>
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <div class="input-with-search" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
+                            <button class="search-icon-btn" id="editChineseSearchBtn">🔍</button>
+                            <input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(o)}" class="big-edit-input-icon" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
+                            <button class="insert-symbol-icon-inside" data-target="editChineseInput"> / </button>
+                        </div>
+                        <div class="input-icon-wrapper" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
+                            <input id="editKhmerInput" placeholder="Khmer word" value="${escapeHtml(n)}" class="big-edit-input-icon" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
+                            <button class="insert-symbol-icon-inside" data-target="editKhmerInput"> / </button>
+                        </div>
+                    </div>
+                    <div id="vocabSearchResultsEdit" style="max-height:200px; overflow-y:auto; margin-top:8px; margin-bottom:12px;"></div>
+                    <div class="edit-group-buttons" style="margin-bottom:12px;"><button id="confirmUpdateBtn" style="background:#10b981;">💾 UPDATE SHEET</button></div>
+                    <div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${i}</button></div>
+                    <button id="closeEditModalBtn" class="cancel-icon">✕</button>
+                </div>`,
                 document.body.appendChild(a);
             a.onclick = function(event) { if (event.target === a) { a.remove(); } };
-            a.querySelectorAll(".insert-symbol-icon-inside").forEach((e => { const t = e.getAttribute("data-target");
-                t && ((e, t) => { e.addEventListener("click", (e => { e.preventDefault(), e.stopPropagation();
-                        const n = document.getElementById(t); if (!n) return; const o = n.selectionStart || 0,
-                            i = n.selectionEnd || 0,
-                            a = n.value,
-                            r = a.substring(0, o) + " / " + a.substring(i);
-                        n.value = r, n.focus();
-                        const s = o + " / ".length;
-                        n.setSelectionRange(s, s), showToast("✓ inserted ' / '") })) })(e, t) }));
-            const r = document.getElementById("editChineseInput"),
-                s = document.getElementById("editKhmerInput");
-            const editEnter = (e) => { if (e.key === "Enter") { e.preventDefault();
+            // Insert "/" buttons
+            a.querySelectorAll(".insert-symbol-icon-inside").forEach((el) => {
+                const target = el.getAttribute("data-target");
+                if (target) {
+                    el.addEventListener("click", (ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        const inp = document.getElementById(target);
+                        if (!inp) return;
+                        const start = inp.selectionStart || 0;
+                        const end = inp.selectionEnd || 0;
+                        const val = inp.value;
+                        inp.value = val.substring(0, start) + " / " + val.substring(end);
+                        inp.focus();
+                        const newPos = start + " / ".length;
+                        inp.setSelectionRange(newPos, newPos);
+                        showToast("✓ inserted ' / '");
+                    });
+                }
+            });
+
+            const editChineseInput = document.getElementById("editChineseInput");
+            const editKhmerInput = document.getElementById("editKhmerInput");
+            const editEnter = (ev) => { if (ev.key === "Enter") { ev.preventDefault();
                     document.getElementById("confirmUpdateBtn").click(); } };
-            r.addEventListener("keypress", editEnter);
-            s.addEventListener("keypress", editEnter);
-            const searchEdit = document.getElementById("vocabSearchInputEdit");
+            editChineseInput.addEventListener("keypress", editEnter);
+            editKhmerInput.addEventListener("keypress", editEnter);
+
             const resultsEdit = document.getElementById("vocabSearchResultsEdit");
 
             window.currentEdit = { idx: e, row: t };
 
-            // Show ALL results
             window.editModalPerformSearch = function(query) {
-                const q = query.trim().toLowerCase();
-                if (!q) { resultsEdit.innerHTML = ""; return; }
-                const matches = vocabList.filter(v => v.chinese.toLowerCase().includes(q) || v.khmer.toLowerCase()
-                    .includes(q));
-                if (matches.length) {
-                    resultsEdit.innerHTML = matches.map(v => {
-                        const idx = vocabList.findIndex(t => t === v);
-                        const row = v.sheetRow;
-                        const khmerEsc = escapeHtml(v.khmer);
-                        const chineseEsc = escapeHtml(v.chinese);
-                        const khmerJs = jsEscape(khmerEsc);
-                        const chineseJs = jsEscape(chineseEsc);
-                        // Delete function WITHOUT inline confirm
-                        const deleteOnclick =
-                            `event.stopPropagation(); window.deleteFromEditSearch(${idx}, ${row}, '${jsEscape(q)}');`;
-                        return `<div style="padding:8px; border-bottom:1px solid #ccc; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px; color:#fff; display:flex; justify-content:space-between; align-items:center;" 
-                                    onclick="loadWordByMode(${idx}, true); window.updateEditModalState(${idx}, ${row}, '${chineseJs}', '${khmerJs}');">
-                                    <span style="flex:1;"><strong>${chineseEsc}</strong> — ${khmerEsc}</span>
-                                    <span style="cursor:pointer; padding:0 8px; font-size:1.2rem;" onclick="${deleteOnclick}">🗑️</span>
-                                </div>`;
-                    }).join("");
-                } else {
-                    resultsEdit.innerHTML = '<div style="padding:8px; color:#aaa;">No matches</div>';
-                }
+                performSearch(query, resultsEdit, true);
             };
 
-            searchEdit.addEventListener("input", () => { window.editModalPerformSearch(searchEdit.value); });
-
-            r.addEventListener("input", () => {
-                const val = r.value;
-                searchEdit.value = val;
+            // Chinese input triggers search on input
+            editChineseInput.addEventListener('input', function() {
+                const val = this.value.trim();
                 window.editModalPerformSearch(val);
+            });
+
+            // Search icon button: trigger search immediately
+            document.getElementById("editChineseSearchBtn").addEventListener("click", function() {
+                const val = editChineseInput.value.trim();
+                window.editModalPerformSearch(val);
+                showToast("🔍 Searching...");
             });
 
             document.getElementById("openSheetRowBtn").onclick = () => {
                 requestOpenSheetRow(window.currentEdit.row);
             };
 
-            const confirmUpdate = async () => {
-                const ch = r.value.trim(),
-                    km = s.value.trim();
-                if (!ch && !km) return showToast("⚠️ At least one field required");
-                a.remove();
-                const success = await updateVocabByRow(window.currentEdit.row, km || n, ch || o);
-                if (success) {
-                    vocabList[window.currentEdit.idx] = { khmer: km || n, chinese: ch || o, sheetRow: window.currentEdit
-                            .row };
-                    buildFirstCharCache();
-                    saveAllData();
-                    renderSidebarUI();
-                    updateDisplay();
-                    showToast("✅ Updated successfully");
-                    refreshAddModalSearch();
+            // ===== MODIFIED: confirmUpdate with optimistic update =====
+            const confirmUpdate = () => {
+                const ch = editChineseInput.value.trim();
+                const km = editKhmerInput.value.trim();
+                if (!ch && !km) {
+                    showToast("⚠️ At least one field required");
+                    return;
                 }
+                a.remove(); // close modal immediately
+                const idx = window.currentEdit.idx;
+                const row = window.currentEdit.row;
+                const oldKhmer = vocabList[idx]?.khmer || '';
+                const oldChinese = vocabList[idx]?.chinese || '';
+
+                // Optimistic update: immediately update local list
+                vocabList[idx] = { khmer: km || oldKhmer, chinese: ch || oldChinese, sheetRow: row };
+                buildFirstCharCache();
+                saveAllData();
+                renderSidebarUI();
+                updateDisplay();
+                showToast("✅ Updated successfully");
+                refreshAddModalSearch();
+
+                // Fire-and-forget API call (no await, don't block UI)
+                updateVocabByRow(row, km || oldKhmer, ch || oldChinese).catch(err => {
+                    showToast('⚠️ API update failed: ' + err.message);
+                });
             };
             document.getElementById("confirmUpdateBtn").onclick = () => showPasswordProtectionModal(confirmUpdate,
                 "update vocabulary");
@@ -3814,6 +4214,14 @@
                     requestAddNewVocab();
                 });
             }
+
+            // Trigger auto-search with current value after modal renders
+            setTimeout(() => {
+                const val = editChineseInput.value.trim();
+                if (val) {
+                    window.editModalPerformSearch(val);
+                }
+            }, 100);
         };
 
         const tripleHtmlCache = new Map;
@@ -4266,9 +4674,13 @@
                     const compressed = JSON.parse(compressedStr);
                     if (Array.isArray(compressed) && compressed.length > 0) {
                         vocabList = decompressVocabList(compressed);
+                        lastSheetDataHash = computeSheetHash(vocabList);
                     }
                 } catch (e) { console.warn("Vocab list parse error:", e); }
             }
+
+            // Check session password
+            checkPasswordVerifiedSession();
 
             applyChineseMainStyle();
             applyPinyinStyles();
@@ -4291,40 +4703,159 @@
                 "side" !== e || sidebarVisible || toggleSidebar()
         }
 
+        // ---- FIX: background click - now reliably prevents double-firing on mobile (time-based) ----
         function setupBackgroundClick() {
-            const e = document.getElementById("bgClickArea");
-            let t = null,
-                n = !1;
-            const o = e => { t && clearTimeout(t), t = null, n = !1 },
-                i = i => {
-                    const a = i.clientX ?? (i.touches ? i.touches[0].clientX : 0),
-                        r = i.clientY ?? (i.touches ? i.touches[0].clientY : 0);
-                    t = setTimeout((() => {
-                        if (!i.target.closest("#floatingMenu") && !i.target.closest(".chinese-word") && !
-                            i.target.closest(".khmer-text") && !i.target.closest(".emoji-container")) {
-                            requestAddNewVocab();
-                            n = !0;
-                            o()
-                        }
-                    }), 300), window.addEventListener("mousemove", o), window.addEventListener("touchmove",
-                        o), window.addEventListener("mouseup", () => { t && !n && (clearTimeout(t), t = null,
-                            window.removeEventListener("mousemove", o), window.removeEventListener(
-                            "touchmove", o)), window.removeEventListener("mouseup", arguments
-                            .callee) })
-                };
-            e.addEventListener("mousedown", i), e.addEventListener("touchstart", i, { passive: !1 }), e.addEventListener(
-                "click", (function(n) {
-                    n.target.closest("#floatingMenu") || n.target.closest(".chinese-word") || n.target
-                    .closest(".khmer-text") || n.target.closest(".emoji-container") || (t ?
-                        clearTimeout(t) : (!document.activeElement || "INPUT" !== document
-                            .activeElement.tagName && "TEXTAREA" !== document.activeElement.tagName ||
-                            document.activeElement.blur(), pickRandom(), blurSearchInput())),
-                        t && (clearTimeout(t), t = null)
-                })), e.addEventListener("wheel", (function(e) {
-                    e.ctrlKey || (e.deltaY < 0 ? (e.preventDefault(), "random" === appMode ?
-                        historyNext() : goNextNormal()) : e.deltaY > 0 && (e.preventDefault(),
-                        "random" === appMode ? historyPrev() : goPrevNormal()), blurSearchInput())
-                }), { passive: !1 })
+            const area = document.getElementById("bgClickArea");
+            let longPressTimer = null;
+            let isLongPress = false;
+            let hasMoved = false;
+            let pressStartX = 0,
+                pressStartY = 0;
+            let tapProcessed = false;
+            let touchInProgress = false;
+            let lastTouchEndTime = 0; // NEW: timestamp of last touchend
+
+            const shouldHandle = (target) => {
+                return !target.closest('#floatingMenu') &&
+                    !target.closest('.chinese-word') &&
+                    !target.closest('.khmer-text') &&
+                    !target.closest('.emoji-container') &&
+                    !target.closest('.sidebar') &&
+                    !target.closest('.resizer') &&
+                    !target.closest('.modal-overlay') &&
+                    !target.closest('#minimizedTrigger');
+            };
+
+            const startPress = (e) => {
+                // If this is a mouse event and a touch ended recently (within 300ms), ignore it
+                if (e.type === 'mousedown' && Date.now() - lastTouchEndTime < 300) {
+                    return;
+                }
+
+                const touch = e.touches ? e.touches[0] : e;
+                const target = e.target;
+                if (!shouldHandle(target)) return;
+
+                if (e.type === 'mousedown' && touchInProgress) return;
+
+                // Reset processed flag only on fresh touch/mouse start
+                tapProcessed = false;
+
+                if (e.type === 'touchstart') {
+                    touchInProgress = true;
+                }
+
+                pressStartX = touch.clientX;
+                pressStartY = touch.clientY;
+                hasMoved = false;
+                isSwiping = false;
+                isLongPress = false;
+                if (longPressTimer) clearTimeout(longPressTimer);
+                longPressTimer = setTimeout(() => {
+                    if (!hasMoved && !isSwiping && shouldHandle(target)) {
+                        requestAddNewVocab();
+                        isLongPress = true;
+                    }
+                    longPressTimer = null;
+                }, 500);
+            };
+
+            const movePress = (e) => {
+                if (longPressTimer) {
+                    const touch = e.touches ? e.touches[0] : e;
+                    const dx = touch.clientX - pressStartX;
+                    const dy = touch.clientY - pressStartY;
+                    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                        hasMoved = true;
+                        isSwiping = true;
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                    }
+                }
+            };
+
+            const endPress = (e) => {
+                // If this is a mouse event and a touch ended recently (within 300ms), ignore it
+                if (e.type === 'mouseup' && Date.now() - lastTouchEndTime < 300) {
+                    return;
+                }
+
+                if (tapProcessed) return;
+
+                if (e.type === 'mouseup' && touchInProgress) {
+                    return;
+                }
+
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+
+                if (isLongPress || isSwiping || hasMoved) {
+                    isLongPress = false;
+                    isSwiping = false;
+                    hasMoved = false;
+                    tapProcessed = true;
+                    if (e.type === 'touchend') {
+                        touchInProgress = false;
+                        lastTouchEndTime = Date.now();
+                    }
+                    return;
+                }
+
+                const target = e.target;
+                if (!shouldHandle(target)) {
+                    tapProcessed = true;
+                    if (e.type === 'touchend') {
+                        touchInProgress = false;
+                        lastTouchEndTime = Date.now();
+                    }
+                    return;
+                }
+
+                const floatingMenu = document.getElementById('floatingMenu');
+                const isMenuVisible = floatingMenu && floatingMenu.style.display !== 'none';
+
+                if (isMenuVisible) {
+                    toggleMenu(true);
+                } else {
+                    pickRandom();
+                }
+
+                if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement
+                        .tagName === 'TEXTAREA')) {
+                    document.activeElement.blur();
+                }
+
+                tapProcessed = true;
+
+                if (e.type === 'touchend') {
+                    touchInProgress = false;
+                    lastTouchEndTime = Date.now();
+                }
+            };
+
+            area.addEventListener('mousedown', startPress);
+            area.addEventListener('touchstart', startPress, { passive: true });
+            area.addEventListener('mousemove', movePress);
+            area.addEventListener('touchmove', movePress, { passive: true });
+            area.addEventListener('mouseup', endPress);
+            area.addEventListener('touchend', endPress);
+            // Keep wheel for prev/next
+            area.addEventListener('wheel', (e) => {
+                if (!e.ctrlKey) {
+                    if (e.deltaY < 0) {
+                        e.preventDefault();
+                        if (appMode === 'random') historyNext();
+                        else goNextNormal();
+                    } else if (e.deltaY > 0) {
+                        e.preventDefault();
+                        if (appMode === 'random') historyPrev();
+                        else goPrevNormal();
+                    }
+                    blurSearchInput();
+                }
+            }, { passive: false });
         }
 
         function setupSidebarWheelNavigation() {
@@ -4388,12 +4919,7 @@
 
         function handlePinchEnd() { isPinching = !1, initialPinchDistance = 0 }
 
-        function applyLayerTransforms() {
-            chineseElement && (chineseElement.querySelectorAll(".pinyin-top").forEach((e => e.style.transform =
-                    `translate(${topLayerX}px, ${topLayerY}px)`)), chineseElement.querySelectorAll(
-                    ".chinese-bottom").forEach((e => e.style.transform =
-                    `translate(${bottomLayerX}px, ${bottomLayerY}px)`)))
-        }
+        // applyLayerTransforms already defined above
 
         function saveAllDragPositions() {
             safeSetItem("drag_chineseX", chineseX);
@@ -4779,7 +5305,7 @@
             }
         }
 
-        // ===== FIXED: Swipe navigation – ignore touches near bottom edge =====
+        // ===== FIXED: Swipe navigation – ignore touches near bottom edge, prevent conflicts =====
         function initSwipeNavigation() {
             const area = document.getElementById("displayArea");
             if (!area) return;
@@ -4791,21 +5317,27 @@
                 const touch = e.touches[0];
                 // Ignore if touch starts within 80px of bottom (avoids system gesture conflict)
                 if (window.innerHeight - touch.clientY < 80) {
-                    startY = 0; // mark as not tracking
+                    startY = 0;
+                    startX = 0;
+                    moved = false;
                     return;
                 }
                 startY = touch.clientY;
                 startX = touch.clientX;
                 moved = false;
+                // Reset global swiping flag when a new touch starts
+                isSwiping = false;
             }, { passive: true });
 
             area.addEventListener("touchmove", function(e) {
-                if (!startY) return; // not tracking
+                if (!startY) return;
                 const touch = e.touches[0];
                 const deltaY = touch.clientY - startY;
                 const deltaX = touch.clientX - startX;
+                // Vertical swipe (up/down) – prev/next word
                 if (Math.abs(deltaY) > 30 && !moved) {
                     moved = true;
+                    isSwiping = true; // mark as swipe to prevent background tap
                     if (deltaY > 0) {
                         // swipe down -> next
                         if (appMode === "random") historyNext();
@@ -4816,10 +5348,18 @@
                         else goPrevNormal();
                     }
                     e.preventDefault();
-                } else if (Math.abs(deltaX) > 30 && !moved && Math.abs(deltaX) > Math.abs(deltaY)) {
+                }
+                // Horizontal swipe (left/right) – sidebar navigation
+                else if (Math.abs(deltaX) > 30 && !moved && Math.abs(deltaX) > Math.abs(deltaY)) {
                     moved = true;
-                    if (deltaX > 0) moveSidebarFocus(1);
-                    else moveSidebarFocus(-1);
+                    isSwiping = true;
+                    if (deltaX > 0) {
+                        // swipe right -> next sidebar item
+                        moveSidebarFocus(1);
+                    } else {
+                        // swipe left -> prev sidebar item
+                        moveSidebarFocus(-1);
+                    }
                     e.preventDefault();
                 }
             }, { passive: false });
@@ -4828,6 +5368,8 @@
                 startY = 0;
                 startX = 0;
                 moved = false;
+                // Reset swiping flag after a short delay to avoid interfering with next tap
+                setTimeout(() => { isSwiping = false; }, 100);
             });
         }
 
@@ -4994,7 +5536,7 @@
         async function initializeSheet() {
             currentSheetId = DEFAULT_SHEET_ID;
             currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`;
-            await loadSheetData();
+            await loadSheetData(true);
         }
 
         function refreshAllStyles() {
@@ -5142,14 +5684,14 @@
                     e.stopPropagation();
                     const overlay = document.getElementById("qrPopupOverlay");
                     if (overlay) overlay.style.display = "flex";
-                    await loadSheetData();
+                    await loadSheetData(true);
                 });
                 newAba.addEventListener("touchstart", async function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     const overlay = document.getElementById("qrPopupOverlay");
                     if (overlay) overlay.style.display = "flex";
-                    await loadSheetData();
+                    await loadSheetData(true);
                 }, { passive: false });
             }
 
