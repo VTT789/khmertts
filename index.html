@@ -2446,7 +2446,8 @@
                     if (k.startsWith('vocabMaster_') || k.startsWith('drag_') || k.startsWith('gear') ||
                         k.startsWith('menu') || k.startsWith('emoji') || k.startsWith('sidebar') ||
                         k === 'floatingMenuLeft' || k === 'floatingMenuTop' || k === 'speechOrder' ||
-                        k === 'topPinyinSectionHidden' || k === 'bottomSectionHidden' || k === 'sheetHistory') {
+                        k === 'topPinyinSectionHidden' || k === 'bottomSectionHidden' || k === 'sheetHistory' ||
+                        k === 'topLayerDirection' || k === 'bottomLayerDirection') {
                         localStorage.removeItem(k);
                     }
                 }
@@ -2748,6 +2749,7 @@
         // ---- RETRY TOAST ----
         let retryToastElement = null;
         let retryResolve = null;
+        let __isRetry = false; // flag to suppress pickRandom during retry flow
 
         function showRetryToast(message, retryFn) {
             // Remove any existing retry toast
@@ -2762,6 +2764,7 @@
             const toast = document.createElement("div");
             toast.className = "copy-toast clickable";
             toast.style.display = "block";
+            // Short message: "retry Tap ⟳" (removed "/Update" and long error text)
             toast.innerHTML = `
                 <span>${message}</span>
                 <span class="retry-icon" title="Retry">⟳</span>
@@ -2775,9 +2778,13 @@
                 toast.style.opacity = "0.6";
                 toast.style.pointerEvents = "none";
                 toast.querySelector("span").innerHTML = "⏳ Retrying...";
+
+                // Set flag to suppress pickRandom during retry
+                __isRetry = true;
+
                 try {
                     const result = await retryFn();
-                    // If we get here, success
+                    // Success
                     toast.remove();
                     retryToastElement = null;
                     showToast("✅ Retry successful!");
@@ -2789,8 +2796,9 @@
                     // Failed again
                     toast.style.opacity = "1";
                     toast.style.pointerEvents = "auto";
-                    toast.querySelector("span").innerHTML = `⚠️ ${err.message || 'Failed again'}. Tap ⟳ to retry`;
-                    // Keep toast visible
+                    toast.querySelector("span").innerHTML = `⚠️ retry failed. Tap ⟳ to retry`;
+                } finally {
+                    __isRetry = false;
                 }
             });
 
@@ -2924,6 +2932,79 @@
             normalCurrentPage = 0;
         const ITEMS_PER_PAGE = 40;
 
+        // ---- Pending deletions set for optimistic search removal ----
+        const pendingDeletions = new Set();
+
+        // ---- NEW: layer direction states (default 'above' for top, 'below' for bottom) ----
+        let topLayerDirection = 'above'; // 'above' or 'below'
+        let bottomLayerDirection = 'below'; // 'below' or 'above'
+
+        function loadLayerDirections() {
+            const top = safeGetItem('topLayerDirection', 'above');
+            const bottom = safeGetItem('bottomLayerDirection', 'below');
+            if (top === 'above' || top === 'below') topLayerDirection = top;
+            if (bottom === 'above' || bottom === 'below') bottomLayerDirection = bottom;
+        }
+
+        function saveLayerDirections() {
+            safeSetItem('topLayerDirection', topLayerDirection);
+            safeSetItem('bottomLayerDirection', bottomLayerDirection);
+        }
+
+        // ---- helper to toggle direction ----
+        function toggleTopDirection() {
+            topLayerDirection = (topLayerDirection === 'above') ? 'below' : 'above';
+            saveLayerDirections();
+            // Immediately move the layer to the new side
+            const fontSizePx = (userSetChineseFontSize / 100) * window.innerHeight;
+            const gap = Math.max(6, fontSizePx * 0.07);
+            const maxOffset = Math.max(80, fontSizePx * 1.8);
+            if (topLayerDirection === 'above') {
+                topLayerX = 0;
+                topLayerY = Math.max(-maxOffset, Math.min(-gap, 0));
+            } else {
+                topLayerX = 0;
+                topLayerY = Math.max(gap, Math.min(maxOffset, gap));
+            }
+            applyLayerTransforms();
+            saveAllDragPositions();
+            showToast(`🔶 Top Pinyin direction set to ${topLayerDirection === 'above' ? '⬆ (above)' : '⬇ (below)'}`);
+            updateDirectionIndicators();
+        }
+
+        function toggleBottomDirection() {
+            bottomLayerDirection = (bottomLayerDirection === 'below') ? 'above' : 'below';
+            saveLayerDirections();
+            // Immediately move the layer to the new side
+            const fontSizePx = (userSetChineseFontSize / 100) * window.innerHeight;
+            const gap = Math.max(6, fontSizePx * 0.07);
+            const maxOffset = Math.max(80, fontSizePx * 1.8);
+            if (bottomLayerDirection === 'below') {
+                bottomLayerX = 0;
+                bottomLayerY = Math.max(gap, Math.min(maxOffset, gap));
+            } else {
+                bottomLayerX = 0;
+                bottomLayerY = Math.max(-maxOffset, Math.min(-gap, 0));
+            }
+            applyLayerTransforms();
+            saveAllDragPositions();
+            showToast(`🔷 Bottom Char direction set to ${bottomLayerDirection === 'below' ? '⬇ (below)' : '⬆ (above)'}`);
+            updateDirectionIndicators();
+        }
+
+        function updateDirectionIndicators() {
+            const topBtn = document.querySelector('.choice-top');
+            const bottomBtn = document.querySelector('.choice-bottom');
+            if (topBtn) {
+                const dir = topLayerDirection === 'above' ? '⬆' : '⬇';
+                topBtn.innerHTML = `🔶 Drag Top Pinyin <span class="dir-indicator">${dir}</span>`;
+            }
+            if (bottomBtn) {
+                const dir = bottomLayerDirection === 'below' ? '⬇' : '⬆';
+                bottomBtn.innerHTML = `🔷 Drag Bottom Char <span class="dir-indicator">${dir}</span>`;
+            }
+        }
+
         function openSheetToKhmerColumn(e) {
             if (!currentSheetUrl) { showToast("❌ No sheet loaded"); return }
             const t = currentSheetUrl + "/edit#gid=0&range=D" + e;
@@ -3027,7 +3108,7 @@
                     showToast(`❌ ${t} failed: ${errMsg}`);
                     throw new Error(errMsg);
                 }
-            } catch (e) { 
+            } catch (e) {
                 const errMsg = e.message || 'Network error';
                 showToast(`❌ ${t} failed: ${errMsg}`);
                 throw new Error(errMsg);
@@ -3412,7 +3493,7 @@
 
         function jsEscape(str) {
             if (!str) return '';
-            return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+            return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\n');
         }
 
         function scrollToActiveSidebarItem() { setTimeout((() => { const e = document.querySelector(
@@ -3495,13 +3576,15 @@
             });
         }
 
-        // Perform search with limit and optimized loop
+        // Perform search with limit and optimized loop, respecting pendingDeletions
         function performSearch(query, container, isEdit = false) {
             const q = query.trim().toLowerCase();
             if (!q) { container.innerHTML = ""; return; }
             const matches = [];
             const limit = 30;
             for (let i = 0; i < vocabList.length && matches.length < limit; i++) {
+                // Skip items pending deletion
+                if (pendingDeletions.has(i)) continue;
                 const v = vocabList[i];
                 if (v.chinese.toLowerCase().includes(q) || v.khmer.toLowerCase().includes(q)) {
                     matches.push({ index: i, item: v });
@@ -3525,7 +3608,12 @@
                     `window.deleteFromAddSearch(${idx}, ${row}, '${jsEscape(q)}')`;
                 const onclickLoad = `loadWordByMode(${idx}, true); ${isEdit ? `window.updateEditModalState(${idx}, ${row}, '${chineseJs}', '${khmerJs}');` : `requestEditModal(${idx}, ${row}, '${khmerJs}', '${chineseJs}');`}`;
                 html += `<div style="padding:8px; border-bottom:1px solid #ccc; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px; color:#fff; display:flex; justify-content:space-between; align-items:center;" 
-                            onclick="${onclickLoad}">
+                            onclick="${onclickLoad}"
+                            data-idx="${idx}"
+                            data-row="${row}"
+                            data-chinese="${chineseJs}"
+                            data-khmer="${khmerJs}"
+                            >
                             <span style="flex:1;"><strong>${chineseEsc}</strong> — ${khmerEsc}</span>
                             <span class="search-delete-btn" style="cursor:pointer; padding:4px 10px; font-size:1.2rem; border-radius:20px; background:rgba(255,0,0,0.2);" 
                                   onclick="event.stopPropagation(); ${deleteFn}" 
@@ -3578,8 +3666,8 @@
                     const e = i.value.trim().toLowerCase();
                     if (!e) { s.style.display = "none";
                         s.innerHTML = ""; return }
-                    const t = vocabList.filter((t => t.chinese.toLowerCase().includes(e) || t.khmer.toLowerCase()
-                        .includes(e)));
+                    const t = vocabList.filter((t => (t.chinese.toLowerCase().includes(e) || t.khmer.toLowerCase()
+                        .includes(e)) && !pendingDeletions.has(vocabList.indexOf(t))));
                     if (0 === t.length) { s.innerHTML =
                             '<div class="result-item" style="opacity:0.7;">No matches</div>';
                         s.style.display = "block"; return }
@@ -3594,7 +3682,7 @@
                         e.addEventListener("click", (t => {
                             t.stopPropagation();
                             const n = parseInt(e.dataset.index);
-                            if (!isNaN(n) && vocabList[n]) {
+                            if (!isNaN(n) && vocabList[n] && !pendingDeletions.has(n)) {
                                 searchTerm = "";
                                 i.value = "";
                                 s.style.display = "none";
@@ -3611,12 +3699,14 @@
                     searchTerm = e, "normal" === appMode) { normalCurrentPage = 0;
                     normalCurrentIdx = 0;
                     renderNormalSidebar(); } else if ("" === searchTerm.trim()) { if (null !== previousWordBeforeSearch &&
-                        vocabList[previousWordBeforeSearch]) { loadWordByMode(previousWordBeforeSearch, !0);
+                        vocabList[previousWordBeforeSearch] && !pendingDeletions.has(previousWordBeforeSearch)) {
+                        loadWordByMode(previousWordBeforeSearch, !0);
                         previousWordBeforeSearch = null } else if (sidebarIndices.length && void 0 !== sidebarIndices[
-                        sidebarFocusIdx]) renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
+                        sidebarFocusIdx] && !pendingDeletions.has(sidebarIndices[sidebarFocusIdx]))
+                    renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
                     else vocabList.length ? pickRandom() : renderSidebarUI(!0) } else { const t = filterVocabBySearch(
-                        vocabList).map((e => vocabList.findIndex((t => t === e)))); if (t.length) { sidebarIndices =
-                            t;
+                        vocabList).filter(idx => !pendingDeletions.has(idx)).map((e => vocabList.findIndex((t =>
+                        t === e)))); if (t.length) { sidebarIndices = t;
                         sidebarFocusIdx = 0;
                         renderSidebarUI(!0); if (sidebarIndices.length > 0) loadWordByMode(sidebarIndices[0], !0) } else { sidebarIndices =
                             [];
@@ -3636,14 +3726,16 @@
                 i.value = "";
                 searchTerm = "";
                 s.style.display = "none";
-                if (null !== previousWordBeforeSearch && vocabList[previousWordBeforeSearch]) {
+                if (null !== previousWordBeforeSearch && vocabList[previousWordBeforeSearch] && !pendingDeletions
+                    .has(previousWordBeforeSearch)) {
                     loadWordByMode(previousWordBeforeSearch, !0);
                     previousWordBeforeSearch = null;
                 } else if ("normal" === appMode) {
                     normalCurrentPage = 0;
                     normalCurrentIdx = 0;
                     renderNormalSidebar();
-                } else if (sidebarIndices.length && void 0 !== sidebarIndices[sidebarFocusIdx]) {
+                } else if (sidebarIndices.length && void 0 !== sidebarIndices[sidebarFocusIdx] && !pendingDeletions
+                    .has(sidebarIndices[sidebarFocusIdx])) {
                     renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
                 } else {
                     vocabList.length ? pickRandom() : renderSidebarUI(!0);
@@ -3660,9 +3752,11 @@
                     toggleAppMode() }));
             updatePaginationControlsInside(o.querySelector("#paginationContainer"));
             let u = sidebarIndices;
-            if ("normal" === appMode && searchTerm) u = filterVocabBySearch(vocabList).map((e => vocabList.findIndex((t =>
-                t === e))));
+            if ("normal" === appMode && searchTerm) u = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions
+                .has(idx)).map((e => vocabList.findIndex((t => t === e))));
             else "random" === appMode && searchTerm && "" !== searchTerm.trim() && (u = sidebarIndices);
+            // Filter out pending deletions
+            u = u.filter(idx => !pendingDeletions.has(idx));
             for (let e = 0; e < u.length; e++) {
                 const n = u[e],
                     o = document.createElement("div"),
@@ -3681,7 +3775,7 @@
 
         function updatePaginationControlsInside(e) {
             if (!e) return;
-            const t = filterVocabBySearch(vocabList);
+            const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx));
             if ("normal" === appMode && t.length > 40) {
                 const n = Math.ceil(t.length / 40);
                 e.style.display = "block", e.innerHTML =
@@ -3694,10 +3788,12 @@
                     l = !1;
                 let longPressPrev = !1,
                     longPressNext = !1;
-                const d = () => { const e = filterVocabBySearch(vocabList); if (e.length) { loadWordByMode(vocabList
-                            .findIndex((t => t === e[0])), !0), showToast("📖 Jumped to FIRST word") } },
-                    c = () => { const e = filterVocabBySearch(vocabList); if (e.length) { loadWordByMode(vocabList
-                                .findIndex((t => t === e[e.length - 1])), !0), showToast("📖 Jumped to LAST word") } };
+                const d = () => { const e = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx));
+                    if (e.length) { loadWordByMode(vocabList.findIndex((t => t === e[0])), !0), showToast(
+                            "📖 Jumped to FIRST word") } },
+                    c = () => { const e = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx));
+                        if (e.length) { loadWordByMode(vocabList.findIndex((t => t === e[e.length - 1])), !0),
+                                showToast("📖 Jumped to LAST word") } };
                 if (o) {
                     o.onclick = function(e) {
                         e.preventDefault();
@@ -3730,7 +3826,7 @@
                     i.onclick = function(e) {
                         e.preventDefault();
                         if (longPressNext) { longPressNext = !1; return; }
-                        const t = filterVocabBySearch(vocabList);
+                        const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx));
                         const pageCount = Math.ceil(t.length / 40);
                         if (normalCurrentPage + 1 < pageCount) { normalCurrentPage++;
                             renderNormalSidebar(); }
@@ -3759,16 +3855,26 @@
             } else e.style.display = "none", e.innerHTML = ""
         }
 
-        // ===== FIXED: delete functions with single confirmation + refresh search results =====
+        // ===== FIXED: delete functions with optimistic search removal + retry suppression =====
         window.deleteFromAddSearch = function(idx, row, searchQuery) {
             const item = vocabList[idx];
             if (!item) { showToast("Item not found"); return }
             const displayNum = getDisplayNumberFromArrayIndex(idx);
             if (!confirm(`⚠️ Delete Display #${displayNum} (${item.chinese || item.khmer})?`)) return;
             const rowToDelete = item.sheetRow;
+
+            // Optimistic: add to pendingDeletions and re-render search results immediately
+            pendingDeletions.add(idx);
+            const addChineseInput = document.getElementById('addChineseInput');
+            if (addChineseInput && window.addModalPerformSearch) {
+                window.addModalPerformSearch(addChineseInput.value);
+            }
+
             showPasswordProtectionModal(async function() {
                 try {
                     await deleteVocabByRow(rowToDelete);
+                    // Success: remove from vocabList, update sheetRows, rebuild cache, re-render
+                    pendingDeletions.delete(idx);
                     vocabList.splice(idx, 1);
                     for (let i = 0; i < vocabList.length; i++) {
                         if (vocabList[i].sheetRow > rowToDelete) {
@@ -3778,26 +3884,42 @@
                     buildFirstCharCache();
                     saveAllData();
                     renderSidebarUI();
-                    if (sidebarFocusIdx >= vocabList.length) { sidebarFocusIdx = vocabList.length - 1; }
-                    if (vocabList.length > 0 && sidebarFocusIdx >= 0) { loadWordByMode(sidebarFocusIdx, true); } else {
+                    // After deletion, if sidebar is empty, call pickRandom (unless this is retry)
+                    if (!__isRetry && vocabList.length > 0 && sidebarIndices.length === 0) {
+                        pickRandom();
+                    } else if (vocabList.length === 0) {
                         updateChineseDisplay("");
                         document.getElementById("khmerWord").innerText = "";
+                        renderSidebarUI();
+                    } else {
+                        // Ensure we have a valid word loaded
+                        if (sidebarFocusIdx >= vocabList.length) sidebarFocusIdx = vocabList.length - 1;
+                        if (sidebarFocusIdx >= 0 && sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices
+                            .length) {
+                            loadWordByMode(sidebarIndices[sidebarFocusIdx], true);
+                        } else if (vocabList.length > 0) {
+                            pickRandom();
+                        }
                     }
-                    const addChineseInput = document.getElementById('addChineseInput');
                     if (addChineseInput && window.addModalPerformSearch) {
                         window.addModalPerformSearch(addChineseInput.value);
                     }
-                    const editChineseInput = document.getElementById('editChineseInput');
-                    if (editChineseInput && window.editModalPerformSearch) {
-                        window.editModalPerformSearch(editChineseInput.value);
-                    }
                     showToast("✅ Deleted successfully");
                 } catch (err) {
-                    // Show retry toast
+                    // Failure: remove from pendingDeletions, show retry toast
+                    pendingDeletions.delete(idx);
+                    if (addChineseInput && window.addModalPerformSearch) {
+                        window.addModalPerformSearch(addChineseInput.value);
+                    }
                     const retryFn = () => {
+                        // Retry: add back to pendingDeletions, then call deleteVocabByRow
+                        pendingDeletions.add(idx);
+                        if (addChineseInput && window.addModalPerformSearch) {
+                            window.addModalPerformSearch(addChineseInput.value);
+                        }
                         return deleteVocabByRow(rowToDelete);
                     };
-                    showRetryToast(`⚠️ Delete failed: ${err.message}. Tap ⟳ to retry`, retryFn);
+                    showRetryToast("retry Tap ⟳", retryFn);
                 }
             }, "delete vocabulary");
         };
@@ -3808,9 +3930,18 @@
             const displayNum = getDisplayNumberFromArrayIndex(idx);
             if (!confirm(`⚠️ Delete Display #${displayNum} (${item.chinese || item.khmer})?`)) return;
             const rowToDelete = item.sheetRow;
+
+            // Optimistic: add to pendingDeletions and re-render search results immediately
+            pendingDeletions.add(idx);
+            const editChineseInput = document.getElementById('editChineseInput');
+            if (editChineseInput && window.editModalPerformSearch) {
+                window.editModalPerformSearch(editChineseInput.value);
+            }
+
             showPasswordProtectionModal(async function() {
                 try {
                     await deleteVocabByRow(rowToDelete);
+                    pendingDeletions.delete(idx);
                     vocabList.splice(idx, 1);
                     for (let i = 0; i < vocabList.length; i++) {
                         if (vocabList[i].sheetRow > rowToDelete) {
@@ -3820,25 +3951,38 @@
                     buildFirstCharCache();
                     saveAllData();
                     renderSidebarUI();
-                    if (sidebarFocusIdx >= vocabList.length) { sidebarFocusIdx = vocabList.length - 1; }
-                    if (vocabList.length > 0 && sidebarFocusIdx >= 0) { loadWordByMode(sidebarFocusIdx, true); } else {
+                    if (!__isRetry && vocabList.length > 0 && sidebarIndices.length === 0) {
+                        pickRandom();
+                    } else if (vocabList.length === 0) {
                         updateChineseDisplay("");
                         document.getElementById("khmerWord").innerText = "";
+                        renderSidebarUI();
+                    } else {
+                        if (sidebarFocusIdx >= vocabList.length) sidebarFocusIdx = vocabList.length - 1;
+                        if (sidebarFocusIdx >= 0 && sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices
+                            .length) {
+                            loadWordByMode(sidebarIndices[sidebarFocusIdx], true);
+                        } else if (vocabList.length > 0) {
+                            pickRandom();
+                        }
                     }
-                    const editChineseInput = document.getElementById('editChineseInput');
                     if (editChineseInput && window.editModalPerformSearch) {
                         window.editModalPerformSearch(editChineseInput.value);
                     }
-                    const addChineseInput = document.getElementById('addChineseInput');
-                    if (addChineseInput && window.addModalPerformSearch) {
-                        window.addModalPerformSearch(addChineseInput.value);
-                    }
                     showToast("✅ Deleted successfully");
                 } catch (err) {
+                    pendingDeletions.delete(idx);
+                    if (editChineseInput && window.editModalPerformSearch) {
+                        window.editModalPerformSearch(editChineseInput.value);
+                    }
                     const retryFn = () => {
+                        pendingDeletions.add(idx);
+                        if (editChineseInput && window.editModalPerformSearch) {
+                            window.editModalPerformSearch(editChineseInput.value);
+                        }
                         return deleteVocabByRow(rowToDelete);
                     };
-                    showRetryToast(`⚠️ Delete failed: ${err.message}. Tap ⟳ to retry`, retryFn);
+                    showRetryToast("retry Tap ⟳", retryFn);
                 }
             }, "delete vocabulary");
         };
@@ -3990,7 +4134,7 @@
                     const retryFn = () => {
                         return addVocabToSheet(khmer, chinese);
                     };
-                    showRetryToast(`⚠️ Add failed: ${err.message}. Tap ⟳ to retry`, retryFn);
+                    showRetryToast("retry Tap ⟳", retryFn);
                 });
             };
 
@@ -4008,6 +4152,12 @@
                     showToast("No vocabulary loaded to edit");
                 }
             });
+
+            // ----- FOCUS on Chinese input -----
+            setTimeout(() => {
+                const input = document.getElementById('addChineseInput');
+                if (input) input.focus();
+            }, 150);
         }
 
         function resetTopLayer() { topLayerX = 0, topLayerY = 0, applyLayerTransforms(), saveAllDragPositions(), showToast(
@@ -4020,15 +4170,83 @@
             return new Promise((e => {
                 const t = document.createElement("div");
                 t.className = "modal-overlay", t.innerHTML =
-                    '\n                <div class="choice-modal">\n                    <h3>✧ CHOOSE ACTION ✧</h3>\n                    <div class="choice-search-area">\n                        <input type="text" id="choiceSearchInput" placeholder="🔍 Search vocabulary...">\n                        <div id="choiceSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>\n                    </div>\n                    <div class="choice-buttons">\n                        <div class="choice-item-row">\n                            <button class="choice-top">🔶 Drag Top Pinyin</button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleTopPinyinChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetTopBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="choice-item-row">\n                            <button class="choice-bottom">🔷 Drag Bottom Char</button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleBottomChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetBottomBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="edit-group-buttons">\n                            <button id="editVocabBtn" style="background:#f59e0b;">✏️ EDIT CURRENT</button>\n                            <div style="display: flex; gap: 8px; align-items: center; flex:1;">\n                                <button id="addVocabBtn" style="background:#10b981; flex:1;">➕ ADD NEW</button>\n                                <button id="resetBothLayersBtn" class="reset-icon" style="background:transparent; box-shadow:none; font-size:1.2rem; width:auto; padding:8px;">⟳</button>\n                            </div>\n                        </div>\n                        <button class="choice-cancel" id="closeLayerChoiceBtn">✕ Cancel</button>\n                    </div>\n                </div>\n            ',
+                    '\n                <div class="choice-modal">\n                    <h3>✧ CHOOSE ACTION ✧</h3>\n                    <div class="choice-search-area">\n                        <input type="text" id="choiceSearchInput" placeholder="🔍 Search vocabulary...">\n                        <div id="choiceSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>\n                    </div>\n                    <div class="choice-buttons">\n                        <div class="choice-item-row">\n                            <button class="choice-top">🔶 Drag Top Pinyin <span class="dir-indicator">⬆</span></button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleTopPinyinChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetTopBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="choice-item-row">\n                            <button class="choice-bottom">🔷 Drag Bottom Char <span class="dir-indicator">⬇</span></button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleBottomChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetBottomBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="edit-group-buttons">\n                            <button id="editVocabBtn" style="background:#f59e0b;">✏️ EDIT CURRENT</button>\n                            <div style="display: flex; gap: 8px; align-items: center; flex:1;">\n                                <button id="addVocabBtn" style="background:#10b981; flex:1;">➕ ADD NEW</button>\n                                <button id="resetBothLayersBtn" class="reset-icon" style="background:transparent; box-shadow:none; font-size:1.2rem; width:auto; padding:8px;">⟳</button>\n                            </div>\n                        </div>\n                        <button class="choice-cancel" id="closeLayerChoiceBtn">✕ Cancel</button>\n                    </div>\n                </div>\n            ',
                     document.body.appendChild(t);
+                // update indicators
+                const topBtn = t.querySelector('.choice-top');
+                const bottomBtn = t.querySelector('.choice-bottom');
+                const topDir = topLayerDirection === 'above' ? '⬆' : '⬇';
+                const bottomDir = bottomLayerDirection === 'below' ? '⬇' : '⬆';
+                if (topBtn) topBtn.innerHTML = `🔶 Drag Top Pinyin <span class="dir-indicator">${topDir}</span>`;
+                if (bottomBtn) bottomBtn.innerHTML =
+                    `🔷 Drag Bottom Char <span class="dir-indicator">${bottomDir}</span>`;
+
+                // ---- LONG PRESS: 0.3 seconds on top/bottom buttons ----
+                function setupLongPress(btn, callback) {
+                    let timer = null;
+                    let isLongPress = false;
+
+                    function start(e) {
+                        // Prevent default to avoid accidental click
+                        e.preventDefault();
+                        isLongPress = false;
+                        timer = setTimeout(() => {
+                            isLongPress = true;
+                            callback();
+                            timer = null;
+                        }, 300); // 0.3 seconds
+                    }
+
+                    function end(e) {
+                        if (timer) {
+                            clearTimeout(timer);
+                            timer = null;
+                        }
+                        // If it was a long press, prevent the normal click
+                        if (isLongPress) {
+                            e.stopPropagation();
+                            isLongPress = false;
+                        }
+                    }
+                    btn.addEventListener('mousedown', start);
+                    btn.addEventListener('touchstart', start, { passive: false });
+                    btn.addEventListener('mouseup', end);
+                    btn.addEventListener('touchend', end);
+                    btn.addEventListener('mouseleave', end);
+                    // Also prevent the normal click from firing after long press
+                    btn.addEventListener('click', function(e) {
+                        if (isLongPress) {
+                            e.stopPropagation();
+                            // <-- FIX: use stopImmediatePropagation to fully block the onclick handler
+                            e.stopImmediatePropagation();
+                            e.preventDefault();
+                            isLongPress = false;
+                        }
+                    });
+                }
+
+                // Top button: toggle direction and move layer instantly
+                setupLongPress(topBtn, function() {
+                    toggleTopDirection();
+                    // update the button indicator
+                    const newDir = topLayerDirection === 'above' ? '⬆' : '⬇';
+                    topBtn.innerHTML = `🔶 Drag Top Pinyin <span class="dir-indicator">${newDir}</span>`;
+                });
+
+                // Bottom button: toggle direction and move layer instantly
+                setupLongPress(bottomBtn, function() {
+                    toggleBottomDirection();
+                    const newDir = bottomLayerDirection === 'below' ? '⬇' : '⬆';
+                    bottomBtn.innerHTML = `🔷 Drag Bottom Char <span class="dir-indicator">${newDir}</span>`;
+                });
+
                 const n = t.querySelector("#choiceSearchInput"),
                     o = t.querySelector("#choiceSearchResults");
                 n.addEventListener("input", (() => {
                     const e = n.value.trim().toLowerCase();
                     if (!e) return void(o.innerHTML = "");
-                    const t = vocabList.filter((t => t.chinese.toLowerCase().includes(e) || t.khmer
-                        .toLowerCase().includes(e)));
+                    const t = vocabList.filter((t => (t.chinese.toLowerCase().includes(e) || t.khmer
+                        .toLowerCase().includes(e)) && !pendingDeletions.has(vocabList.indexOf(t))));
                     0 !== t.length ? o.innerHTML = t.map((e =>
                             `<div style="padding:8px; border-bottom:1px solid #555; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px; color:white;" onclick="loadWordByMode(${vocabList.findIndex((t=>t===e))}, true); document.querySelector('.modal-overlay')?.remove();"><strong>${escapeHtml(e.chinese)}</strong> — ${escapeHtml(e.khmer)}</div>`
                         )).join("") : o.innerHTML =
@@ -4088,8 +4306,9 @@
                         saveAllData();
                         showToast(`Bottom Char ${bottomCharVisible?"shown":"hidden"}`);
                     },
-                    r.onclick = () => { const idx = sidebarIndices[sidebarFocusIdx]; if (idx !== undefined) { requestEditModal(
-                                idx, vocabList[idx]?.sheetRow, vocabList[idx]?.khmer, vocabList[idx]?.chinese);
+                    r.onclick = () => { const idx = sidebarIndices[sidebarFocusIdx]; if (idx !== undefined && !pendingDeletions
+                            .has(idx)) { requestEditModal(idx, vocabList[idx]?.sheetRow, vocabList[idx]?.khmer,
+                                vocabList[idx]?.chinese);
                             h(null) } }, s.onclick = () => { requestAddNewVocab();
                         h(null) }, l.onclick = () => h(null), t.onclick = e => { e.target === t && h(null) }
             }))
@@ -4239,7 +4458,7 @@
                     const retryFn = () => {
                         return updateVocabByRow(row, km || oldKhmer, ch || oldChinese);
                     };
-                    showRetryToast(`⚠️ Update failed: ${err.message}. Tap ⟳ to retry`, retryFn);
+                    showRetryToast("retry Tap ⟳", retryFn);
                 });
             };
             document.getElementById("confirmUpdateBtn").onclick = () => showPasswordProtectionModal(confirmUpdate,
@@ -4249,15 +4468,23 @@
                 const displayNum = getDisplayNumberFromArrayIndex(window.currentEdit.idx);
                 const item = vocabList[window.currentEdit.idx];
                 if (!confirm(`⚠️ Delete Display #${displayNum} (${item?.chinese || item?.khmer || 'unknown'})?`)) return;
+                const idx = window.currentEdit.idx;
+                const rowToDelete = window.currentEdit.row;
+
+                // Optimistic: add to pendingDeletions and re-render search results immediately
+                pendingDeletions.add(idx);
+                if (editChineseInput && window.editModalPerformSearch) {
+                    window.editModalPerformSearch(editChineseInput.value);
+                }
                 a.remove();
+
                 try {
-                    await deleteVocabByRow(window.currentEdit.row);
-                    const idx = window.currentEdit.idx;
+                    await deleteVocabByRow(rowToDelete);
+                    pendingDeletions.delete(idx);
                     const oldIndices = [...sidebarIndices];
                     vocabList.splice(idx, 1);
-                    const deletedRow = window.currentEdit.row;
                     for (let i = 0; i < vocabList.length; i++) {
-                        if (vocabList[i].sheetRow > deletedRow) {
+                        if (vocabList[i].sheetRow > rowToDelete) {
                             vocabList[i].sheetRow--;
                         }
                     }
@@ -4291,12 +4518,18 @@
                             normalCurrentIdx = newIdx;
                             normalCurrentPage = getNormalPageForIndex(newIdx);
                             renderNormalSidebar();
-                        } else if (newIdx >= 0 && vocabList[newIdx]) {
+                        } else if (newIdx >= 0 && vocabList[newIdx] && !pendingDeletions.has(newIdx)) {
                             history = [newIdx];
                             historyIndex = 0;
                             renderRandomSidebar(newIdx);
-                        } else if (vocabList.length) pickRandom();
-                        else {
+                        } else if (vocabList.length > 0) {
+                            if (!__isRetry) pickRandom();
+                            else {
+                                // During retry, just load the first available word
+                                const firstIdx = vocabList.findIndex((_, i) => !pendingDeletions.has(i));
+                                if (firstIdx >= 0) loadWordByMode(firstIdx, true);
+                            }
+                        } else {
                             renderSidebarUI();
                             updateChineseDisplay("");
                             document.getElementById("khmerWord").innerText = "";
@@ -4305,10 +4538,18 @@
                     showToast("✅ Deleted successfully");
                     refreshAddModalSearch();
                 } catch (err) {
+                    pendingDeletions.delete(idx);
+                    if (editChineseInput && window.editModalPerformSearch) {
+                        window.editModalPerformSearch(editChineseInput.value);
+                    }
                     const retryFn = () => {
-                        return deleteVocabByRow(window.currentEdit.row);
+                        pendingDeletions.add(idx);
+                        if (editChineseInput && window.editModalPerformSearch) {
+                            window.editModalPerformSearch(editChineseInput.value);
+                        }
+                        return deleteVocabByRow(rowToDelete);
                     };
-                    showRetryToast(`⚠️ Delete failed: ${err.message}. Tap ⟳ to retry`, retryFn);
+                    showRetryToast("retry Tap ⟳", retryFn);
                 }
             };
             document.getElementById("deleteRowBtn").onclick = () => showPasswordProtectionModal(deleteAction,
@@ -4329,6 +4570,12 @@
                     window.editModalPerformSearch(val);
                 }
             }, 100);
+
+            // ----- FOCUS on Chinese input -----
+            setTimeout(() => {
+                const input = document.getElementById('editChineseInput');
+                if (input) input.focus();
+            }, 150);
         };
 
         const tripleHtmlCache = new Map;
@@ -4599,7 +4846,18 @@
         function updateDisplay() {
             if (!sidebarIndices.length) return;
             const e = sidebarIndices[sidebarFocusIdx];
-            if (void 0 === e) return;
+            if (void 0 === e || pendingDeletions.has(e)) {
+                // If current item is pending deletion, try to find another
+                const newIdx = sidebarIndices.find(idx => !pendingDeletions.has(idx));
+                if (newIdx !== undefined) {
+                    sidebarFocusIdx = sidebarIndices.indexOf(newIdx);
+                    return updateDisplay();
+                }
+                // If all are pending deletion, clear display
+                updateChineseDisplay("");
+                document.getElementById("khmerWord").innerText = "";
+                return;
+            }
             const t = vocabList[e];
             updateChineseDisplay(t.chinese || t.khmer), document.getElementById("khmerWord").innerText = t.khmer ||
                 "", document.querySelectorAll(".vocab-item").forEach(((e, t) => e.classList.toggle("active", t ===
@@ -4685,6 +4943,8 @@
             } else {
                 safeRemoveItem("vocabMaster_List_Compressed");
             }
+            // save directions
+            saveLayerDirections();
         }
 
         function loadSettings() {
@@ -4785,6 +5045,9 @@
                     }
                 } catch (e) { console.warn("Vocab list parse error:", e); }
             }
+
+            // Load layer directions
+            loadLayerDirections();
 
             checkPasswordVerifiedSession();
 
@@ -5112,6 +5375,7 @@
                     onGlobalDragMove, { passive: !1 }), window.addEventListener("touchend", onGlobalDragEnd))
         }
 
+        // ----- FIXED: onGlobalDragMove with smart clamping based on direction ----
         function onGlobalDragMove(e) {
             if (!dragActive) return;
             e.preventDefault();
@@ -5119,17 +5383,42 @@
                 n = e.clientY ?? (e.touches ? e.touches[0].clientY : 0),
                 o = t - dragStartMouseX,
                 i = n - dragStartMouseY;
-            if ("word" === dragType) { const e = canvas.getBoundingClientRect();
+            if ("word" === dragType) {
+                const e = canvas.getBoundingClientRect();
                 let t = dragStartLeft / 100 * e.width,
                     n = dragStartTop / 100 * e.height + i;
                 chineseX = (t + o) / e.width * 100, chineseY = n / e.height * 100, chineseElement.style.left =
-                    chineseX + "%", chineseElement.style.top = chineseY + "%" } else if ("top" === dragType) {
-                topLayerX = dragStartTopX + o, topLayerY = dragStartTopY + i, topLayerX = Math.max(-800, Math.min(
-                    800, topLayerX)), topLayerY = Math.max(-800, Math.min(800, topLayerY)),
-                    applyLayerTransforms() } else "bottom" === dragType && (bottomLayerX = dragStartBottomX + o,
-                    bottomLayerY = dragStartBottomY + i, bottomLayerX = Math.max(-800, Math.min(800,
-                    bottomLayerX)), bottomLayerY = Math.max(-800, Math.min(800, bottomLayerY)),
-                    applyLayerTransforms())
+                    chineseX + "%", chineseElement.style.top = chineseY + "%";
+            } else if ("top" === dragType) {
+                const fontSizePx = (userSetChineseFontSize / 100) * window.innerHeight;
+                const gap = Math.max(6, fontSizePx * 0.07);
+                const maxOffset = Math.max(80, fontSizePx * 1.8);
+                topLayerX = dragStartTopX + o;
+                topLayerY = dragStartTopY + i;
+                // Clamp based on direction: if 'above', keep Y negative (above main); if 'below', keep Y positive (below main)
+                if (topLayerDirection === 'above') {
+                    topLayerX = Math.max(-maxOffset, Math.min(maxOffset, topLayerX));
+                    topLayerY = Math.max(-maxOffset, Math.min(-gap, topLayerY));
+                } else { // below
+                    topLayerX = Math.max(-maxOffset, Math.min(maxOffset, topLayerX));
+                    topLayerY = Math.max(gap, Math.min(maxOffset, topLayerY));
+                }
+                applyLayerTransforms();
+            } else if ("bottom" === dragType) {
+                const fontSizePx = (userSetChineseFontSize / 100) * window.innerHeight;
+                const gap = Math.max(6, fontSizePx * 0.07);
+                const maxOffset = Math.max(80, fontSizePx * 1.8);
+                bottomLayerX = dragStartBottomX + o;
+                bottomLayerY = dragStartBottomY + i;
+                if (bottomLayerDirection === 'below') {
+                    bottomLayerX = Math.max(-maxOffset, Math.min(maxOffset, bottomLayerX));
+                    bottomLayerY = Math.max(gap, Math.min(maxOffset, bottomLayerY));
+                } else { // above
+                    bottomLayerX = Math.max(-maxOffset, Math.min(maxOffset, bottomLayerX));
+                    bottomLayerY = Math.max(-maxOffset, Math.min(-gap, bottomLayerY));
+                }
+                applyLayerTransforms();
+            }
         }
 
         function onGlobalDragEnd() {
@@ -5586,12 +5875,21 @@
         }
 
         function moveSidebarFocus(e) {
-            if (!sidebarIndices.length) return;
-            let t = sidebarFocusIdx + e;
-            t < 0 && (t = sidebarIndices.length - 1), t >= sidebarIndices.length && (t = 0), sidebarFocusIdx = t,
+            // Filter out pending deletions
+            const validIndices = sidebarIndices.filter(idx => !pendingDeletions.has(idx));
+            if (!validIndices.length) return;
+            let t = validIndices.indexOf(sidebarIndices[sidebarFocusIdx]);
+            if (t === -1) t = 0;
+            t = (t + e + validIndices.length) % validIndices.length;
+            const newIdx = validIndices[t];
+            const actualPos = sidebarIndices.indexOf(newIdx);
+            if (actualPos !== -1) {
+                sidebarFocusIdx = actualPos;
                 updateDisplay();
-            const n = vocabList[sidebarIndices[sidebarFocusIdx]];
-            n && speakAutoSequence(n.chinese, n.khmer), scrollToActiveSidebarItem()
+                const word = vocabList[sidebarIndices[sidebarFocusIdx]];
+                if (word) speakAutoSequence(word.chinese, word.khmer);
+                scrollToActiveSidebarItem();
+            }
         }
 
         function extractSheetIdFromUrl(e) {
@@ -5865,6 +6163,23 @@
             }, 100);
 
             document.getElementById("insertDataBtn").onclick = () => { showLoadVocabularyModal(); };
+
+            // ----- KEYBOARD SHORTCUTS -----
+            document.addEventListener('keydown', function(e) {
+                // Ctrl+F or Cmd+F to open ADD NEW modal
+                if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                    e.preventDefault();
+                    requestAddNewVocab();
+                }
+                // Escape to close any modal (remove .modal-overlay)
+                if (e.key === 'Escape') {
+                    const modals = document.querySelectorAll('.modal-overlay');
+                    if (modals.length) {
+                        modals.forEach(m => m.remove());
+                        showToast('Closed');
+                    }
+                }
+            });
         };
         const originalToggleMenu = toggleMenu;
         window.toggleMenu = function(e) {
