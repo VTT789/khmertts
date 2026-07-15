@@ -2446,8 +2446,7 @@
                     if (k.startsWith('vocabMaster_') || k.startsWith('drag_') || k.startsWith('gear') ||
                         k.startsWith('menu') || k.startsWith('emoji') || k.startsWith('sidebar') ||
                         k === 'floatingMenuLeft' || k === 'floatingMenuTop' || k === 'speechOrder' ||
-                        k === 'topPinyinSectionHidden' || k === 'bottomSectionHidden' || k === 'sheetHistory' ||
-                        k === 'topLayerDirection' || k === 'bottomLayerDirection') {
+                        k === 'topPinyinSectionHidden' || k === 'bottomSectionHidden' || k === 'sheetHistory') {
                         localStorage.removeItem(k);
                     }
                 }
@@ -2934,76 +2933,6 @@
 
         // ---- Pending deletions set for optimistic search removal ----
         const pendingDeletions = new Set();
-
-        // ---- NEW: layer direction states (default 'above' for top, 'below' for bottom) ----
-        let topLayerDirection = 'above'; // 'above' or 'below'
-        let bottomLayerDirection = 'below'; // 'below' or 'above'
-
-        function loadLayerDirections() {
-            const top = safeGetItem('topLayerDirection', 'above');
-            const bottom = safeGetItem('bottomLayerDirection', 'below');
-            if (top === 'above' || top === 'below') topLayerDirection = top;
-            if (bottom === 'above' || bottom === 'below') bottomLayerDirection = bottom;
-        }
-
-        function saveLayerDirections() {
-            safeSetItem('topLayerDirection', topLayerDirection);
-            safeSetItem('bottomLayerDirection', bottomLayerDirection);
-        }
-
-        // ---- helper to toggle direction ----
-        function toggleTopDirection() {
-            topLayerDirection = (topLayerDirection === 'above') ? 'below' : 'above';
-            saveLayerDirections();
-            // Immediately move the layer to the new side
-            const fontSizePx = (userSetChineseFontSize / 100) * window.innerHeight;
-            const gap = Math.max(6, fontSizePx * 0.07);
-            const maxOffset = Math.max(80, fontSizePx * 1.8);
-            if (topLayerDirection === 'above') {
-                topLayerX = 0;
-                topLayerY = Math.max(-maxOffset, Math.min(-gap, 0));
-            } else {
-                topLayerX = 0;
-                topLayerY = Math.max(gap, Math.min(maxOffset, gap));
-            }
-            applyLayerTransforms();
-            saveAllDragPositions();
-            showToast(`🔶 Top Pinyin direction set to ${topLayerDirection === 'above' ? '⬆ (above)' : '⬇ (below)'}`);
-            updateDirectionIndicators();
-        }
-
-        function toggleBottomDirection() {
-            bottomLayerDirection = (bottomLayerDirection === 'below') ? 'above' : 'below';
-            saveLayerDirections();
-            // Immediately move the layer to the new side
-            const fontSizePx = (userSetChineseFontSize / 100) * window.innerHeight;
-            const gap = Math.max(6, fontSizePx * 0.07);
-            const maxOffset = Math.max(80, fontSizePx * 1.8);
-            if (bottomLayerDirection === 'below') {
-                bottomLayerX = 0;
-                bottomLayerY = Math.max(gap, Math.min(maxOffset, gap));
-            } else {
-                bottomLayerX = 0;
-                bottomLayerY = Math.max(-maxOffset, Math.min(-gap, 0));
-            }
-            applyLayerTransforms();
-            saveAllDragPositions();
-            showToast(`🔷 Bottom Char direction set to ${bottomLayerDirection === 'below' ? '⬇ (below)' : '⬆ (above)'}`);
-            updateDirectionIndicators();
-        }
-
-        function updateDirectionIndicators() {
-            const topBtn = document.querySelector('.choice-top');
-            const bottomBtn = document.querySelector('.choice-bottom');
-            if (topBtn) {
-                const dir = topLayerDirection === 'above' ? '⬆' : '⬇';
-                topBtn.innerHTML = `🔶 Drag Top Pinyin <span class="dir-indicator">${dir}</span>`;
-            }
-            if (bottomBtn) {
-                const dir = bottomLayerDirection === 'below' ? '⬇' : '⬆';
-                bottomBtn.innerHTML = `🔷 Drag Bottom Char <span class="dir-indicator">${dir}</span>`;
-            }
-        }
 
         function openSheetToKhmerColumn(e) {
             if (!currentSheetUrl) { showToast("❌ No sheet loaded"); return }
@@ -4166,80 +4095,69 @@
         function resetBottomLayer() { bottomLayerX = 0, bottomLayerY = 0, applyLayerTransforms(), saveAllDragPositions(),
                 showToast("🔷 Bottom Character layer reset") }
 
+        // ===== FIXED HOLD-SWAP with simultaneous toggling =====
+        function setupLayerHoldSwap(button, layerType, onSwap) {
+            if (!button) return;
+            let timer = null;
+            let holdTriggered = false;
+            let moved = false;
+            let startX = 0,
+                startY = 0;
+
+            const start = (e) => {
+                const touch = e.touches ? e.touches[0] : e;
+                startX = touch.clientX;
+                startY = touch.clientY;
+                moved = false;
+                holdTriggered = false;
+                if (timer) clearTimeout(timer);
+                timer = setTimeout(() => {
+                    if (!moved) {
+                        holdTriggered = true;
+                        onSwap();
+                        // Close the modal after swap
+                        const modal = button.closest('.modal-overlay');
+                        if (modal) modal.remove();
+                        showToast('🔁 Layers swapped');
+                    }
+                    timer = null;
+                }, 300);
+            };
+
+            const move = (e) => {
+                const touch = e.touches ? e.touches[0] : e;
+                const dx = touch.clientX - startX;
+                const dy = touch.clientY - startY;
+                if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+                    moved = true;
+                    if (timer) { clearTimeout(timer);
+                        timer = null; }
+                }
+            };
+
+            const end = (e) => {
+                if (timer) { clearTimeout(timer);
+                    timer = null; }
+                holdTriggered = false;
+            };
+
+            button.addEventListener('mousedown', start);
+            button.addEventListener('mousemove', move);
+            button.addEventListener('mouseup', end);
+            button.addEventListener('mouseleave', end);
+            button.addEventListener('touchstart', start, { passive: true });
+            button.addEventListener('touchmove', move, { passive: true });
+            button.addEventListener('touchend', end, { passive: true });
+            button.addEventListener('touchcancel', end, { passive: true });
+        }
+
+        // ---- MODIFIED: showLayerChoiceModal with simultaneous swap ----
         function showLayerChoiceModal() {
             return new Promise((e => {
                 const t = document.createElement("div");
                 t.className = "modal-overlay", t.innerHTML =
-                    '\n                <div class="choice-modal">\n                    <h3>✧ CHOOSE ACTION ✧</h3>\n                    <div class="choice-search-area">\n                        <input type="text" id="choiceSearchInput" placeholder="🔍 Search vocabulary...">\n                        <div id="choiceSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>\n                    </div>\n                    <div class="choice-buttons">\n                        <div class="choice-item-row">\n                            <button class="choice-top">🔶 Drag Top Pinyin <span class="dir-indicator">⬆</span></button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleTopPinyinChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetTopBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="choice-item-row">\n                            <button class="choice-bottom">🔷 Drag Bottom Char <span class="dir-indicator">⬇</span></button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleBottomChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetBottomBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="edit-group-buttons">\n                            <button id="editVocabBtn" style="background:#f59e0b;">✏️ EDIT CURRENT</button>\n                            <div style="display: flex; gap: 8px; align-items: center; flex:1;">\n                                <button id="addVocabBtn" style="background:#10b981; flex:1;">➕ ADD NEW</button>\n                                <button id="resetBothLayersBtn" class="reset-icon" style="background:transparent; box-shadow:none; font-size:1.2rem; width:auto; padding:8px;">⟳</button>\n                            </div>\n                        </div>\n                        <button class="choice-cancel" id="closeLayerChoiceBtn">✕ Cancel</button>\n                    </div>\n                </div>\n            ',
+                    '\n                <div class="choice-modal">\n                    <h3>✧ CHOOSE ACTION ✧</h3>\n                    <div class="choice-search-area">\n                        <input type="text" id="choiceSearchInput" placeholder="🔍 Search vocabulary...">\n                        <div id="choiceSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>\n                    </div>\n                    <div class="choice-buttons">\n                        <div class="choice-item-row">\n                            <button class="choice-top">🔶 Drag Top Pinyin</button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleTopPinyinChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetTopBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="choice-item-row">\n                            <button class="choice-bottom">🔷 Drag Bottom Char</button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleBottomChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetBottomBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="edit-group-buttons">\n                            <button id="editVocabBtn" style="background:#f59e0b;">✏️ EDIT CURRENT</button>\n                            <div style="display: flex; gap: 8px; align-items: center; flex:1;">\n                                <button id="addVocabBtn" style="background:#10b981; flex:1;">➕ ADD NEW</button>\n                                <button id="resetBothLayersBtn" class="reset-icon" style="background:transparent; box-shadow:none; font-size:1.2rem; width:auto; padding:8px;">⟳</button>\n                            </div>\n                        </div>\n                        <button class="choice-cancel" id="closeLayerChoiceBtn">✕ Cancel</button>\n                    </div>\n                </div>\n            ',
                     document.body.appendChild(t);
-                // update indicators
-                const topBtn = t.querySelector('.choice-top');
-                const bottomBtn = t.querySelector('.choice-bottom');
-                const topDir = topLayerDirection === 'above' ? '⬆' : '⬇';
-                const bottomDir = bottomLayerDirection === 'below' ? '⬇' : '⬆';
-                if (topBtn) topBtn.innerHTML = `🔶 Drag Top Pinyin <span class="dir-indicator">${topDir}</span>`;
-                if (bottomBtn) bottomBtn.innerHTML =
-                    `🔷 Drag Bottom Char <span class="dir-indicator">${bottomDir}</span>`;
-
-                // ---- LONG PRESS: 0.3 seconds on top/bottom buttons ----
-                function setupLongPress(btn, callback) {
-                    let timer = null;
-                    let isLongPress = false;
-
-                    function start(e) {
-                        // Prevent default to avoid accidental click
-                        e.preventDefault();
-                        isLongPress = false;
-                        timer = setTimeout(() => {
-                            isLongPress = true;
-                            callback();
-                            timer = null;
-                        }, 300); // 0.3 seconds
-                    }
-
-                    function end(e) {
-                        if (timer) {
-                            clearTimeout(timer);
-                            timer = null;
-                        }
-                        // If it was a long press, prevent the normal click
-                        if (isLongPress) {
-                            e.stopPropagation();
-                            isLongPress = false;
-                        }
-                    }
-                    btn.addEventListener('mousedown', start);
-                    btn.addEventListener('touchstart', start, { passive: false });
-                    btn.addEventListener('mouseup', end);
-                    btn.addEventListener('touchend', end);
-                    btn.addEventListener('mouseleave', end);
-                    // Also prevent the normal click from firing after long press
-                    btn.addEventListener('click', function(e) {
-                        if (isLongPress) {
-                            e.stopPropagation();
-                            // <-- FIX: use stopImmediatePropagation to fully block the onclick handler
-                            e.stopImmediatePropagation();
-                            e.preventDefault();
-                            isLongPress = false;
-                        }
-                    });
-                }
-
-                // Top button: toggle direction and move layer instantly
-                setupLongPress(topBtn, function() {
-                    toggleTopDirection();
-                    // update the button indicator
-                    const newDir = topLayerDirection === 'above' ? '⬆' : '⬇';
-                    topBtn.innerHTML = `🔶 Drag Top Pinyin <span class="dir-indicator">${newDir}</span>`;
-                });
-
-                // Bottom button: toggle direction and move layer instantly
-                setupLongPress(bottomBtn, function() {
-                    toggleBottomDirection();
-                    const newDir = bottomLayerDirection === 'below' ? '⬇' : '⬆';
-                    bottomBtn.innerHTML = `🔷 Drag Bottom Char <span class="dir-indicator">${newDir}</span>`;
-                });
-
                 const n = t.querySelector("#choiceSearchInput"),
                     o = t.querySelector("#choiceSearchResults");
                 n.addEventListener("input", (() => {
@@ -4263,54 +4181,127 @@
                     u = t.querySelector("#toggleTopPinyinChoiceBtn"),
                     p = t.querySelector("#toggleBottomChoiceBtn"),
                     h = n => { t.remove(), e(n) };
-                i.onclick = () => h("top"), a.onclick = () => h("bottom"), d.onclick = () => { resetTopLayer(),
-                        h(null) }, c.onclick = () => { resetBottomLayer(), h(null) }, m.onclick = () => {
-                        resetLayerOffsets(), h(null) },
-                    u.onclick = () => {
-                        topPinyinVisible = !topPinyinVisible;
-                        applyTextVisibility();
-                        const topSec = document.getElementById("topPinyinSection");
-                        const topBtn = document.getElementById("toggleTopPinyinSectionBtn");
-                        if (topSec && topBtn) {
-                            if (!topPinyinVisible) {
-                                topSec.classList.add("hidden");
-                                topBtn.innerText = "🫣";
-                                u.innerText = "🫣";
-                            } else {
-                                topSec.classList.remove("hidden");
-                                topBtn.innerText = "😱";
-                                u.innerText = "😱";
-                            }
+
+                // ----- Simultaneous swap function -----
+                const toggleBothLayers = () => {
+                    const charBlock = chineseElement.querySelector('.char-block');
+                    if (!charBlock) return;
+                    const pinyinEl = charBlock.querySelector('.pinyin-top');
+                    const mainEl = charBlock.querySelector('.chinese-main');
+                    const bottomEl = charBlock.querySelector('.chinese-bottom');
+                    if (!pinyinEl || !mainEl || !bottomEl) return;
+
+                    const mainRect = mainEl.getBoundingClientRect();
+                    const pinyinRect = pinyinEl.getBoundingClientRect();
+                    const bottomRect = bottomEl.getBoundingClientRect();
+                    const gap = 8;
+
+                    // Determine current state: pinyin above (topLayerY < 1) and bottom below (bottomLayerY >= 0)
+                    const pinyinAbove = topLayerY < 1;
+                    const bottomBelow = bottomLayerY >= 0;
+
+                    if (pinyinAbove && bottomBelow) {
+                        // Swap: pinyin goes below main, bottom goes above main
+                        const distPinyinToBottom = mainRect.bottom - pinyinRect.top;
+                        const distBottomToTop = mainRect.top - bottomRect.bottom;
+                        topLayerY = distPinyinToBottom + gap;      // positive: below
+                        bottomLayerY = distBottomToTop - gap;      // negative: above
+                    } else {
+                        // Reset to default: pinyin above, bottom below
+                        topLayerY = 0;
+                        bottomLayerY = 0;
+                    }
+                    topLayerX = 0;
+                    bottomLayerX = 0;
+                    applyLayerTransforms();
+                    saveAllDragPositions();
+                };
+
+                // Attach hold‑swap to both buttons
+                setupLayerHoldSwap(i, 'top', () => {
+                    toggleBothLayers();
+                    const modal = i.closest('.modal-overlay');
+                    if (modal) modal.remove();
+                    showToast('🔁 Layers swapped');
+                });
+                setupLayerHoldSwap(a, 'bottom', () => {
+                    toggleBothLayers();
+                    const modal = a.closest('.modal-overlay');
+                    if (modal) modal.remove();
+                    showToast('🔁 Layers swapped');
+                });
+
+                // Normal click handlers (drag mode)
+                i.onclick = (ev) => {
+                    // If a hold was triggered, ignore click
+                    if (ev._holdTriggered) return;
+                    h("top");
+                };
+                a.onclick = (ev) => {
+                    if (ev._holdTriggered) return;
+                    h("bottom");
+                };
+
+                d.onclick = () => { resetTopLayer(), h(null) };
+                c.onclick = () => { resetBottomLayer(), h(null) };
+                m.onclick = () => {
+                    resetLayerOffsets(), h(null)
+                };
+
+                u.onclick = () => {
+                    topPinyinVisible = !topPinyinVisible;
+                    applyTextVisibility();
+                    const topSec = document.getElementById("topPinyinSection");
+                    const topBtn = document.getElementById("toggleTopPinyinSectionBtn");
+                    if (topSec && topBtn) {
+                        if (!topPinyinVisible) {
+                            topSec.classList.add("hidden");
+                            topBtn.innerText = "🫣";
+                            u.innerText = "🫣";
+                        } else {
+                            topSec.classList.remove("hidden");
+                            topBtn.innerText = "😱";
+                            u.innerText = "😱";
                         }
-                        safeSetItem("topPinyinSectionHidden", !topPinyinVisible);
-                        saveAllData();
-                        showToast(`Top Pinyin ${topPinyinVisible?"shown":"hidden"}`);
-                    },
-                    p.onclick = () => {
-                        bottomCharVisible = !bottomCharVisible;
-                        applyTextVisibility();
-                        const bottomSec = document.getElementById("bottomSection");
-                        const bottomBtn = document.getElementById("toggleBottomSectionBtn");
-                        if (bottomSec && bottomBtn) {
-                            if (!bottomCharVisible) {
-                                bottomSec.classList.add("hidden");
-                                bottomBtn.innerText = "🫣";
-                                p.innerText = "🫣";
-                            } else {
-                                bottomSec.classList.remove("hidden");
-                                bottomBtn.innerText = "😱";
-                                p.innerText = "😱";
-                            }
+                    }
+                    safeSetItem("topPinyinSectionHidden", !topPinyinVisible);
+                    saveAllData();
+                    showToast(`Top Pinyin ${topPinyinVisible ? "shown" : "hidden"}`);
+                };
+
+                p.onclick = () => {
+                    bottomCharVisible = !bottomCharVisible;
+                    applyTextVisibility();
+                    const bottomSec = document.getElementById("bottomSection");
+                    const bottomBtn = document.getElementById("toggleBottomSectionBtn");
+                    if (bottomSec && bottomBtn) {
+                        if (!bottomCharVisible) {
+                            bottomSec.classList.add("hidden");
+                            bottomBtn.innerText = "🫣";
+                            p.innerText = "🫣";
+                        } else {
+                            bottomSec.classList.remove("hidden");
+                            bottomBtn.innerText = "😱";
+                            p.innerText = "😱";
                         }
-                        safeSetItem("bottomSectionHidden", !bottomCharVisible);
-                        saveAllData();
-                        showToast(`Bottom Char ${bottomCharVisible?"shown":"hidden"}`);
-                    },
-                    r.onclick = () => { const idx = sidebarIndices[sidebarFocusIdx]; if (idx !== undefined && !pendingDeletions
-                            .has(idx)) { requestEditModal(idx, vocabList[idx]?.sheetRow, vocabList[idx]?.khmer,
-                                vocabList[idx]?.chinese);
-                            h(null) } }, s.onclick = () => { requestAddNewVocab();
-                        h(null) }, l.onclick = () => h(null), t.onclick = e => { e.target === t && h(null) }
+                    }
+                    safeSetItem("bottomSectionHidden", !bottomCharVisible);
+                    saveAllData();
+                    showToast(`Bottom Char ${bottomCharVisible ? "shown" : "hidden"}`);
+                };
+
+                r.onclick = () => {
+                    const idx = sidebarIndices[sidebarFocusIdx];
+                    if (idx !== undefined && !pendingDeletions.has(idx)) {
+                        requestEditModal(idx, vocabList[idx]?.sheetRow, vocabList[idx]?.khmer,
+                            vocabList[idx]?.chinese);
+                        h(null)
+                    }
+                };
+                s.onclick = () => { requestAddNewVocab();
+                    h(null) };
+                l.onclick = () => h(null);
+                t.onclick = ev => { if (ev.target === t) h(null) };
             }))
         }
 
@@ -4943,8 +4934,6 @@
             } else {
                 safeRemoveItem("vocabMaster_List_Compressed");
             }
-            // save directions
-            saveLayerDirections();
         }
 
         function loadSettings() {
@@ -5045,9 +5034,6 @@
                     }
                 } catch (e) { console.warn("Vocab list parse error:", e); }
             }
-
-            // Load layer directions
-            loadLayerDirections();
 
             checkPasswordVerifiedSession();
 
@@ -5375,7 +5361,6 @@
                     onGlobalDragMove, { passive: !1 }), window.addEventListener("touchend", onGlobalDragEnd))
         }
 
-        // ----- FIXED: onGlobalDragMove with smart clamping based on direction ----
         function onGlobalDragMove(e) {
             if (!dragActive) return;
             e.preventDefault();
@@ -5383,42 +5368,17 @@
                 n = e.clientY ?? (e.touches ? e.touches[0].clientY : 0),
                 o = t - dragStartMouseX,
                 i = n - dragStartMouseY;
-            if ("word" === dragType) {
-                const e = canvas.getBoundingClientRect();
+            if ("word" === dragType) { const e = canvas.getBoundingClientRect();
                 let t = dragStartLeft / 100 * e.width,
                     n = dragStartTop / 100 * e.height + i;
                 chineseX = (t + o) / e.width * 100, chineseY = n / e.height * 100, chineseElement.style.left =
-                    chineseX + "%", chineseElement.style.top = chineseY + "%";
-            } else if ("top" === dragType) {
-                const fontSizePx = (userSetChineseFontSize / 100) * window.innerHeight;
-                const gap = Math.max(6, fontSizePx * 0.07);
-                const maxOffset = Math.max(80, fontSizePx * 1.8);
-                topLayerX = dragStartTopX + o;
-                topLayerY = dragStartTopY + i;
-                // Clamp based on direction: if 'above', keep Y negative (above main); if 'below', keep Y positive (below main)
-                if (topLayerDirection === 'above') {
-                    topLayerX = Math.max(-maxOffset, Math.min(maxOffset, topLayerX));
-                    topLayerY = Math.max(-maxOffset, Math.min(-gap, topLayerY));
-                } else { // below
-                    topLayerX = Math.max(-maxOffset, Math.min(maxOffset, topLayerX));
-                    topLayerY = Math.max(gap, Math.min(maxOffset, topLayerY));
-                }
-                applyLayerTransforms();
-            } else if ("bottom" === dragType) {
-                const fontSizePx = (userSetChineseFontSize / 100) * window.innerHeight;
-                const gap = Math.max(6, fontSizePx * 0.07);
-                const maxOffset = Math.max(80, fontSizePx * 1.8);
-                bottomLayerX = dragStartBottomX + o;
-                bottomLayerY = dragStartBottomY + i;
-                if (bottomLayerDirection === 'below') {
-                    bottomLayerX = Math.max(-maxOffset, Math.min(maxOffset, bottomLayerX));
-                    bottomLayerY = Math.max(gap, Math.min(maxOffset, bottomLayerY));
-                } else { // above
-                    bottomLayerX = Math.max(-maxOffset, Math.min(maxOffset, bottomLayerX));
-                    bottomLayerY = Math.max(-maxOffset, Math.min(-gap, bottomLayerY));
-                }
-                applyLayerTransforms();
-            }
+                    chineseX + "%", chineseElement.style.top = chineseY + "%" } else if ("top" === dragType) {
+                topLayerX = dragStartTopX + o, topLayerY = dragStartTopY + i, topLayerX = Math.max(-800, Math.min(
+                    800, topLayerX)), topLayerY = Math.max(-800, Math.min(800, topLayerY)),
+                    applyLayerTransforms() } else "bottom" === dragType && (bottomLayerX = dragStartBottomX + o,
+                    bottomLayerY = dragStartBottomY + i, bottomLayerX = Math.max(-800, Math.min(800,
+                    bottomLayerX)), bottomLayerY = Math.max(-800, Math.min(800, bottomLayerY)),
+                    applyLayerTransforms())
         }
 
         function onGlobalDragEnd() {
