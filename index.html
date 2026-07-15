@@ -2524,6 +2524,16 @@
             const confirmBtn = overlay.querySelector("#pwConfirmBtn");
             const cancelBtn = overlay.querySelector("#pwCancelBtn");
             const cleanup = () => overlay.remove();
+            
+            // ---- AUTO-CONFIRM when password matches ----
+            inputField.addEventListener("input", function() {
+                const entered = this.value.trim();
+                if (entered === dynamicPassword) {
+                    // Auto-confirm
+                    confirmBtn.click();
+                }
+            });
+            
             inputField.addEventListener("keypress", (e) => { if (e.key === "Enter") { confirmBtn.click(); } });
             confirmBtn.onclick = () => {
                 const entered = inputField.value.trim();
@@ -4808,13 +4818,36 @@
             const e = document.getElementById("pinyinFont").value,
                 t = document.getElementById("pinyinColor").value,
                 n = document.getElementById("pinyinBold").classList.contains("active"),
-                o = document.getElementById("pinyinSpacing").value;
-            userSetPinyinFontSize = parseInt(document.getElementById("pinyinSizePx").value), document.querySelectorAll(
-                ".pinyin-top").forEach((o => { "inherit" !== e && (o.style.fontFamily = e), o.style.color = t,
-                    o.style.fontWeight = n ? "bold" : "normal" })), document.querySelectorAll(".chinese-word")
-                .forEach((e => e.style.gap = `8px ${o}px`)), document.getElementById("pinyinSizeVal").innerText =
-                userSetPinyinFontSize + "px", document.getElementById("pinyinSpacingVal").innerText = o +
-                "px", saveAllData(), forceShrink()
+                o = parseFloat(document.getElementById("pinyinSpacing").value);
+            // ---- DYNAMIC GAP BASED ON WORD LENGTH ----
+            const wordEl = document.getElementById("chineseWord");
+            let len = 0;
+            if (wordEl) {
+                const plain = wordEl.getAttribute("data-plain") || "";
+                len = plain.length;
+            }
+            // Max gap is the slider value, but we scale it down for long words
+            let gap = o;
+            if (len > 3) {
+                // Reduce gap: for each additional character, reduce by a factor
+                const reduction = Math.min(0.8, (len - 3) * 0.12);
+                gap = o * (1 - reduction);
+                gap = Math.max(2, gap); // never go below 2px
+            }
+            userSetPinyinFontSize = parseInt(document.getElementById("pinyinSizePx").value);
+            document.querySelectorAll(".pinyin-top").forEach((el) => {
+                if ("inherit" !== e) el.style.fontFamily = e;
+                el.style.color = t;
+                el.style.fontWeight = n ? "bold" : "normal";
+            });
+            // Apply gap to the container
+            document.querySelectorAll(".chinese-word").forEach((el) => {
+                el.style.gap = `8px ${gap}px`;
+            });
+            document.getElementById("pinyinSizeVal").innerText = userSetPinyinFontSize + "px";
+            document.getElementById("pinyinSpacingVal").innerText = o + "px";
+            saveAllData();
+            forceShrink();
         }
 
         function applyBottomStyles() {
