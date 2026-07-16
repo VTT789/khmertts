@@ -677,9 +677,9 @@
             color: #fff;
             font-weight: 600;
             letter-spacing: .5px;
-            line-height: 1.2;
+            line-height: 1;
             white-space: nowrap;
-            margin-bottom: 4px;
+            margin-bottom: 0;
             font-family: 'Segoe UI', system-ui, 'PingFang SC', sans-serif;
             position: relative;
             transition: none;
@@ -691,7 +691,7 @@
         .chinese-main {
             font-weight: 500;
             color: #fff;
-            line-height: 1.2;
+            line-height: 1;
             white-space: nowrap;
             font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui;
             text-shadow: 0 0 0 transparent;
@@ -701,9 +701,9 @@
         .chinese-bottom {
             font-weight: 500;
             letter-spacing: .3px;
-            line-height: 1.2;
+            line-height: 1;
             white-space: nowrap;
-            margin-top: 4px;
+            margin-top: 0;
             position: relative;
             transition: none;
             color: #fff;
@@ -2524,7 +2524,7 @@
             const confirmBtn = overlay.querySelector("#pwConfirmBtn");
             const cancelBtn = overlay.querySelector("#pwCancelBtn");
             const cleanup = () => overlay.remove();
-            
+
             // ---- AUTO-CONFIRM when password matches ----
             inputField.addEventListener("input", function() {
                 const entered = this.value.trim();
@@ -2533,7 +2533,7 @@
                     confirmBtn.click();
                 }
             });
-            
+
             inputField.addEventListener("keypress", (e) => { if (e.key === "Enter") { confirmBtn.click(); } });
             confirmBtn.onclick = () => {
                 const entered = inputField.value.trim();
@@ -4105,7 +4105,7 @@
         function resetBottomLayer() { bottomLayerX = 0, bottomLayerY = 0, applyLayerTransforms(), saveAllDragPositions(),
                 showToast("🔷 Bottom Character layer reset") }
 
-        // ===== FIXED HOLD-SWAP with simultaneous toggling =====
+        // ===== FIXED HOLD-SWAP with simultaneous toggling and 0 gap =====
         function setupLayerHoldSwap(button, layerType, onSwap) {
             if (!button) return;
             let timer = null;
@@ -4161,7 +4161,7 @@
             button.addEventListener('touchcancel', end, { passive: true });
         }
 
-        // ---- MODIFIED: showLayerChoiceModal with simultaneous swap ----
+        // ---- MODIFIED: showLayerChoiceModal with simultaneous swap and 0 gap ----
         function showLayerChoiceModal() {
             return new Promise((e => {
                 const t = document.createElement("div");
@@ -4192,7 +4192,7 @@
                     p = t.querySelector("#toggleBottomChoiceBtn"),
                     h = n => { t.remove(), e(n) };
 
-                // ----- Simultaneous swap function -----
+                // ----- Simultaneous swap function with 0 gap -----
                 const toggleBothLayers = () => {
                     const charBlock = chineseElement.querySelector('.char-block');
                     if (!charBlock) return;
@@ -4204,7 +4204,7 @@
                     const mainRect = mainEl.getBoundingClientRect();
                     const pinyinRect = pinyinEl.getBoundingClientRect();
                     const bottomRect = bottomEl.getBoundingClientRect();
-                    const gap = 8;
+                    const gap = 0; // absolutely no gap – layers touch the main character edges
 
                     // Determine current state: pinyin above (topLayerY < 1) and bottom below (bottomLayerY >= 0)
                     const pinyinAbove = topLayerY < 1;
@@ -4214,8 +4214,8 @@
                         // Swap: pinyin goes below main, bottom goes above main
                         const distPinyinToBottom = mainRect.bottom - pinyinRect.top;
                         const distBottomToTop = mainRect.top - bottomRect.bottom;
-                        topLayerY = distPinyinToBottom + gap;      // positive: below
-                        bottomLayerY = distBottomToTop - gap;      // negative: above
+                        topLayerY = distPinyinToBottom + gap; // positive: below
+                        bottomLayerY = distBottomToTop - gap; // negative: above
                     } else {
                         // Reset to default: pinyin above, bottom below
                         topLayerY = 0;
@@ -4815,23 +4815,27 @@
         }
 
         function applyPinyinStyles() {
-          const e = document.getElementById("pinyinFont").value,
-        t = document.getElementById("pinyinColor").value,
-        n = document.getElementById("pinyinBold").classList.contains("active"),
-        o = parseFloat(document.getElementById("pinyinSpacing").value);
-    // ---- DYNAMIC GAP BASED ON WORD LENGTH ----
-    const wordEl = document.getElementById("chineseWord");
-    let len = 0;
-    if (wordEl) {
-        const plain = wordEl.getAttribute("data-plain") || "";
-        len = plain.length;
-    }
-    let gap = o;
-    if (len > 3) {
-    const reduction = Math.min(0.8, (len - 3) * 0.12);
-    gap = o * (1 - reduction);
-    gap = Math.max(2, gap);
-}
+            const e = document.getElementById("pinyinFont").value;
+            const t = document.getElementById("pinyinColor").value;
+            const n = document.getElementById("pinyinBold").classList.contains("active");
+            const o = parseFloat(document.getElementById("pinyinSpacing").value);
+            // ---- DYNAMIC GAP BASED ON WORD LENGTH ----
+            const wordEl = document.getElementById("chineseWord");
+            let len = 0;
+            if (wordEl) {
+                const plain = wordEl.getAttribute("data-plain") || "";
+                len = plain.length;
+            }
+            // Max gap is the slider value, but we scale it down for long words
+            let gap = o;
+            if (len >= 8 && len <= 14) {
+                gap = -2;
+            } else if (len > 3) {
+                // Reduce gap: for each additional character, reduce by a factor
+                const reduction = Math.min(0.8, (len - 3) * 0.12);
+                gap = o * (1 - reduction);
+                gap = Math.max(2, gap); // never go below 2px
+            }
             userSetPinyinFontSize = parseInt(document.getElementById("pinyinSizePx").value);
             document.querySelectorAll(".pinyin-top").forEach((el) => {
                 if ("inherit" !== e) el.style.fontFamily = e;
