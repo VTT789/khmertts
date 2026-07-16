@@ -4827,12 +4827,11 @@
         len = plain.length;
     }
     let gap = o;
-    if (len > 1) {
-        // More aggressive reduction: (len-1)*0.2, capped at 0.85
-        const reduction = Math.min(0.85, (len - 1) * 0.2);
-        gap = o * (1 - reduction);
-        gap = Math.max(1, gap); // allow as low as 1px
-    }
+    if (len > 3) {
+    const reduction = Math.min(0.8, (len - 3) * 0.12);
+    gap = o * (1 - reduction);
+    gap = Math.max(2, gap);
+}
             userSetPinyinFontSize = parseInt(document.getElementById("pinyinSizePx").value);
             document.querySelectorAll(".pinyin-top").forEach((el) => {
                 if ("inherit" !== e) el.style.fontFamily = e;
