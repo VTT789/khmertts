@@ -671,15 +671,19 @@
             text-align: center;
             white-space: nowrap;
             position: relative;
+            line-height: 1; /* added to tighten vertical spacing */
+            padding: 0;    /* added */
+            margin: 0;     /* added */
         }
         .pinyin-top {
             font-size: .35em;
             color: #fff;
             font-weight: 600;
             letter-spacing: .5px;
-            line-height: 1;
+            line-height: 1;      /* added */
             white-space: nowrap;
-            margin-bottom: 0;
+            margin-bottom: 0;    /* added */
+            margin-top: 0;       /* added */
             font-family: 'Segoe UI', system-ui, 'PingFang SC', sans-serif;
             position: relative;
             transition: none;
@@ -691,7 +695,7 @@
         .chinese-main {
             font-weight: 500;
             color: #fff;
-            line-height: 1;
+            line-height: 1;      /* added */
             white-space: nowrap;
             font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui;
             text-shadow: 0 0 0 transparent;
@@ -701,9 +705,10 @@
         .chinese-bottom {
             font-weight: 500;
             letter-spacing: .3px;
-            line-height: 1;
+            line-height: 1;      /* added */
             white-space: nowrap;
-            margin-top: 0;
+            margin-top: 0;       /* added */
+            margin-bottom: 0;    /* added */
             position: relative;
             transition: none;
             color: #fff;
@@ -2108,6 +2113,20 @@
         }
         body.night-mode .modal-heading-row h3 {
             background: rgba(0, 0, 0, 0.6);
+        }
+
+        /* Additional vertical spacing fix for char-block children */
+        .char-block .pinyin-top,
+        .char-block .chinese-main,
+        .char-block .chinese-bottom {
+            line-height: 1;
+            margin: 0;
+            padding: 0;
+        }
+        .char-block {
+            line-height: 1;
+            padding: 0;
+            margin: 0;
         }
     </style>
     <style>
@@ -4814,6 +4833,7 @@
                 userSetKhmerFontSize + "vh", applyShadow(), saveAllData(), forceShrink()
         }
 
+        // ===== UPDATED: applyPinyinStyles with mobile-friendly gap =====
         function applyPinyinStyles() {
             const e = document.getElementById("pinyinFont").value;
             const t = document.getElementById("pinyinColor").value;
@@ -4826,15 +4846,16 @@
                 const plain = wordEl.getAttribute("data-plain") || "";
                 len = plain.length;
             }
-            // Max gap is the slider value, but we scale it down for long words
             let gap = o;
+            const isMobile = window.innerWidth <= 700; // mobile viewport
             if (len >= 8 && len <= 14) {
-                gap = -2;
+                // On mobile, never go below 2px to avoid overlap
+                gap = isMobile ? Math.max(2, -2) : -2;
             } else if (len > 3) {
                 // Reduce gap: for each additional character, reduce by a factor
                 const reduction = Math.min(0.8, (len - 3) * 0.12);
                 gap = o * (1 - reduction);
-                gap = Math.max(2, gap); // never go below 2px
+                gap = Math.max(2, gap); // never below 2px
             }
             userSetPinyinFontSize = parseInt(document.getElementById("pinyinSizePx").value);
             document.querySelectorAll(".pinyin-top").forEach((el) => {
