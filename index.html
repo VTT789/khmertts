@@ -3934,10 +3934,22 @@
         }
         window.refreshAddModalSearch = refreshAddModalSearch;
 
-        // --- Top pinyin uses ORIGINAL transform, Bottom uses margin (last fix) ---
+        // --- Layer transforms using baseline font size for scaling ---
+        let baselineFontSizePx = null; // pixel size when offsets were set
+
         function applyLayerTransforms() {
             if (!chineseElement) return;
-            const scale = getFontScaleFactor();
+            const mainEl = chineseElement.querySelector('.chinese-main');
+            if (!mainEl) return;
+            const currentSize = parseFloat(getComputedStyle(mainEl).fontSize);
+            if (!currentSize || isNaN(currentSize)) return;
+
+            // If baseline not set, use current
+            if (baselineFontSizePx === null) {
+                baselineFontSizePx = currentSize;
+            }
+
+            const scale = currentSize / baselineFontSizePx;
             const tops = chineseElement.querySelectorAll(".pinyin-top");
             tops.forEach((el) => {
                 const tx = topLayerX * scale;
@@ -3948,12 +3960,23 @@
             });
             const bottoms = chineseElement.querySelectorAll(".chinese-bottom");
             bottoms.forEach((el) => {
-                const my = bottomLayerY * scale;
                 const mx = bottomLayerX * scale;
+                const my = bottomLayerY * scale;
                 el.style.marginTop = my + 'px';
                 el.style.marginLeft = mx + 'px';
                 el.style.transform = 'none';
             });
+        }
+
+        function resetLayerOffsets() {
+            topLayerX = 0;
+            topLayerY = 0;
+            bottomLayerX = 0;
+            bottomLayerY = 0;
+            baselineFontSizePx = null;
+            applyLayerTransforms();
+            saveAllDragPositions();
+            showToast("Both layers reset");
         }
 
         // ---- MODIFIED: showAddNewModal with heading row (button outside h3) and optimistic update ----
@@ -4110,7 +4133,7 @@
         function resetBottomLayer() { bottomLayerX = 0, bottomLayerY = 0, applyLayerTransforms(), saveAllDragPositions(),
                 showToast("🔷 Bottom Character layer reset") }
 
-        // ===== FIXED HOLD-SWAP with simultaneous toggling and 0 gap =====
+        // ===== FIXED HOLD-SWAP with simultaneous toggling and length‑based offset scaling =====
         function setupLayerHoldSwap(button, layerType, onSwap) {
             if (!button) return;
             let timer = null;
@@ -4166,7 +4189,7 @@
             button.addEventListener('touchcancel', end, { passive: true });
         }
 
-        // ---- MODIFIED: showLayerChoiceModal with simultaneous swap and length‑based offset scaling ----
+        // ---- MODIFIED: showLayerChoiceModal with baseline scaling for mobile stability ----
         function showLayerChoiceModal() {
             return new Promise((e => {
                 const t = document.createElement("div");
@@ -4197,7 +4220,7 @@
                     p = t.querySelector("#toggleBottomChoiceBtn"),
                     h = n => { t.remove(), e(n) };
 
-                // ----- Simultaneous swap function with gap and length‑based scaling -----
+                // ----- Simultaneous swap function with length‑based offset scaling (mobile‑ready) -----
                 const toggleBothLayers = () => {
                     const charBlock = chineseElement.querySelector('.char-block');
                     if (!charBlock) return;
@@ -4206,7 +4229,6 @@
                     const bottomEl = charBlock.querySelector('.chinese-bottom');
                     if (!pinyinEl || !mainEl || !bottomEl) return;
 
-                    const scale = getFontScaleFactor();
                     const mainRect = mainEl.getBoundingClientRect();
                     const pinyinRect = pinyinEl.getBoundingClientRect();
                     const bottomRect = bottomEl.getBoundingClientRect();
@@ -4220,17 +4242,18 @@
                     const len = plain.length;
                     let lenFactor = 1;
                     if (len > 3) {
-                        // Reduce offset progressively for longer text, max reduction ~50%
                         lenFactor = 1 - Math.min((len - 3) * 0.03, 0.5);
                     }
 
-                    // Apply length factor and a small gap (0.5px) to avoid overlap
+                    // Small gap to avoid overlap
                     const gap = 0.5;
-                    // Store in base coordinates (divide by scale)
-                    topLayerY = (distPinyinToBottom * lenFactor + gap) / scale;
-                    bottomLayerY = (distBottomToTop * lenFactor - gap) / scale;
+                    // Store offsets in pixels (not divided by scale) – baseline will be set on first apply
+                    topLayerY = distPinyinToBottom * lenFactor + gap;
+                    bottomLayerY = distBottomToTop * lenFactor - gap;
                     topLayerX = 0;
                     bottomLayerX = 0;
+                    // Reset baseline so scale factor is recalculated
+                    baselineFontSizePx = null;
                     applyLayerTransforms();
                     saveAllDragPositions();
                 };
@@ -4844,8 +4867,15 @@
                 gap = o * (1 - reduction);
                 gap = Math.max(2, gap);
             }
-            // Apply font scale factor to gap
-            const scale = getFontScaleFactor();
+            // Apply font scale factor to gap – use baseline scaling
+            const mainEl = document.querySelector('.chinese-main');
+            let scale = 1;
+            if (mainEl) {
+                const currentSize = parseFloat(getComputedStyle(mainEl).fontSize);
+                if (currentSize && !isNaN(currentSize) && baselineFontSizePx !== null) {
+                    scale = currentSize / baselineFontSizePx;
+                }
+            }
             const scaledGap = gap * scale;
             const scaledRowGap = 8 * scale;
             userSetPinyinFontSize = parseInt(document.getElementById("pinyinSizePx").value);
@@ -5091,6 +5121,12 @@
             setKhmerFontSize(userSetKhmerFontSize);
             applyShadow();
             applyBottomAutoScale();
+            // Init baseline
+            const mainEl = document.querySelector('.chinese-main');
+            if (mainEl) {
+                const size = parseFloat(getComputedStyle(mainEl).fontSize);
+                if (size && !isNaN(size)) baselineFontSizePx = size;
+            }
         }
 
         function toggleBold(e, t) {
@@ -5310,6 +5346,10 @@
             safeSetItem("drag_topY", topLayerY);
             safeSetItem("drag_bottomX", bottomLayerX);
             safeSetItem("drag_bottomY", bottomLayerY);
+            // Store baseline font size
+            if (baselineFontSizePx !== null) {
+                safeSetItem("drag_baselineFontSize", baselineFontSizePx);
+            }
         }
 
         function loadAllDragPositions() {
@@ -5321,6 +5361,8 @@
             topLayerY = parseFloat(safeGetItem("drag_topY", "0"));
             bottomLayerX = parseFloat(safeGetItem("drag_bottomX", "0"));
             bottomLayerY = parseFloat(safeGetItem("drag_bottomY", "0"));
+            const bl = parseFloat(safeGetItem("drag_baselineFontSize", "null"));
+            if (!isNaN(bl) && bl > 0) baselineFontSizePx = bl;
             if (chineseElement) {
                 chineseElement.style.left = chineseX + "%";
                 chineseElement.style.top = chineseY + "%";
@@ -5337,9 +5379,6 @@
 
         function resetKhmerPosition() { khmerX = 50, khmerY = 70, khmerElement && (khmerElement.style.left = "50%",
                 khmerElement.style.top = "70%"), saveAllDragPositions(), forceShrink() }
-
-        function resetLayerOffsets() { topLayerX = 0, topLayerY = 0, bottomLayerX = 0, bottomLayerY = 0,
-                applyLayerTransforms(), saveAllDragPositions(), showToast("Both layers reset") }
 
         function onChinesePointerDown(e) {
             e.preventDefault(), e.stopPropagation();
@@ -5927,16 +5966,9 @@
 
         // ---- NEW: get font scale factor for dynamic scaling of gaps and layer positions ----
         function getFontScaleFactor() {
-            const mainEl = document.querySelector('.chinese-main');
-            if (!mainEl) return 1;
-            const actualSize = parseFloat(getComputedStyle(mainEl).fontSize);
-            if (!actualSize || isNaN(actualSize)) return 1;
-            // Default size at 42vh (approx in pixels)
-            const defaultSize = 42 * (window.innerHeight / 100);
-            if (defaultSize <= 0) return 1;
-            const scale = actualSize / defaultSize;
-            // Clamp to reasonable range
-            return Math.max(0.1, Math.min(3, scale));
+            // This is no longer used for offsets but kept for other scaling like gaps.
+            // For offsets we use baseline scaling.
+            return 1;
         }
 
         const styleInputs = [
