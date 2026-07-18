@@ -671,19 +671,15 @@
             text-align: center;
             white-space: nowrap;
             position: relative;
-            line-height: 1; /* added to tighten vertical spacing */
-            padding: 0;    /* added */
-            margin: 0;     /* added */
         }
         .pinyin-top {
             font-size: .35em;
             color: #fff;
             font-weight: 600;
             letter-spacing: .5px;
-            line-height: 1;      /* added */
+            line-height: 1;
             white-space: nowrap;
-            margin-bottom: 0;    /* added */
-            margin-top: 0;       /* added */
+            margin-bottom: 0;
             font-family: 'Segoe UI', system-ui, 'PingFang SC', sans-serif;
             position: relative;
             transition: none;
@@ -695,7 +691,7 @@
         .chinese-main {
             font-weight: 500;
             color: #fff;
-            line-height: 1;      /* added */
+            line-height: 1;
             white-space: nowrap;
             font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui;
             text-shadow: 0 0 0 transparent;
@@ -705,10 +701,9 @@
         .chinese-bottom {
             font-weight: 500;
             letter-spacing: .3px;
-            line-height: 1;      /* added */
+            line-height: 1;
             white-space: nowrap;
-            margin-top: 0;       /* added */
-            margin-bottom: 0;    /* added */
+            margin-top: 0;
             position: relative;
             transition: none;
             color: #fff;
@@ -2113,20 +2108,6 @@
         }
         body.night-mode .modal-heading-row h3 {
             background: rgba(0, 0, 0, 0.6);
-        }
-
-        /* Additional vertical spacing fix for char-block children */
-        .char-block .pinyin-top,
-        .char-block .chinese-main,
-        .char-block .chinese-bottom {
-            line-height: 1;
-            margin: 0;
-            padding: 0;
-        }
-        .char-block {
-            line-height: 1;
-            padding: 0;
-            margin: 0;
         }
     </style>
     <style>
@@ -3956,16 +3937,21 @@
         // --- Top pinyin uses ORIGINAL transform, Bottom uses margin (last fix) ---
         function applyLayerTransforms() {
             if (!chineseElement) return;
+            const scale = getFontScaleFactor();
             const tops = chineseElement.querySelectorAll(".pinyin-top");
             tops.forEach((el) => {
-                el.style.transform = `translate(${topLayerX}px, ${topLayerY}px)`;
+                const tx = topLayerX * scale;
+                const ty = topLayerY * scale;
+                el.style.transform = `translate(${tx}px, ${ty}px)`;
                 el.style.marginTop = '';
                 el.style.marginLeft = '';
             });
             const bottoms = chineseElement.querySelectorAll(".chinese-bottom");
             bottoms.forEach((el) => {
-                el.style.marginTop = bottomLayerY + 'px';
-                el.style.marginLeft = bottomLayerX + 'px';
+                const my = bottomLayerY * scale;
+                const mx = bottomLayerX * scale;
+                el.style.marginTop = my + 'px';
+                el.style.marginLeft = mx + 'px';
                 el.style.transform = 'none';
             });
         }
@@ -4180,7 +4166,7 @@
             button.addEventListener('touchcancel', end, { passive: true });
         }
 
-        // ---- MODIFIED: showLayerChoiceModal with simultaneous swap and 0 gap ----
+        // ---- MODIFIED: showLayerChoiceModal with simultaneous swap and length‑based offset scaling ----
         function showLayerChoiceModal() {
             return new Promise((e => {
                 const t = document.createElement("div");
@@ -4211,7 +4197,7 @@
                     p = t.querySelector("#toggleBottomChoiceBtn"),
                     h = n => { t.remove(), e(n) };
 
-                // ----- Simultaneous swap function with 0 gap -----
+                // ----- Simultaneous swap function with gap and length‑based scaling -----
                 const toggleBothLayers = () => {
                     const charBlock = chineseElement.querySelector('.char-block');
                     if (!charBlock) return;
@@ -4220,26 +4206,29 @@
                     const bottomEl = charBlock.querySelector('.chinese-bottom');
                     if (!pinyinEl || !mainEl || !bottomEl) return;
 
+                    const scale = getFontScaleFactor();
                     const mainRect = mainEl.getBoundingClientRect();
                     const pinyinRect = pinyinEl.getBoundingClientRect();
                     const bottomRect = bottomEl.getBoundingClientRect();
-                    const gap = 0; // absolutely no gap – layers touch the main character edges
 
-                    // Determine current state: pinyin above (topLayerY < 1) and bottom below (bottomLayerY >= 0)
-                    const pinyinAbove = topLayerY < 1;
-                    const bottomBelow = bottomLayerY >= 0;
+                    // Compute base distances in pixels
+                    let distPinyinToBottom = mainRect.bottom - pinyinRect.top;
+                    let distBottomToTop = mainRect.top - bottomRect.bottom;
 
-                    if (pinyinAbove && bottomBelow) {
-                        // Swap: pinyin goes below main, bottom goes above main
-                        const distPinyinToBottom = mainRect.bottom - pinyinRect.top;
-                        const distBottomToTop = mainRect.top - bottomRect.bottom;
-                        topLayerY = distPinyinToBottom + gap; // positive: below
-                        bottomLayerY = distBottomToTop - gap; // negative: above
-                    } else {
-                        // Reset to default: pinyin above, bottom below
-                        topLayerY = 0;
-                        bottomLayerY = 0;
+                    // Get text length and compute a scaling factor to reduce offset for long text
+                    const plain = chineseElement.getAttribute('data-plain') || '';
+                    const len = plain.length;
+                    let lenFactor = 1;
+                    if (len > 3) {
+                        // Reduce offset progressively for longer text, max reduction ~50%
+                        lenFactor = 1 - Math.min((len - 3) * 0.03, 0.5);
                     }
+
+                    // Apply length factor and a small gap (0.5px) to avoid overlap
+                    const gap = 0.5;
+                    // Store in base coordinates (divide by scale)
+                    topLayerY = (distPinyinToBottom * lenFactor + gap) / scale;
+                    bottomLayerY = (distBottomToTop * lenFactor - gap) / scale;
                     topLayerX = 0;
                     bottomLayerX = 0;
                     applyLayerTransforms();
@@ -4262,7 +4251,6 @@
 
                 // Normal click handlers (drag mode)
                 i.onclick = (ev) => {
-                    // If a hold was triggered, ignore click
                     if (ev._holdTriggered) return;
                     h("top");
                 };
@@ -4762,7 +4750,9 @@
                 u = document.getElementById("pinyinBold").classList.contains("active");
             document.querySelectorAll(".pinyin-top").forEach((e => { "inherit" !== c && (e.style.fontFamily = c),
                     e.style.color = m, e.style.fontWeight = u ? "bold" : "normal", e.style.fontSize = d + "px" })),
-                applyBottomAutoScale()
+                applyBottomAutoScale();
+            // Re-apply layer transforms after font size change to update scaling
+            applyLayerTransforms();
         }
 
         function shrinkKhmerToFit() {
@@ -4833,30 +4823,31 @@
                 userSetKhmerFontSize + "vh", applyShadow(), saveAllData(), forceShrink()
         }
 
-        // ===== UPDATED: applyPinyinStyles with mobile-friendly gap =====
         function applyPinyinStyles() {
             const e = document.getElementById("pinyinFont").value;
             const t = document.getElementById("pinyinColor").value;
             const n = document.getElementById("pinyinBold").classList.contains("active");
             const o = parseFloat(document.getElementById("pinyinSpacing").value);
-            // ---- DYNAMIC GAP BASED ON WORD LENGTH ----
+            // ---- DYNAMIC GAP BASED ON WORD LENGTH AND FONT SCALE ----
             const wordEl = document.getElementById("chineseWord");
             let len = 0;
             if (wordEl) {
                 const plain = wordEl.getAttribute("data-plain") || "";
                 len = plain.length;
             }
+            // Max gap is the slider value, but we scale it down for long words
             let gap = o;
-            const isMobile = window.innerWidth <= 700; // mobile viewport
             if (len >= 8 && len <= 14) {
-                // On mobile, never go below 2px to avoid overlap
-                gap = isMobile ? Math.max(2, -2) : -2;
+                gap = -2;
             } else if (len > 3) {
-                // Reduce gap: for each additional character, reduce by a factor
                 const reduction = Math.min(0.8, (len - 3) * 0.12);
                 gap = o * (1 - reduction);
-                gap = Math.max(2, gap); // never below 2px
+                gap = Math.max(2, gap);
             }
+            // Apply font scale factor to gap
+            const scale = getFontScaleFactor();
+            const scaledGap = gap * scale;
+            const scaledRowGap = 8 * scale;
             userSetPinyinFontSize = parseInt(document.getElementById("pinyinSizePx").value);
             document.querySelectorAll(".pinyin-top").forEach((el) => {
                 if ("inherit" !== e) el.style.fontFamily = e;
@@ -4865,7 +4856,7 @@
             });
             // Apply gap to the container
             document.querySelectorAll(".chinese-word").forEach((el) => {
-                el.style.gap = `8px ${gap}px`;
+                el.style.gap = `${scaledRowGap}px ${scaledGap}px`;
             });
             document.getElementById("pinyinSizeVal").innerText = userSetPinyinFontSize + "px";
             document.getElementById("pinyinSpacingVal").innerText = o + "px";
@@ -5930,7 +5921,24 @@
             applyStyles();
             applySidebarStyles();
             forceShrink();
+            // Ensure layer transforms are re-applied after styles change
+            applyLayerTransforms();
         }
+
+        // ---- NEW: get font scale factor for dynamic scaling of gaps and layer positions ----
+        function getFontScaleFactor() {
+            const mainEl = document.querySelector('.chinese-main');
+            if (!mainEl) return 1;
+            const actualSize = parseFloat(getComputedStyle(mainEl).fontSize);
+            if (!actualSize || isNaN(actualSize)) return 1;
+            // Default size at 42vh (approx in pixels)
+            const defaultSize = 42 * (window.innerHeight / 100);
+            if (defaultSize <= 0) return 1;
+            const scale = actualSize / defaultSize;
+            // Clamp to reasonable range
+            return Math.max(0.1, Math.min(3, scale));
+        }
+
         const styleInputs = [
             "mZhFont", "mZhColor", "mZhSize", "mKmFont", "mKmColor", "mKmSize",
             "sZhFont", "sZhColor", "sZhSize", "sKmFont", "sKmColor", "sKmSize",
