@@ -3966,6 +3966,22 @@
                 el.style.marginLeft = mx + 'px';
                 el.style.transform = 'none';
             });
+            // Update button arrows if modal is open
+            updateLayerButtonTexts();
+        }
+
+        // ---- Function to update layer drag button arrows ----
+        function updateLayerButtonTexts() {
+            const overlay = document.querySelector('.modal-overlay .choice-modal');
+            if (!overlay) return;
+            const topBtn = overlay.querySelector('.choice-top');
+            const bottomBtn = overlay.querySelector('.choice-bottom');
+            if (!topBtn || !bottomBtn) return;
+            // Determine direction: if offset > 0 (moved down), show down arrow; else up arrow.
+            const topDir = topLayerY > 0 ? '↓' : '↑';
+            const bottomDir = bottomLayerY > 0 ? '↓' : '↑';
+            topBtn.innerHTML = `🔶 Drag Top Pinyin ${topDir}`;
+            bottomBtn.innerHTML = `🔷 Drag Bottom Char ${bottomDir}`;
         }
 
         function resetLayerOffsets() {
@@ -4127,11 +4143,11 @@
             }, 150);
         }
 
-        function resetTopLayer() { topLayerX = 0, topLayerY = 0, applyLayerTransforms(), saveAllDragPositions(), showToast(
-                "🔶 Top Pinyin layer reset") }
+        function resetTopLayer() { topLayerX = 0; topLayerY = 0; applyLayerTransforms(); saveAllDragPositions(); showToast(
+                "🔶 Top Pinyin layer reset"); }
 
-        function resetBottomLayer() { bottomLayerX = 0, bottomLayerY = 0, applyLayerTransforms(), saveAllDragPositions(),
-                showToast("🔷 Bottom Character layer reset") }
+        function resetBottomLayer() { bottomLayerX = 0; bottomLayerY = 0; applyLayerTransforms(); saveAllDragPositions();
+            showToast("🔷 Bottom Character layer reset"); }
 
         // ===== FIXED HOLD-SWAP with simultaneous toggling and length‑based offset scaling =====
         function setupLayerHoldSwap(button, layerType, onSwap) {
@@ -4194,7 +4210,7 @@
             return new Promise((e => {
                 const t = document.createElement("div");
                 t.className = "modal-overlay", t.innerHTML =
-                    '\n                <div class="choice-modal">\n                    <h3>✧ CHOOSE ACTION ✧</h3>\n                    <div class="choice-search-area">\n                        <input type="text" id="choiceSearchInput" placeholder="🔍 Search vocabulary...">\n                        <div id="choiceSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>\n                    </div>\n                    <div class="choice-buttons">\n                        <div class="choice-item-row">\n                            <button class="choice-top">🔶 Drag Top Pinyin ↑↓</button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleTopPinyinChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetTopBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="choice-item-row">\n                            <button class="choice-bottom">🔷 Drag Bottom Char ↑↓</button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleBottomChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetBottomBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="edit-group-buttons">\n                            <button id="editVocabBtn" style="background:#f59e0b;">✏️ EDIT CURRENT</button>\n                            <div style="display: flex; gap: 8px; align-items: center; flex:1;">\n                                <button id="addVocabBtn" style="background:#10b981; flex:1;">➕ ADD NEW</button>\n                                <button id="resetBothLayersBtn" class="reset-icon" style="background:transparent; box-shadow:none; font-size:1.2rem; width:auto; padding:8px;">⟳</button>\n                            </div>\n                        </div>\n                        <button class="choice-cancel" id="closeLayerChoiceBtn">✕ Cancel</button>\n                    </div>\n                </div>\n            ',
+                    '\n                <div class="choice-modal">\n                    <h3>✧ CHOOSE ACTION ✧</h3>\n                    <div class="choice-search-area">\n                        <input type="text" id="choiceSearchInput" placeholder="🔍 Search vocabulary...">\n                        <div id="choiceSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>\n                    </div>\n                    <div class="choice-buttons">\n                        <div class="choice-item-row">\n                            <button class="choice-top">🔶 Drag Top Pinyin ↑</button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleTopPinyinChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetTopBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="choice-item-row">\n                            <button class="choice-bottom">🔷 Drag Bottom Char ↑</button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleBottomChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetBottomBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="edit-group-buttons">\n                            <button id="editVocabBtn" style="background:#f59e0b;">✏️ EDIT CURRENT</button>\n                            <div style="display: flex; gap: 8px; align-items: center; flex:1;">\n                                <button id="addVocabBtn" style="background:#10b981; flex:1;">➕ ADD NEW</button>\n                                <button id="resetBothLayersBtn" class="reset-icon" style="background:transparent; box-shadow:none; font-size:1.2rem; width:auto; padding:8px;">⟳</button>\n                            </div>\n                        </div>\n                        <button class="choice-cancel" id="closeLayerChoiceBtn">✕ Cancel</button>\n                    </div>\n                </div>\n            ',
                     document.body.appendChild(t);
                 const n = t.querySelector("#choiceSearchInput"),
                     o = t.querySelector("#choiceSearchResults");
@@ -4218,7 +4234,10 @@
                     m = t.querySelector("#resetBothLayersBtn"),
                     u = t.querySelector("#toggleTopPinyinChoiceBtn"),
                     p = t.querySelector("#toggleBottomChoiceBtn"),
-                    h = n => { t.remove(), e(n) };
+                    h = n => { t.remove(); e(n); };
+
+                // Update initial arrow direction
+                updateLayerButtonTexts();
 
                 // ----- Simultaneous swap function with length‑based offset scaling (mobile‑ready) -----
                 const toggleBothLayers = () => {
@@ -4256,6 +4275,8 @@
                     baselineFontSizePx = null;
                     applyLayerTransforms();
                     saveAllDragPositions();
+                    // Update button arrows
+                    updateLayerButtonTexts();
                 };
 
                 // Attach hold‑swap to both buttons
@@ -4282,10 +4303,11 @@
                     h("bottom");
                 };
 
-                d.onclick = () => { resetTopLayer(), h(null) };
-                c.onclick = () => { resetBottomLayer(), h(null) };
+                d.onclick = () => { resetTopLayer(); h(null); };
+                c.onclick = () => { resetBottomLayer(); h(null); };
                 m.onclick = () => {
-                    resetLayerOffsets(), h(null)
+                    resetLayerOffsets();
+                    h(null);
                 };
 
                 u.onclick = () => {
@@ -4339,9 +4361,9 @@
                     }
                 };
                 s.onclick = () => { requestAddNewVocab();
-                    h(null) };
+                    h(null); };
                 l.onclick = () => h(null);
-                t.onclick = ev => { if (ev.target === t) h(null) };
+                t.onclick = ev => { if (ev.target === t) h(null); };
             }))
         }
 
