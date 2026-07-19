@@ -3936,6 +3936,7 @@
 
         // --- Layer transforms using baseline font size for scaling ---
         let baselineFontSizePx = null; // pixel size when offsets were set
+        let rowsSwapped = false; // track whether button rows are swapped
 
         function applyLayerTransforms() {
             if (!chineseElement) return;
@@ -3966,22 +3967,71 @@
                 el.style.marginLeft = mx + 'px';
                 el.style.transform = 'none';
             });
-            // Update button arrows if modal is open
+            // Update button arrows and labels if modal is open
             updateLayerButtonTexts();
         }
 
-        // ---- Function to update layer drag button arrows ----
+        // ---- Function to update layer drag button texts (labels + arrows) ----
+        let topBtnLabel = '🔶 Drag Top Pinyin';
+        let bottomBtnLabel = '🔷 Drag Bottom Char';
+        let topBtnElement = null;
+        let bottomBtnElement = null;
+
         function updateLayerButtonTexts() {
-            const overlay = document.querySelector('.modal-overlay .choice-modal');
-            if (!overlay) return;
-            const topBtn = overlay.querySelector('.choice-top');
-            const bottomBtn = overlay.querySelector('.choice-bottom');
-            if (!topBtn || !bottomBtn) return;
-            // Determine direction: if offset > 0 (moved down), show down arrow; else up arrow.
-            const topDir = topLayerY > 0 ? '↓' : '↑';
-            const bottomDir = bottomLayerY > 0 ? '↓' : '↑';
-            topBtn.innerHTML = `🔶 Drag Top Pinyin ${topDir}`;
-            bottomBtn.innerHTML = `🔷 Drag Bottom Char ${bottomDir}`;
+            if (!topBtnElement || !bottomBtnElement) return;
+            // Determine which direction arrows to use based on whether rows have been swapped.
+            // If rowsSwapped is true, the top button now controls the bottom layer (and vice versa).
+            let topDir, bottomDir;
+            if (rowsSwapped) {
+                // Top button shows bottom layer direction; bottom button shows top layer direction.
+                topDir = bottomLayerY > 0 ? '↓' : '↑';
+                bottomDir = topLayerY > 0 ? '↓' : '↑';
+            } else {
+                topDir = topLayerY > 0 ? '↓' : '↑';
+                bottomDir = bottomLayerY > 0 ? '↓' : '↑';
+            }
+            topBtnElement.textContent = topBtnLabel + ' ' + topDir;
+            bottomBtnElement.textContent = bottomBtnLabel + ' ' + bottomDir;
+        }
+
+        // ---- Swap button rows in the modal ----
+        function swapButtonRows() {
+            const container = document.querySelector('.choice-buttons');
+            if (!container) return;
+            const rows = container.querySelectorAll('.choice-item-row');
+            if (rows.length < 2) return;
+            const parent = rows[0].parentNode;
+            // Swap rows
+            parent.insertBefore(rows[1], rows[0]);
+            rowsSwapped = !rowsSwapped;
+            // Update references
+            topBtnElement = container.querySelector('.choice-item-row:first-child button');
+            bottomBtnElement = container.querySelector('.choice-item-row:last-child button');
+            // Swap labels
+            const temp = topBtnLabel;
+            topBtnLabel = bottomBtnLabel;
+            bottomBtnLabel = temp;
+            updateLayerButtonTexts();
+        }
+
+        // ---- Reset button rows to default ----
+        function resetButtonRows() {
+            if (!rowsSwapped) return;
+            const container = document.querySelector('.choice-buttons');
+            if (!container) return;
+            const rows = container.querySelectorAll('.choice-item-row');
+            if (rows.length < 2) return;
+            const parent = rows[0].parentNode;
+            // Swap back
+            parent.insertBefore(rows[1], rows[0]);
+            rowsSwapped = false;
+            // Update references
+            topBtnElement = container.querySelector('.choice-item-row:first-child button');
+            bottomBtnElement = container.querySelector('.choice-item-row:last-child button');
+            // Reset labels
+            topBtnLabel = '🔶 Drag Top Pinyin';
+            bottomBtnLabel = '🔷 Drag Bottom Char';
+            updateLayerButtonTexts();
         }
 
         function resetLayerOffsets() {
@@ -3992,6 +4042,7 @@
             baselineFontSizePx = null;
             applyLayerTransforms();
             saveAllDragPositions();
+            resetButtonRows();
             showToast("Both layers reset");
         }
 
@@ -4208,10 +4259,20 @@
         // ---- MODIFIED: showLayerChoiceModal with baseline scaling for mobile stability ----
         function showLayerChoiceModal() {
             return new Promise((e => {
+                // Reset labels and row state when modal opens
+                rowsSwapped = false;
+                topBtnLabel = '🔶 Drag Top Pinyin';
+                bottomBtnLabel = '🔷 Drag Bottom Char';
+
                 const t = document.createElement("div");
                 t.className = "modal-overlay", t.innerHTML =
-                    '\n                <div class="choice-modal">\n                    <h3>✧ CHOOSE ACTION ✧</h3>\n                    <div class="choice-search-area">\n                        <input type="text" id="choiceSearchInput" placeholder="🔍 Search vocabulary...">\n                        <div id="choiceSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>\n                    </div>\n                    <div class="choice-buttons">\n                        <div class="choice-item-row">\n                            <button class="choice-top">🔶 Drag Top Pinyin ↑</button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleTopPinyinChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetTopBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="choice-item-row">\n                            <button class="choice-bottom">🔷 Drag Bottom Char ↑</button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleBottomChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetBottomBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="edit-group-buttons">\n                            <button id="editVocabBtn" style="background:#f59e0b;">✏️ EDIT CURRENT</button>\n                            <div style="display: flex; gap: 8px; align-items: center; flex:1;">\n                                <button id="addVocabBtn" style="background:#10b981; flex:1;">➕ ADD NEW</button>\n                                <button id="resetBothLayersBtn" class="reset-icon" style="background:transparent; box-shadow:none; font-size:1.2rem; width:auto; padding:8px;">⟳</button>\n                            </div>\n                        </div>\n                        <button class="choice-cancel" id="closeLayerChoiceBtn">✕ Cancel</button>\n                    </div>\n                </div>\n            ',
+                    '\n                <div class="choice-modal">\n                    <h3>✧ CHOOSE ACTION ✧</h3>\n                    <div class="choice-search-area">\n                        <input type="text" id="choiceSearchInput" placeholder="🔍 Search vocabulary...">\n                        <div id="choiceSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>\n                    </div>\n                    <div class="choice-buttons">\n                        <div class="choice-item-row">\n                            <button class="choice-top" id="topDragBtn">🔶 Drag Top Pinyin ↑</button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleTopPinyinChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetTopBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="choice-item-row">\n                            <button class="choice-bottom" id="bottomDragBtn">🔷 Drag Bottom Char ↑</button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleBottomChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetBottomBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="edit-group-buttons">\n                            <button id="editVocabBtn" style="background:#f59e0b;">✏️ EDIT CURRENT</button>\n                            <div style="display: flex; gap: 8px; align-items: center; flex:1;">\n                                <button id="addVocabBtn" style="background:#10b981; flex:1;">➕ ADD NEW</button>\n                                <button id="resetBothLayersBtn" class="reset-icon" style="background:transparent; box-shadow:none; font-size:1.2rem; width:auto; padding:8px;">⟳</button>\n                            </div>\n                        </div>\n                        <button class="choice-cancel" id="closeLayerChoiceBtn">✕ Cancel</button>\n                    </div>\n                </div>\n            ',
                     document.body.appendChild(t);
+
+                // Get button references
+                topBtnElement = t.querySelector('#topDragBtn');
+                bottomBtnElement = t.querySelector('#bottomDragBtn');
+
                 const n = t.querySelector("#choiceSearchInput"),
                     o = t.querySelector("#choiceSearchResults");
                 n.addEventListener("input", (() => {
@@ -4224,8 +4285,8 @@
                         )).join("") : o.innerHTML =
                         '<div style="padding:8px; text-align:center; color:#ccc;">No matches</div>'
                 }));
-                const i = t.querySelector(".choice-top"),
-                    a = t.querySelector(".choice-bottom"),
+                const i = topBtnElement,
+                    a = bottomBtnElement,
                     r = t.querySelector("#editVocabBtn"),
                     s = t.querySelector("#addVocabBtn"),
                     l = t.querySelector("#closeLayerChoiceBtn"),
@@ -4236,7 +4297,7 @@
                     p = t.querySelector("#toggleBottomChoiceBtn"),
                     h = n => { t.remove(); e(n); };
 
-                // Update initial arrow direction
+                // Initial update
                 updateLayerButtonTexts();
 
                 // ----- Simultaneous swap function with length‑based offset scaling (mobile‑ready) -----
@@ -4275,8 +4336,9 @@
                     baselineFontSizePx = null;
                     applyLayerTransforms();
                     saveAllDragPositions();
-                    // Update button arrows
-                    updateLayerButtonTexts();
+
+                    // Swap the button rows in the DOM
+                    swapButtonRows();
                 };
 
                 // Attach hold‑swap to both buttons
