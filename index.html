@@ -4202,6 +4202,7 @@
 
         // ---- MODIFIED: showLayerChoiceModal with baseline scaling for mobile stability ----
         // Press-hold removed from topDragBtn and bottomDragBtn (no hold swap)
+        // Updated lenFactor values for 1-3 chars to bring layers closer
         function showLayerChoiceModal() {
             return new Promise((e => {
                 // Reset labels and row state when modal opens
@@ -4266,18 +4267,18 @@
                     const plain = chineseElement.getAttribute('data-plain') || '';
                     const len = plain.length;
 
-                    // ---- EXACT VALUES FOR 1-3 CHARS (user-specified) ----
+                    // ---- UPDATED VALUES FOR 1-3 CHARS (much tighter) ----
                     let lenFactor;
                     let gap;
                     if (len === 1) {
-                        lenFactor = 0.05;
-                        gap = 0.01;
-                    } else if (len === 2) {
-                        lenFactor = 0.08;
+                        lenFactor = 0.20;
                         gap = 0.02;
-                    } else if (len === 3) {
-                        lenFactor = 0.12;
+                    } else if (len === 2) {
+                        lenFactor = 0.25;
                         gap = 0.03;
+                    } else if (len === 3) {
+                        lenFactor = 0.30;
+                        gap = 0.04;
                     } else {
                         // Longer words: use original logic with a slightly reduced factor
                         lenFactor = Math.max(0.08, 0.35 - (len - 3) * 0.018);
@@ -5487,12 +5488,18 @@
                     n = dragStartTop / 100 * e.height + i;
                 chineseX = (t + o) / e.width * 100, chineseY = n / e.height * 100, chineseElement.style.left =
                     chineseX + "%", chineseElement.style.top = chineseY + "%" } else if ("top" === dragType) {
-                topLayerX = dragStartTopX + o, topLayerY = dragStartTopY + i, topLayerX = Math.max(-800, Math.min(
-                    800, topLayerX)), topLayerY = Math.max(-800, Math.min(800, topLayerY)),
-                    applyLayerTransforms() } else "bottom" === dragType && (bottomLayerX = dragStartBottomX + o,
-                    bottomLayerY = dragStartBottomY + i, bottomLayerX = Math.max(-800, Math.min(800,
-                    bottomLayerX)), bottomLayerY = Math.max(-800, Math.min(800, bottomLayerY)),
-                    applyLayerTransforms())
+                topLayerX = dragStartTopX + o, topLayerY = dragStartTopY + i;
+                // Clamp to prevent overlapping
+                topLayerX = Math.max(-200, Math.min(200, topLayerX));
+                topLayerY = Math.max(-50, Math.min(300, topLayerY));
+                applyLayerTransforms();
+            } else if ("bottom" === dragType) {
+                bottomLayerX = dragStartBottomX + o, bottomLayerY = dragStartBottomY + i;
+                // Clamp to prevent overlapping
+                bottomLayerX = Math.max(-200, Math.min(200, bottomLayerX));
+                bottomLayerY = Math.max(-300, Math.min(50, bottomLayerY));
+                applyLayerTransforms();
+            }
         }
 
         function onGlobalDragEnd() {
