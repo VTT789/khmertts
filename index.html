@@ -4200,63 +4200,8 @@
         function resetBottomLayer() { bottomLayerX = 0; bottomLayerY = 0; applyLayerTransforms(); saveAllDragPositions();
             showToast("🔷 Bottom Character layer reset"); }
 
-        // ===== FIXED HOLD-SWAP with simultaneous toggling and length‑based offset scaling =====
-        function setupLayerHoldSwap(button, layerType, onSwap) {
-            if (!button) return;
-            let timer = null;
-            let holdTriggered = false;
-            let moved = false;
-            let startX = 0,
-                startY = 0;
-
-            const start = (e) => {
-                const touch = e.touches ? e.touches[0] : e;
-                startX = touch.clientX;
-                startY = touch.clientY;
-                moved = false;
-                holdTriggered = false;
-                if (timer) clearTimeout(timer);
-                timer = setTimeout(() => {
-                    if (!moved) {
-                        holdTriggered = true;
-                        onSwap();
-                        // Close the modal after swap
-                        const modal = button.closest('.modal-overlay');
-                        if (modal) modal.remove();
-                        showToast('🔁 Layers swapped');
-                    }
-                    timer = null;
-                }, 300);
-            };
-
-            const move = (e) => {
-                const touch = e.touches ? e.touches[0] : e;
-                const dx = touch.clientX - startX;
-                const dy = touch.clientY - startY;
-                if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
-                    moved = true;
-                    if (timer) { clearTimeout(timer);
-                        timer = null; }
-                }
-            };
-
-            const end = (e) => {
-                if (timer) { clearTimeout(timer);
-                    timer = null; }
-                holdTriggered = false;
-            };
-
-            button.addEventListener('mousedown', start);
-            button.addEventListener('mousemove', move);
-            button.addEventListener('mouseup', end);
-            button.addEventListener('mouseleave', end);
-            button.addEventListener('touchstart', start, { passive: true });
-            button.addEventListener('touchmove', move, { passive: true });
-            button.addEventListener('touchend', end, { passive: true });
-            button.addEventListener('touchcancel', end, { passive: true });
-        }
-
         // ---- MODIFIED: showLayerChoiceModal with baseline scaling for mobile stability ----
+        // Press-hold removed from topDragBtn and bottomDragBtn (no hold swap)
         function showLayerChoiceModal() {
             return new Promise((e => {
                 // Reset labels and row state when modal opens
@@ -4321,15 +4266,20 @@
                     const plain = chineseElement.getAttribute('data-plain') || '';
                     const len = plain.length;
 
-                    // ---- TIGHTER FACTORS FOR 1-3 CHARS (mobile optimized) ----
+                    // ---- EXACT VALUES FOR 1-3 CHARS (user-specified) ----
                     let lenFactor;
                     let gap;
-                    if (len <= 3) {
-                        // Much tighter: 1→0.04, 2→0.07, 3→0.10  (visually close, no overlap)
-                        lenFactor = 0.02 + 0.04 * len;
+                    if (len === 1) {
+                        lenFactor = 0.05;
+                        gap = 0.01;
+                    } else if (len === 2) {
+                        lenFactor = 0.08;
+                        gap = 0.02;
+                    } else if (len === 3) {
+                        lenFactor = 0.12;
                         gap = 0.03;
                     } else {
-                        // Longer words: use original logic but with a slightly reduced factor
+                        // Longer words: use original logic with a slightly reduced factor
                         lenFactor = Math.max(0.08, 0.35 - (len - 3) * 0.018);
                         gap = 0.08;
                     }
@@ -4348,30 +4298,16 @@
                     swapButtonRows();
                 };
 
-                // Attach hold‑swap to both buttons
-                setupLayerHoldSwap(i, 'top', () => {
-                    toggleBothLayers();
-                    const modal = i.closest('.modal-overlay');
-                    if (modal) modal.remove();
-                    showToast('🔁 Layers swapped');
-                });
-                setupLayerHoldSwap(a, 'bottom', () => {
-                    toggleBothLayers();
-                    const modal = a.closest('.modal-overlay');
-                    if (modal) modal.remove();
-                    showToast('🔁 Layers swapped');
-                });
-
-                // Normal click handlers (drag mode)
+                // ----- PRESS-HOLD REMOVED: no setupLayerHoldSwap calls -----
+                // Normal click handlers (drag mode) only
                 i.onclick = (ev) => {
-                    if (ev._holdTriggered) return;
                     h("top");
                 };
                 a.onclick = (ev) => {
-                    if (ev._holdTriggered) return;
                     h("bottom");
                 };
 
+                // Reset handlers
                 d.onclick = () => { resetTopLayer(); h(null); };
                 c.onclick = () => { resetBottomLayer(); h(null); };
                 m.onclick = () => {
@@ -4379,6 +4315,7 @@
                     h(null);
                 };
 
+                // Toggle visibility handlers
                 u.onclick = () => {
                     topPinyinVisible = !topPinyinVisible;
                     applyTextVisibility();
