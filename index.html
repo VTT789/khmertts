@@ -4323,15 +4323,16 @@
 
                     // ---- TIGHTER FACTORS FOR 1-3 CHARS (mobile optimized) ----
                     let lenFactor;
+                    let gap;
                     if (len <= 3) {
-                        // 1→0.2, 2→0.3, 3→0.4  (very tight)
-                        lenFactor = 0.1 + 0.1 * len;
+                        // Much tighter: 1→0.04, 2→0.07, 3→0.10  (visually close, no overlap)
+                        lenFactor = 0.02 + 0.04 * len;
+                        gap = 0.03;
                     } else {
-                        // For longer, start at 0.4 for len=4 and decrease
-                        lenFactor = Math.max(0.1, 0.4 - (len - 3) * 0.02);
+                        // Longer words: use original logic but with a slightly reduced factor
+                        lenFactor = Math.max(0.08, 0.35 - (len - 3) * 0.018);
+                        gap = 0.08;
                     }
-                    // Small gap to avoid overlap
-                    const gap = 0.1;
 
                     // Store offsets in pixels (baseline will be set on first apply)
                     topLayerY = distPinyinToBottom * lenFactor + gap;
