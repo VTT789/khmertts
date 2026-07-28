@@ -907,6 +907,20 @@
             align-self: center;
             color: var(--text-secondary);
         }
+        .pagination-info input {
+            width: 50px;
+            text-align: center;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: .75rem;
+            padding: 2px 4px;
+        }
+        .pagination-info input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
         .vocab-list {
             flex-grow: 1;
             overflow-y: auto;
@@ -1463,7 +1477,8 @@
             max-width: 70vw;
             height: auto;
             border-radius: 16px;
-            display: block
+            display: block;
+            cursor: pointer;
         }
         .qr-close-btn {
             position: absolute;
@@ -1755,6 +1770,10 @@
                 padding: 8px 14px;
                 min-width: 60px;
                 font-size: .75rem
+            }
+            .pagination-info input {
+                width: 40px;
+                font-size: .7rem;
             }
             .big-edit-input-icon {
                 font-size: 1rem !important;
@@ -2258,7 +2277,7 @@
                         <button class=tab-btn id=tabPinyin onclick='switchTab("pinyin")'>LAYERS</button>
                     </div>
                     <div id=mainControls class="control-group active">
-                        <div class=size-row><label>Next Word Delay (s)</label><input type=range id=autoDelay class=size-slider min=1 max=15 step=1 value=3><span id=delayVal style=font-size:.7rem;width:20px>3s</span></div>
+                        <div class=size-row><label>Next Word Delay (s)</label><input type=range id=autoDelay class=size-slider min=1 max=15 step=1 value=1><span id=delayVal style=font-size:.7rem;width:20px>1s</span></div>
                         <div id=zhMainControls>
                             <div class=style-grid><label>ZH Font</label><select id=mZhFont class=font-select>
                                     <option value="'Baguette Simplified'">Baguette Simplified</option>
@@ -2272,7 +2291,7 @@
                                     <option value="'Hanyi Changyi'">Hanyi Changyi</option>
                                     <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
                                     <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
-                                </select><input type=color id=mZhColor value=#ffffff><button id=mZhBold class=bold-icon-btn onclick='toggleBold("mZhBold",applyChineseMainStyle)'><span>BOLD</span></button></div>
+                                </select><input type=color id=mZhColor value=#000000><button id=mZhBold class=bold-icon-btn onclick='toggleBold("mZhBold",applyChineseMainStyle)'><span>BOLD</span></button></div>
                             <div class=size-row><label>Main Char Size (vh)</label><input type=range id=mZhSize class=size-slider min=2 max=150 value=42><span id=mZhSizeVal>42vh</span></div>
                             <div class=shadow-style-grid>
                                 <label>Shadow</label>
@@ -2286,12 +2305,12 @@
                                 <option value="'KHROSAPSRA'">Rosapsra</option>
                                 <option value="'KHMithSalaPali'">MithSalaPali</option>
                                 <option value="'KHSAMADY'">Samady KS</option>
-                            </select><input type=color id=mKmColor value=#ffffff><button id=mKmBold class=bold-icon-btn onclick='toggleBold("mKmBold",applyStyles)'><span>BOLD</span></button></div>
+                            </select><input type=color id=mKmColor value=#000000><button id=mKmBold class=bold-icon-btn onclick='toggleBold("mKmBold",applyStyles)'><span>BOLD</span></button></div>
                         <div class=size-row><label>KM Size (vh)</label><input type=range id=mKmSize class=size-slider min=2 max=150 value=42><span id=mKmSizeVal>42vh</span></div>
                     </div>
                     <div id=voiceControls class=control-group>
                         <div class=voice-row><label style=font-weight:700>🎙️ Khmer Voice</label><select id=kmVoiceSelect class=voice-select><option value=km-KH-SreymomNeural>Sreymom (Female)</option><option value=km-KH-PisethNeural>Piseth (Male)</option></select></div>
-                        <div class=voice-row><label style=font-weight:700>🇨🇳 Chinese Voice</label><select id=zhVoiceSelect class=voice-select><option value=zh-CN-XiaoxiaoNeural>Xiaoxiao (女声)</option><option value=zh-CN-YunxiNeural>Yunxi (男声)</option><option value=zh-CN-YunyangNeural>Yunyang (新闻)</option><option value=zh-CN-XiaoyiNeural>Xiaoyi (教学)</option></select></div>
+                        <div class=voice-row><label style=font-weight:700>🇨🇳 Chinese Voice</label><select id=zhVoiceSelect class=voice-select><option value=zh-CN-XiaoxiaoNeural>Xiaoxiao (女声)</option><option value=zh-CN-YunxiNeural selected>Yunxi (男声)</option><option value=zh-CN-YunyangNeural>Yunyang (新闻)</option><option value=zh-CN-XiaoyiNeural>Xiaoyi (教学)</option></select></div>
                         <div class=size-row><label>🇨🇳 Speech Rate</label><input type=range id=zhRateSlider class=size-slider min=-100 max=100 value=0 step=5><span id=zhRateVal>0%</span></div>
                         <div class=size-row><label>ZH Repetitions</label><input type=range id=zhReps class=size-slider min=0 max=10 value=1><span id=repVal>1</span></div>
                         <div class=size-row><label>KM Repetitions</label><input type=range id=kmReps class=size-slider min=0 max=10 value=1><span id=kmRepVal>1</span></div>
@@ -2303,8 +2322,8 @@
                     <div id=sideControls class=control-group>
                         <button id=sidebarToggleBtn class="btn-main btn-accent" style=margin-bottom:10px;width:100% onclick=toggleSidebar()>SHOW SIDEBAR</button>
                         <div id=sidebarControlsContainer>
-                            <div class=side-style-grid><label>ZH Font</label><select id=sZhFont class=font-select><option value="'BaguettePinyin'">Baguette</option><option value="'XHeiPinyin'">X Hei</option><option value="'Cream Pudding Pinyin'">Cream Pudding</option><option value="'Pinyin'">FZPY01</option></select><input type=color id=sZhColor value=#ffffff></div>
-                            <div class=side-style-grid><label>KM Font</label><select id=sKmFont class=font-select><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option><option value="'KHROSAPSRA'">Rosapsra</option><option value="'KHMithSalaPali'">MithSalaPali</option></select><input type=color id=sKmColor value=#ffffff></div>
+                            <div class=side-style-grid><label>ZH Font</label><select id=sZhFont class=font-select><option value="'BaguettePinyin'">Baguette</option><option value="'XHeiPinyin'">X Hei</option><option value="'Cream Pudding Pinyin'">Cream Pudding</option><option value="'Pinyin'">FZPY01</option></select><input type=color id=sZhColor value=#000000></div>
+                            <div class=side-style-grid><label>KM Font</label><select id=sKmFont class=font-select><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option><option value="'KHROSAPSRA'">Rosapsra</option><option value="'KHMithSalaPali'">MithSalaPali</option></select><input type=color id=sKmColor value=#000000></div>
                             <div class=size-row><label>ZH Side Size</label><input type=range id=sZhSize min=0.5 max=4 step=0.1 value=1.1></div>
                             <div class=size-row><label>KM Side Size</label><input type=range id=sKmSize min=0.5 max=4 step=0.1 value=0.9></div>
                             <div class=size-row><label>📋 Vocab Spacing</label><input type=range id=sVocabSpacing min=0 max=30 step=1 value=8><span id=vocabSpacingVal>8px</span></div>
@@ -2333,7 +2352,7 @@
                                         <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
                                         <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
                                     </select>
-                                    <input type=color id=pinyinColor value=#ffffff>
+                                    <input type=color id=pinyinColor value=#000000>
                                     <button id=pinyinBold class="bold-icon-btn active" onclick='toggleBold("pinyinBold",applyPinyinStyles)'><span>BOLD</span></button>
                                 </div>
                                 <div class=size-row><label>Size (px)</label><input type=range id=pinyinSizePx class=size-slider min=20 max=120 value=55><span id=pinyinSizeVal>55px</span></div>
@@ -2359,7 +2378,7 @@
                                             <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti</option>
                                             <option value="'Hanyi Extra Bold'">Hanyi Extra Bold</option>
                                         </select>
-                                        <input type=color id=bottomCharColor value=#ffffff>
+                                        <input type=color id=bottomCharColor value=#000000>
                                         <button id=bottomBold class=bold-icon-btn onclick='toggleBold("bottomBold",applyBottomStyles)'><span>BOLD</span></button>
                                     </div>
                                     <div class=size-row><label>Size (px)</label><input type=range id=bottomSizePx class=size-slider min=20 max=120 value=55><span id=bottomSizeVal>55px</span></div>
@@ -3113,7 +3132,7 @@
                     <h3>📥 Load Vocabulary</h3>
                     <div class="url-input-area">
                         <div class="input-wrap">
-                            <input type="text" id="sheetUrlInputModal" placeholder="Google Sheet URL or ID" value="${currentSheetId||DEFAULT_SHEET_ID}">
+                            <input type="text" id="sheetUrlInputModal" placeholder="Google Sheet URL or ID" value="">
                             <button id="clearUrlBtn" class="url-clear-btn" title="Clear input">✕</button>
                         </div>
                         <select id="sheetHistorySelect">
@@ -3515,26 +3534,69 @@
             });
         }
 
-        // Perform search with limit and optimized loop, respecting pendingDeletions
+        // ===== IMPROVED: compute relevance score for search matches =====
+        function getRelevanceScore(item, query) {
+            const chineseLower = (item.chinese || '').toLowerCase();
+            const khmerLower = (item.khmer || '').toLowerCase();
+            const q = query.toLowerCase();
+            let score = 0;
+
+            const chineseExact = chineseLower === q;
+            const khmerExact = khmerLower === q;
+            const chineseStartsWith = chineseLower.startsWith(q);
+            const khmerStartsWith = khmerLower.startsWith(q);
+            const chineseContains = chineseLower.includes(q);
+            const khmerContains = khmerLower.includes(q);
+
+            if (!chineseContains && !khmerContains) return 0;
+
+            // Exact match (highest priority)
+            if (chineseExact) score += 10000;
+            if (khmerExact) score += 9000;
+
+            // Starts with (high priority)
+            if (chineseStartsWith && !chineseExact) score += 1000;
+            if (khmerStartsWith && !khmerExact) score += 900;
+
+            // Contains (medium priority) — only if not already counted as starts-with or exact
+            if (chineseContains && !chineseStartsWith && !chineseExact) score += 500;
+            if (khmerContains && !khmerStartsWith && !khmerExact) score += 400;
+
+            // Bonus for shorter length (more precise match)
+            if (chineseContains) score += Math.max(0, 50 - item.chinese.length);
+            if (khmerContains) score += Math.max(0, 50 - item.khmer.length);
+
+            // Slight bonus for Chinese match over Khmer match (primary language)
+            if (chineseContains) score += 10;
+
+            return score;
+        }
+
+        // Perform search with limit and optimized loop, respecting pendingDeletions + SORTED
         function performSearch(query, container, isEdit = false) {
             const q = query.trim().toLowerCase();
             if (!q) { container.innerHTML = ""; return; }
             const matches = [];
             const limit = 30;
-            for (let i = 0; i < vocabList.length && matches.length < limit; i++) {
-                // Skip items pending deletion
+            // FIX: remove early break to collect ALL matches
+            for (let i = 0; i < vocabList.length; i++) {
                 if (pendingDeletions.has(i)) continue;
                 const v = vocabList[i];
-                if (v.chinese.toLowerCase().includes(q) || v.khmer.toLowerCase().includes(q)) {
-                    matches.push({ index: i, item: v });
+                const score = getRelevanceScore(v, q);
+                if (score > 0) {
+                    matches.push({ index: i, item: v, score: score });
                 }
             }
-            if (matches.length === 0) {
+            // Sort by score descending (best match first)
+            matches.sort((a, b) => b.score - a.score);
+            const limited = matches.slice(0, limit);
+
+            if (limited.length === 0) {
                 container.innerHTML = '<div style="padding:8px; text-align:center; color:#aaa;">No matches</div>';
                 return;
             }
             let html = '';
-            for (const match of matches) {
+            for (const match of limited) {
                 const idx = match.index;
                 const v = match.item;
                 const row = v.sheetRow;
@@ -3605,17 +3667,26 @@
                     const e = i.value.trim().toLowerCase();
                     if (!e) { s.style.display = "none";
                         s.innerHTML = ""; return }
-                    const t = vocabList.filter((t => (t.chinese.toLowerCase().includes(e) || t.khmer.toLowerCase()
-                        .includes(e)) && !pendingDeletions.has(vocabList.indexOf(t))));
-                    if (0 === t.length) { s.innerHTML =
+                    // Use relevance scoring for sidebar search as well
+                    const matches = [];
+                    for (let idx = 0; idx < vocabList.length; idx++) {
+                        if (pendingDeletions.has(idx)) continue;
+                        const item = vocabList[idx];
+                        const score = getRelevanceScore(item, e);
+                        if (score > 0) {
+                            matches.push({ idx, score });
+                        }
+                    }
+                    matches.sort((a, b) => b.score - a.score);
+                    if (0 === matches.length) { s.innerHTML =
                             '<div class="result-item" style="opacity:0.7;">No matches</div>';
                         s.style.display = "block"; return }
-                    s.innerHTML = t.map((e =>
-                        `<div class="result-item" data-index="${vocabList.findIndex((t=>t===e))}">
-                                <div class="result-chinese">${escapeHtml(e.chinese)}</div>
-                                <div class="result-khmer">${escapeHtml(e.khmer)}</div>
+                    s.innerHTML = matches.map(({ idx }) =>
+                        `<div class="result-item" data-index="${idx}">
+                                <div class="result-chinese">${escapeHtml(vocabList[idx].chinese)}</div>
+                                <div class="result-khmer">${escapeHtml(vocabList[idx].khmer)}</div>
                             </div>`
-                    )).join("");
+                    ).join("");
                     s.style.display = "block";
                     s.querySelectorAll(".result-item").forEach((e => {
                         e.addEventListener("click", (t => {
@@ -3718,9 +3789,10 @@
             if ("normal" === appMode && t.length > 40) {
                 const n = Math.ceil(t.length / 40);
                 e.style.display = "block", e.innerHTML =
-                    `<div class="pagination-bar"><button id="prevPageBtnSide" class="pagination-btn">◀ Prev</button><span class="pagination-info">Page ${normalCurrentPage+1} / ${n}</span><button id="nextPageBtnSide" class="pagination-btn">Next ▶</button></div>`;
+                    `<div class="pagination-bar"><button id="prevPageBtnSide" class="pagination-btn">◀ Prev</button><span class="pagination-info"><input type="number" id="pageJumpInput" class="pagination-input" min="1" max="${n}" value="${normalCurrentPage+1}" style="width:50px; text-align:center; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text-primary); font-size:.75rem; padding:2px 4px;"> / ${n}</span><button id="nextPageBtnSide" class="pagination-btn">Next ▶</button></div>`;
                 const o = document.getElementById("prevPageBtnSide"),
-                    i = document.getElementById("nextPageBtnSide");
+                    i = document.getElementById("nextPageBtnSide"),
+                    jumpInput = document.getElementById("pageJumpInput");
                 let a = null,
                     r = null,
                     s = !1,
@@ -3733,13 +3805,52 @@
                     c = () => { const e = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx));
                         if (e.length) { loadWordByMode(vocabList.findIndex((t => t === e[e.length - 1])), !0),
                                 showToast("📖 Jumped to LAST word") } };
+
+                // Page jump input handler
+                if (jumpInput) {
+                    const handleJump = () => {
+                        let val = parseInt(jumpInput.value);
+                        const maxPages = n;
+                        if (isNaN(val) || val < 1) val = 1;
+                        if (val > maxPages) val = maxPages;
+                        const newPage = val - 1;
+                        if (newPage !== normalCurrentPage) {
+                            normalCurrentPage = newPage;
+                            renderNormalSidebar();
+                        }
+                        // Keep input in sync
+                        jumpInput.value = normalCurrentPage + 1;
+                    };
+                    jumpInput.addEventListener('change', handleJump);
+                    jumpInput.addEventListener('keypress', (ev) => {
+                        if (ev.key === 'Enter') {
+                            ev.preventDefault();
+                            handleJump();
+                        }
+                    });
+                }
+
+                function syncPageInput() {
+                    const input = document.getElementById('pageJumpInput');
+                    if (input) {
+                        const totalPages = Math.ceil(filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx))
+                            .length / 40);
+                        input.value = normalCurrentPage + 1;
+                        input.max = totalPages;
+                    }
+                }
+
                 if (o) {
                     o.onclick = function(e) {
                         e.preventDefault();
                         if (longPressPrev) { longPressPrev = !1; return; }
-                        if (normalCurrentPage > 0) { normalCurrentPage--;
-                            renderNormalSidebar(); }
+                        if (normalCurrentPage > 0) {
+                            normalCurrentPage--;
+                            renderNormalSidebar();
+                            setTimeout(syncPageInput, 50);
+                        }
                     };
+                    // long press logic unchanged
                     const prevStart = function(e) {
                         e.preventDefault();
                         s = !1;
@@ -3749,6 +3860,7 @@
                             longPressPrev = !0;
                             d();
                             a = null;
+                            setTimeout(syncPageInput, 50);
                         }, 500);
                     };
                     const prevEnd = function() {
@@ -3767,8 +3879,11 @@
                         if (longPressNext) { longPressNext = !1; return; }
                         const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx));
                         const pageCount = Math.ceil(t.length / 40);
-                        if (normalCurrentPage + 1 < pageCount) { normalCurrentPage++;
-                            renderNormalSidebar(); }
+                        if (normalCurrentPage + 1 < pageCount) {
+                            normalCurrentPage++;
+                            renderNormalSidebar();
+                            setTimeout(syncPageInput, 50);
+                        }
                     };
                     const nextStart = function(e) {
                         e.preventDefault();
@@ -3779,6 +3894,7 @@
                             longPressNext = !0;
                             c();
                             r = null;
+                            setTimeout(syncPageInput, 50);
                         }, 500);
                     };
                     const nextEnd = function() {
@@ -3791,8 +3907,36 @@
                     i.addEventListener("touchend", nextEnd);
                     i.addEventListener("mouseleave", nextEnd);
                 }
+
+                // Initial sync
+                setTimeout(syncPageInput, 100);
             } else e.style.display = "none", e.innerHTML = ""
         }
+
+        // Global sync function
+        function syncPageInput() {
+            const input = document.getElementById('pageJumpInput');
+            if (input) {
+                const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx));
+                const totalPages = Math.ceil(filtered.length / 40);
+                input.value = normalCurrentPage + 1;
+                input.max = totalPages;
+            }
+        }
+
+        // Patch renderNormalSidebar and renderSidebarUI to sync after rendering
+        const origRenderNormalSidebar = renderNormalSidebar;
+        renderNormalSidebar = function() {
+            origRenderNormalSidebar();
+            setTimeout(syncPageInput, 50);
+        };
+
+        // Also patch renderSidebarUI (though it calls updatePaginationControlsInside)
+        const origRenderSidebarUI = renderSidebarUI;
+        renderSidebarUI = function(e) {
+            origRenderSidebarUI(e);
+            setTimeout(syncPageInput, 50);
+        };
 
         // ===== FIXED: delete functions with optimistic search removal + retry suppression =====
         window.deleteFromAddSearch = function(idx, row, searchQuery) {
@@ -4200,9 +4344,7 @@
         function resetBottomLayer() { bottomLayerX = 0; bottomLayerY = 0; applyLayerTransforms(); saveAllDragPositions();
             showToast("🔷 Bottom Character layer reset"); }
 
-        // ---- MODIFIED: showLayerChoiceModal with baseline scaling for mobile stability ----
-        // Press-hold removed from topDragBtn and bottomDragBtn (no hold swap)
-        // Updated lenFactor values for 1-3 chars to bring layers closer
+        // ---- MODIFIED: showLayerChoiceModal with sorted search results ----
         function showLayerChoiceModal() {
             return new Promise((e => {
                 // Reset labels and row state when modal opens
@@ -4222,14 +4364,26 @@
                 const n = t.querySelector("#choiceSearchInput"),
                     o = t.querySelector("#choiceSearchResults");
                 n.addEventListener("input", (() => {
-                    const e = n.value.trim().toLowerCase();
-                    if (!e) return void(o.innerHTML = "");
-                    const t = vocabList.filter((t => (t.chinese.toLowerCase().includes(e) || t.khmer
-                        .toLowerCase().includes(e)) && !pendingDeletions.has(vocabList.indexOf(t))));
-                    0 !== t.length ? o.innerHTML = t.map((e =>
-                            `<div style="padding:8px; border-bottom:1px solid #555; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px; color:white;" onclick="loadWordByMode(${vocabList.findIndex((t=>t===e))}, true); document.querySelector('.modal-overlay')?.remove();"><strong>${escapeHtml(e.chinese)}</strong> — ${escapeHtml(e.khmer)}</div>`
-                        )).join("") : o.innerHTML =
-                        '<div style="padding:8px; text-align:center; color:#ccc;">No matches</div>'
+                    const query = n.value.trim().toLowerCase();
+                    if (!query) return void(o.innerHTML = "");
+                    // Get matches with scores and sort
+                    const matches = [];
+                    for (let i = 0; i < vocabList.length; i++) {
+                        if (pendingDeletions.has(i)) continue;
+                        const item = vocabList[i];
+                        const score = getRelevanceScore(item, query);
+                        if (score > 0) {
+                            matches.push({ idx: i, item: item, score: score });
+                        }
+                    }
+                    matches.sort((a, b) => b.score - a.score);
+                    if (0 === matches.length) {
+                        o.innerHTML = '<div style="padding:8px; text-align:center; color:#ccc;">No matches</div>';
+                        return;
+                    }
+                    o.innerHTML = matches.slice(0, 30).map(({ idx }) =>
+                        `<div style="padding:8px; border-bottom:1px solid #555; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px; color:white;" onclick="loadWordByMode(${idx}, true); document.querySelector('.modal-overlay')?.remove();"><strong>${escapeHtml(vocabList[idx].chinese)}</strong> — ${escapeHtml(vocabList[idx].khmer)}</div>`
+                    ).join("");
                 }));
                 const i = topBtnElement,
                     a = bottomBtnElement,
@@ -5051,27 +5205,28 @@
                     userSetKhmerFontSize = t.mKmSize || 42;
                     document.getElementById("mZhSize").value = userSetChineseFontSize;
                     document.getElementById("mKmSize").value = userSetKhmerFontSize;
-                    document.getElementById("mZhColor").value = t.mZhColor || "#ffffff";
-                    document.getElementById("mKmColor").value = t.mKmColor || "#ffffff";
+                    document.getElementById("mZhColor").value = t.mZhColor || "#000000";
+                    document.getElementById("mKmColor").value = t.mKmColor || "#000000";
                     document.getElementById("zhReps").value = t.zhReps || 1;
                     document.getElementById("kmReps").value = t.kmReps || 1;
-                    let n = void 0 !== t.autoDelay ? t.autoDelay : 3;
+                    let n = void 0 !== t.autoDelay ? t.autoDelay : 1;
                     document.getElementById("autoDelay").value = n;
                     if (void 0 !== t.shadow) document.getElementById("shadowSlider").value = t.shadow;
                     if (t.sZhFont) document.getElementById("sZhFont").value = t.sZhFont;
                     if (t.sKmFont) document.getElementById("sKmFont").value = t.sKmFont;
                     if (t.sZhSize) document.getElementById("sZhSize").value = t.sZhSize;
                     if (t.sKmSize) document.getElementById("sKmSize").value = t.sKmSize;
-                    if (t.sZhColor) document.getElementById("sZhColor").value = t.sZhColor || "#ffffff";
-                    if (t.sKmColor) document.getElementById("sKmColor").value = t.sKmColor || "#ffffff";
+                    if (t.sZhColor) document.getElementById("sZhColor").value = t.sZhColor || "#000000";
+                    if (t.sKmColor) document.getElementById("sKmColor").value = t.sKmColor || "#000000";
                     document.getElementById("sVocabSpacing").value = t.vocabSpacing || 8;
                     document.body.style.setProperty("--vocab-spacing", (t.vocabSpacing || 8) + "px");
                     document.getElementById("vocabSpacingVal").innerText = (t.vocabSpacing || 8) + "px";
                     if (t.zhVoice) document.getElementById("zhVoiceSelect").value = t.zhVoice;
+                    // If no saved voice, use Yunxi (already selected in HTML)
                     if (t.kmVoice) document.getElementById("kmVoiceSelect").value = t.kmVoice;
                     if (void 0 !== t.zhRate) document.getElementById("zhRateSlider").value = t.zhRate;
                     if (t.pinyinFont) document.getElementById("pinyinFont").value = t.pinyinFont;
-                    if (t.pinyinColor) document.getElementById("pinyinColor").value = t.pinyinColor || "#ffffff";
+                    if (t.pinyinColor) document.getElementById("pinyinColor").value = t.pinyinColor || "#000000";
                     if (void 0 !== t.pinyinBold) {
                         const e = document.getElementById("pinyinBold");
                         t.pinyinBold ? e.classList.add("active") : e.classList.remove("active");
@@ -5083,7 +5238,7 @@
                     if (t.pinyinSpacing) document.getElementById("pinyinSpacing").value = t.pinyinSpacing;
                     if (t.bottomFont) document.getElementById("bottomFont").value = t.bottomFont;
                     if (t.bottomCharColor) document.getElementById("bottomCharColor").value = t.bottomCharColor ||
-                        "#ffffff";
+                        "#000000";
                     if (void 0 !== t.bottomBold) {
                         const e = document.getElementById("bottomBold");
                         t.bottomBold ? e.classList.add("active") : e.classList.remove("active");
@@ -5115,14 +5270,14 @@
                 } catch (e) { console.warn("Settings parse error:", e); }
             } else {
                 document.getElementById("pinyinFont").value = "'Baguette Simplified'";
-                document.getElementById("pinyinColor").value = "#ffffff";
+                document.getElementById("pinyinColor").value = "#000000";
                 document.getElementById("pinyinSizePx").value = "55";
                 userSetPinyinFontSize = 55;
                 document.getElementById("pinyinSpacing").value = "0";
                 document.getElementById("bottomSizePx").value = "55";
                 userSetBottomFontSize = 55;
-                document.getElementById("mKmColor").value = "#ffffff";
-                document.getElementById("bottomCharColor").value = "#ffffff";
+                document.getElementById("mKmColor").value = "#000000";
+                document.getElementById("bottomCharColor").value = "#000000";
                 document.getElementById("shadowSlider").value = "3";
                 sidebarVisible = false;
                 document.getElementById("rightSide").classList.add("hidden");
@@ -5453,10 +5608,19 @@
         }
 
         function onPressEnd() {
-            null === longPressTimer || dragActive || hasMovedDuringPress || speakChineseFromMain(), longPressTimer && (
-                clearTimeout(longPressTimer), longPressTimer = null), window.removeEventListener("mousemove",
-                onPressMove), window.removeEventListener("touchmove", onPressMove), window.removeEventListener(
-                "mouseup", onPressEnd), window.removeEventListener("touchend", onPressEnd)
+            // Only speak if no long press, no drag, and no move occurred
+            // The click event is removed, so this is the ONLY speech trigger for Chinese
+            if (longPressTimer !== null && !dragActive && !hasMovedDuringPress) {
+                speakChineseFromMain();
+            }
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            window.removeEventListener("mousemove", onPressMove);
+            window.removeEventListener("touchmove", onPressMove);
+            window.removeEventListener("mouseup", onPressEnd);
+            window.removeEventListener("touchend", onPressEnd);
         }
 
         function startWordDrag(e, t) {
@@ -5511,67 +5675,201 @@
         }
 
         function initChineseDrag() {
-            chineseElement = document.getElementById("chineseWord"), chineseElement && (chineseElement.style
-                .position = "absolute", chineseElement.style.left = chineseX + "%", chineseElement.style.top =
-                chineseY + "%", chineseElement.style.transform = "translate(-50%, -50%)", chineseElement.style
-                .cursor = "grab", chineseElement.addEventListener("click", (e => { e.stopPropagation(),
-                    speakChineseFromMain() })), chineseElement.addEventListener("mousedown",
-                onChinesePointerDown), chineseElement.addEventListener("touchstart", onChinesePointerDown, { passive: !1 }),
-                chineseElement.addEventListener("touchstart", (e => handlePinchStart(e, "chinese")), { passive: !1 }),
-                chineseElement.addEventListener("touchmove", (e => handlePinchMove(e, "chinese")), { passive: !1 }),
-                chineseElement.addEventListener("touchend", handlePinchEnd), chineseElement.addEventListener(
-                    "wheel", (function(e) {
-                        if (e.ctrlKey) { e.preventDefault(); const t = e.deltaY > 0 ? -1 : 1;
-                            let n = userSetChineseFontSize + t;
-                            n = Math.max(10, Math.min(150, n)), setChineseFontSize(n) }
-                    }), { passive: !1 }))
+            chineseElement = document.getElementById("chineseWord");
+            if (!chineseElement) return;
+            chineseElement.style.position = "absolute";
+            chineseElement.style.left = chineseX + "%";
+            chineseElement.style.top = chineseY + "%";
+            chineseElement.style.transform = "translate(-50%, -50%)";
+            chineseElement.style.cursor = "grab";
+            // REMOVED click event – speech is now handled by onPressEnd only
+            // chineseElement.addEventListener("click", (e => { e.stopPropagation(), speakChineseFromMain() }));
+            chineseElement.addEventListener("mousedown", onChinesePointerDown);
+            chineseElement.addEventListener("touchstart", onChinesePointerDown, { passive: false });
+            chineseElement.addEventListener("touchstart", (e => handlePinchStart(e, "chinese")), { passive: false });
+            chineseElement.addEventListener("touchmove", (e => handlePinchMove(e, "chinese")), { passive: false });
+            chineseElement.addEventListener("touchend", handlePinchEnd);
+            chineseElement.addEventListener("wheel", (function(e) {
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    const t = e.deltaY > 0 ? -1 : 1;
+                    let n = userSetChineseFontSize + t;
+                    n = Math.max(10, Math.min(150, n));
+                    setChineseFontSize(n);
+                }
+            }), { passive: false });
         }
 
         function initKhmerDrag() {
-            if (khmerElement = document.getElementById("khmerWord"), !khmerElement) return;
-            khmerElement.style.position = "absolute", khmerElement.style.left = khmerX + "%", khmerElement.style
-                .top = khmerY + "%", khmerElement.style.transform = "translate(-50%, -50%)", khmerElement.style
-                .cursor = "grab", khmerElement.addEventListener("click", (e => { e.stopPropagation(),
-                    speakKhmerFromMain() })), khmerElement.addEventListener("touchstart", (e => handlePinchStart(
-                    e, "khmer")), { passive: !1 }), khmerElement.addEventListener("touchmove", (e =>
-                    handlePinchMove(e, "khmer")), { passive: !1 }), khmerElement.addEventListener(
-                "touchend", handlePinchEnd), khmerElement.addEventListener("wheel", (function(e) {
-                    if (e.ctrlKey) { e.preventDefault(); const t = e.deltaY > 0 ? -1 : 1;
-                        let n = userSetKhmerFontSize + t;
-                        n = Math.max(10, Math.min(150, n)), setKhmerFontSize(n) }
-                }), { passive: !1 });
-            let e, t, n, o, i = !1,
-                a = !1;
-            const r = r => {
-                r.preventDefault(), r.stopPropagation(), i = !0, a = !1;
-                const s = r.clientX ?? (r.touches ? r.touches[0].clientX : 0),
-                    l = r.clientY ?? (r.touches ? r.touches[0].clientY : 0);
-                e = s, t = l, n = khmerX, o = khmerY, khmerElement.style.cursor = "grabbing";
-                const d = r => {
-                        if (!i) return;
-                        r.preventDefault();
-                        const s = r.clientX ?? (r.touches ? r.touches[0].clientX : 0),
-                            l = r.clientY ?? (r.touches ? r.touches[0].clientY : 0),
-                            d = s - e,
-                            c = l - t;
-                        !a && (Math.abs(d) > 5 || Math.abs(c) > 5) && (a = !0);
-                        const m = canvas.getBoundingClientRect();
-                        let u = n / 100 * m.width,
-                            h = o / 100 * m.height + c;
-                        khmerX = (u + d) / m.width * 100, khmerY = h / m.height * 100, khmerElement.style
-                            .left = khmerX + "%", khmerElement.style.top = khmerY + "%"
-                    },
-                    c = () => { i = !1, khmerElement.style.cursor = "grab", a || speakKhmerFromMain(),
-                            saveAllDragPositions(), window.removeEventListener("mousemove", d), window
-                            .removeEventListener("mouseup", c), window.removeEventListener("touchmove",
-                                d), window.removeEventListener("touchend", c), forceShrink() };
-                window.addEventListener("mousemove", d), window.addEventListener("mouseup", c), window
-                    .addEventListener("touchmove", d, { passive: !1 }), window.addEventListener(
-                    "touchend", c)
+            khmerElement = document.getElementById("khmerWord");
+            if (!khmerElement) return;
+            // Add a closure flag to track long press for Khmer
+            let khmerLongPressTriggered = false;
+
+            // Modified long-press handler: do NOT preventDefault on touchstart,
+            // so that click event can fire on tap.
+            const newOnKhmerPointerDown = function(e) {
+                // Only prevent default for mouse to avoid text selection, but not for touch
+                if (e.type === 'mousedown') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                } else if (e.type === 'touchstart') {
+                    // Do NOT preventDefault or stopPropagation – let click fire
+                    // But we need to prevent scrolling on drag later.
+                    // We'll handle touchmove separately.
+                }
+                let timer = null;
+                let moved = false;
+                const onMove = (ev) => {
+                    moved = true;
+                    if (timer) clearTimeout(timer);
+                };
+                const onEnd = () => {
+                    if (timer) clearTimeout(timer);
+                    // Reset flag after a short delay so click event can run first
+                    setTimeout(() => {
+                        khmerLongPressTriggered = false;
+                    }, 150);
+                    window.removeEventListener("mousemove", onMove);
+                    window.removeEventListener("touchmove", onMove);
+                    window.removeEventListener("mouseup", onEnd);
+                    window.removeEventListener("touchend", onEnd);
+                };
+                // For touch, we need to detect long press without blocking click.
+                // We'll set a timer, but if the user taps (quick), the timer won't fire.
+                timer = setTimeout(async () => {
+                    if (!moved && !copyLocked) {
+                        const text = khmerElement.innerText;
+                        if (text) {
+                            khmerLongPressTriggered = true;
+                            if (isIOS) {
+                                showCopyPopupWithButton(text, "Khmer");
+                            } else {
+                                await copyTextDirectly(text, "Khmer");
+                            }
+                        }
+                    }
+                    onEnd();
+                }, 500);
+                // For touch, we need to listen to touchmove/touchend
+                if (e.type === 'touchstart') {
+                    window.addEventListener("touchmove", onMove);
+                    window.addEventListener("touchend", onEnd);
+                } else {
+                    window.addEventListener("mousemove", onMove);
+                    window.addEventListener("mouseup", onEnd);
+                }
             };
-            khmerElement.addEventListener("mousedown", r), khmerElement.addEventListener("touchstart", r, { passive: !1 }),
-                khmerElement.addEventListener("mousedown", onKhmerPointerDown), khmerElement.addEventListener(
-                    "touchstart", onKhmerPointerDown, { passive: !1 })
+
+            khmerElement.style.position = "absolute";
+            khmerElement.style.left = khmerX + "%";
+            khmerElement.style.top = khmerY + "%";
+            khmerElement.style.transform = "translate(-50%, -50%)";
+            khmerElement.style.cursor = "grab";
+
+            // Click event with long-press check
+            khmerElement.addEventListener("click", (e => {
+                e.stopPropagation();
+                // If long press was triggered, don't speak
+                if (khmerLongPressTriggered) {
+                    khmerLongPressTriggered = false;
+                    return;
+                }
+                // Also check if copy popup is active
+                if (copyLocked) {
+                    return;
+                }
+                speakKhmerFromMain();
+            }));
+
+            // Use the new pointer down handler for both mouse and touch
+            khmerElement.addEventListener("mousedown", newOnKhmerPointerDown);
+            khmerElement.addEventListener("touchstart", newOnKhmerPointerDown, { passive: true }); // passive: true to allow click
+
+            khmerElement.addEventListener("touchstart", (e => handlePinchStart(e, "khmer")), { passive: false });
+            khmerElement.addEventListener("touchmove", (e => handlePinchMove(e, "khmer")), { passive: false });
+            khmerElement.addEventListener("touchend", handlePinchEnd);
+
+            khmerElement.addEventListener("wheel", (function(e) {
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    const t = e.deltaY > 0 ? -1 : 1;
+                    let n = userSetKhmerFontSize + t;
+                    n = Math.max(10, Math.min(150, n));
+                    setKhmerFontSize(n);
+                }
+            }), { passive: false });
+
+            // Drag logic for Khmer (adjusted for touch)
+            let dragActiveLocal = false;
+            let startXLocal = 0,
+                startYLocal = 0;
+            let startLeftLocal = 0,
+                startTopLocal = 0;
+            let hasMovedLocal = false;
+
+            const onKhmerDragStart = (ev) => {
+                // Only prevent default if we are starting a drag, but we can't know yet.
+                // We'll use a timer to start drag, but we need to track movement.
+                // Instead, we'll use a simpler approach: on mousedown/touchstart, record initial position,
+                // and if move > threshold, start dragging and prevent default on touchmove.
+                const touch = ev.clientX !== undefined ? ev : (ev.touches ? ev.touches[0] : null);
+                if (!touch) return;
+                const cx = touch.clientX || 0;
+                const cy = touch.clientY || 0;
+                startXLocal = cx;
+                startYLocal = cy;
+                const rect = khmerElement.getBoundingClientRect();
+                startLeftLocal = khmerX;
+                startTopLocal = khmerY;
+                hasMovedLocal = false;
+                dragActiveLocal = true;
+                khmerElement.style.cursor = "grabbing";
+
+                const onMove = (ev2) => {
+                    if (!dragActiveLocal) return;
+                    const t2 = ev2.clientX !== undefined ? ev2 : (ev2.touches ? ev2.touches[0] : null);
+                    if (!t2) return;
+                    const cx2 = t2.clientX || 0;
+                    const cy2 = t2.clientY || 0;
+                    const dx = cx2 - startXLocal;
+                    const dy = cy2 - startYLocal;
+                    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+                        hasMovedLocal = true;
+                        // Prevent default only when dragging
+                        ev2.preventDefault();
+                    }
+                    const areaRect = canvas.getBoundingClientRect();
+                    let newX = startLeftLocal + (dx / areaRect.width) * 100;
+                    let newY = startTopLocal + (dy / areaRect.height) * 100;
+                    khmerX = newX;
+                    khmerY = newY;
+                    khmerElement.style.left = khmerX + "%";
+                    khmerElement.style.top = khmerY + "%";
+                };
+
+                const onEnd = () => {
+                    dragActiveLocal = false;
+                    khmerElement.style.cursor = "grab";
+                    if (!hasMovedLocal) {
+                        // If no drag, the click event will handle speech
+                    }
+                    saveAllDragPositions();
+                    forceShrink();
+                    window.removeEventListener("mousemove", onMove);
+                    window.removeEventListener("mouseup", onEnd);
+                    window.removeEventListener("touchmove", onMove);
+                    window.removeEventListener("touchend", onEnd);
+                };
+
+                window.addEventListener("mousemove", onMove);
+                window.addEventListener("mouseup", onEnd);
+                window.addEventListener("touchmove", onMove, { passive: false });
+                window.addEventListener("touchend", onEnd);
+            };
+
+            khmerElement.addEventListener("mousedown", onKhmerDragStart);
+            khmerElement.addEventListener("touchstart", onKhmerDragStart, { passive: true });
         }
 
         function initFloatingMenuDrag() {
@@ -5946,7 +6244,27 @@
             const e = document.getElementById("qrPopupOverlay"),
                 t = document.getElementById("qrCloseBtn");
             t && t.addEventListener("click", (() => e.style.display = "none")), e.addEventListener("click", (t => { t
-                    .target === e && (e.style.display = "none") }))
+                    .target === e && (e.style.display = "none") }));
+
+            // ---- QR image click: load default sheet ----
+            const qrImg = document.querySelector('#qrPopupOverlay .qr-card img');
+            if (qrImg) {
+                qrImg.addEventListener('click', async function(ev) {
+                    ev.stopPropagation();
+                    const overlay = document.getElementById('qrPopupOverlay');
+                    if (!overlay) return;
+                    // Load the default sheet
+                    const sheetId = DEFAULT_SHEET_ID;
+                    const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
+                    currentSheetId = sheetId;
+                    currentSheetUrl = sheetUrl;
+                    addSheetToHistory(sheetId);
+                    showToast(`📥 Loading default sheet...`);
+                    await loadSheetData(true);
+                    // Close the QR overlay after loading
+                    overlay.style.display = 'none';
+                });
+            }
         }
 
         function applyRateDisplay() {
@@ -6066,9 +6384,12 @@
                 orderBtn.addEventListener('click', toggleSpeechOrder);
             }
 
-            if (vocabList.length === 0) {
-                await initializeSheet();
-            } else {
+            // --- REMOVED auto-load: vocabList remains empty on first load ---
+            // if (vocabList.length === 0) {
+            //     await initializeSheet();
+            // }
+            // --- Instead, build cache and render empty state ---
+            if (vocabList.length > 0) {
                 buildFirstCharCache();
                 if (appMode === "random") {
                     if (history.length === 0 && vocabList.length > 0) {
@@ -6086,6 +6407,12 @@
                     if (normalCurrentIdx >= vocabList.length) normalCurrentIdx = 0;
                     renderNormalSidebar();
                 }
+            } else {
+                // Empty state: render empty sidebar, clear display
+                renderSidebarUI();
+                updateChineseDisplay("");
+                document.getElementById("khmerWord").innerText = "";
+                document.getElementById("studioTitleSpan").innerText = "Vocab Master";
             }
 
             initNightMode();
@@ -6142,14 +6469,14 @@
                     e.stopPropagation();
                     const overlay = document.getElementById("qrPopupOverlay");
                     if (overlay) overlay.style.display = "flex";
-                    await loadSheetData(true);
+                    // DO NOT auto-load sheet here — user must tap QR image to load
                 });
                 newAba.addEventListener("touchstart", async function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     const overlay = document.getElementById("qrPopupOverlay");
                     if (overlay) overlay.style.display = "flex";
-                    await loadSheetData(true);
+                    // DO NOT auto-load sheet here — user must tap QR image to load
                 }, { passive: false });
             }
 
