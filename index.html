@@ -2310,29 +2310,32 @@
                     </div>
                     <div id=voiceControls class=control-group>
                         <div class=voice-row><label style=font-weight:700>🎙️ Khmer Voice</label><select id=kmVoiceSelect class=voice-select><option value=km-KH-SreymomNeural>Sreymom (Female)</option><option value=km-KH-PisethNeural>Piseth (Male)</option></select></div>
-                        <div class=voice-row><label style=font-weight:700>🇨🇳 Chinese Voice</label><select id=zhVoiceSelect class=voice-select><option value=zh-CN-XiaoxiaoNeural>Xiaoxiao (女声)</option><option value=zh-CN-YunxiNeural selected>Yunxi (男声)</option><option value=zh-CN-YunyangNeural>Yunyang (新闻)</option><option value=zh-CN-XiaoyiNeural>Xiaoyi (教学)</option>
- <option value="zh-CN-XiaoxiaoNeural">Xiaoxiao (女声·通用)</option>
-    <option value="zh-CN-XiaoyiNeural">Xiaoyi (教学)</option>
-    <option value="zh-CN-YunxiNeural" selected>Yunxi (男声·通用)</option>
-    <option value="zh-CN-YunyangNeural">Yunyang (新闻)</option>
-    <option value="zh-CN-XiaohanNeural">Xiaohan (温柔女声)</option>
-    <option value="zh-CN-XiaomengNeural">Xiaomeng (欢快女声)</option>
-    <option value="zh-CN-XiaomoNeural">Xiaomo (轻柔女声)</option>
-    <option value="zh-CN-XiaoqiuNeural">Xiaoqiu (叙述女声)</option>
-    <option value="zh-CN-XiaoruiNeural">Xiaorui (成熟女声)</option>
-    <option value="zh-CN-XiaoshuangNeural">Xiaoshuang (年轻女声)</option>
-    <option value="zh-CN-XiaoxiaNeural">Xiaoxia (活泼女声)</option>
-    <option value="zh-CN-XiaoxuanNeural">Xiaoxuan (甜美女声)</option>
-    <option value="zh-CN-XiaoyanNeural">Xiaoyan (平静女声)</option>
-    <option value="zh-CN-XiaoyouNeural">Xiaoyou (儿童女声)</option>
-    <option value="zh-CN-XiaozhenNeural">Xiaozhen (成熟女声)</option>
-    <option value="zh-CN-YunfengNeural">Yunfeng (年轻男声)</option>
-    <option value="zh-CN-YunhaoNeural">Yunhao (成年男声)</option>
-    <option value="zh-CN-YunjianNeural">Yunjian (体育男声)</option>
-    <option value="zh-CN-YunxiaNeural">Yunxia (叙述男声)</option>
-    <option value="zh-CN-YunyeNeural">Yunye (休闲男声)</option>
-    <option value="zh-CN-YunzeNeural">Yunze (卡通男声)</option>
-</select></div>
+                        <div class=voice-row><label style=font-weight:700>🇨🇳 Chinese Voice</label>
+                            <select id=zhVoiceSelect class=voice-select>
+                                <!-- Static fallback options – will be replaced by dynamic loader -->
+                                <option value="zh-CN-XiaoxiaoNeural">Xiaoxiao (女声·通用)</option>
+                                <option value="zh-CN-XiaoyiNeural">Xiaoyi (教学)</option>
+                                <option value="zh-CN-YunxiNeural" selected>Yunxi (男声·通用)</option>
+                                <option value="zh-CN-YunyangNeural">Yunyang (新闻)</option>
+                                <option value="zh-CN-XiaohanNeural">Xiaohan (温柔女声)</option>
+                                <option value="zh-CN-XiaomengNeural">Xiaomeng (欢快女声)</option>
+                                <option value="zh-CN-XiaomoNeural">Xiaomo (轻柔女声)</option>
+                                <option value="zh-CN-XiaoqiuNeural">Xiaoqiu (叙述女声)</option>
+                                <option value="zh-CN-XiaoruiNeural">Xiaorui (成熟女声)</option>
+                                <option value="zh-CN-XiaoshuangNeural">Xiaoshuang (年轻女声)</option>
+                                <option value="zh-CN-XiaoxiaNeural">Xiaoxia (活泼女声)</option>
+                                <option value="zh-CN-XiaoxuanNeural">Xiaoxuan (甜美女声)</option>
+                                <option value="zh-CN-XiaoyanNeural">Xiaoyan (平静女声)</option>
+                                <option value="zh-CN-XiaoyouNeural">Xiaoyou (儿童女声)</option>
+                                <option value="zh-CN-XiaozhenNeural">Xiaozhen (成熟女声)</option>
+                                <option value="zh-CN-YunfengNeural">Yunfeng (年轻男声)</option>
+                                <option value="zh-CN-YunhaoNeural">Yunhao (成年男声)</option>
+                                <option value="zh-CN-YunjianNeural">Yunjian (体育男声)</option>
+                                <option value="zh-CN-YunxiaNeural">Yunxia (叙述男声)</option>
+                                <option value="zh-CN-YunyeNeural">Yunye (休闲男声)</option>
+                                <option value="zh-CN-YunzeNeural">Yunze (卡通男声)</option>
+                            </select>
+                        </div>
                         <div class=size-row><label>🇨🇳 Speech Rate</label><input type=range id=zhRateSlider class=size-slider min=-100 max=100 value=0 step=5><span id=zhRateVal>0%</span></div>
                         <div class=size-row><label>ZH Repetitions</label><input type=range id=zhReps class=size-slider min=0 max=10 value=1><span id=repVal>1</span></div>
                         <div class=size-row><label>KM Repetitions</label><input type=range id=kmReps class=size-slider min=0 max=10 value=1><span id=kmRepVal>1</span></div>
@@ -6345,6 +6348,57 @@
             return 1;
         }
 
+        // ============================================================
+        // DYNAMIC VOICE LOADER (added)
+        // ============================================================
+        async function loadChineseVoices() {
+            try {
+                const res = await fetch('/voices');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                const allVoices = data.voices || [];
+
+                // Filter only zh-CN voices
+                const chineseVoices = allVoices.filter(v => v.startsWith('zh-CN-'));
+
+                const select = document.getElementById('zhVoiceSelect');
+                if (!select) return;
+
+                // Remember current selection
+                const currentValue = select.value;
+
+                // Clear existing options
+                select.innerHTML = '';
+
+                // Add options for each available voice
+                chineseVoices.forEach(voiceId => {
+                    const opt = document.createElement('option');
+                    opt.value = voiceId;
+
+                    // Create a human‑friendly label
+                    let label = voiceId.replace('zh-CN-', '').replace('Neural', '');
+                    // Add gender emoji (optional)
+                    const femaleNames = ['Xiaoxiao', 'Xiaoyi', 'Xiaohan', 'Xiaomeng', 'Xiaomo', 'Xiaoqiu', 'Xiaorui', 'Xiaoshuang', 'Xiaoxia', 'Xiaoxuan', 'Xiaoyan', 'Xiaoyou', 'Xiaozhen'];
+                    const isFemale = femaleNames.some(name => voiceId.includes(name));
+                    opt.textContent = label + (isFemale ? ' ♀' : ' ♂');
+                    select.appendChild(opt);
+                });
+
+                // Restore previous selection if possible
+                if (currentValue && chineseVoices.includes(currentValue)) {
+                    select.value = currentValue;
+                } else if (select.options.length > 0) {
+                    select.value = select.options[0].value;
+                }
+
+                console.log(`✅ Loaded ${chineseVoices.length} Chinese voices`);
+            } catch (e) {
+                console.warn('Could not load voices, using static list:', e);
+                // Keep the static options as fallback – do nothing
+            }
+        }
+        // ============================================================
+
         const styleInputs = [
             "mZhFont", "mZhColor", "mZhSize", "mKmFont", "mKmColor", "mKmSize",
             "sZhFont", "sZhColor", "sZhSize", "sKmFont", "sKmColor", "sKmSize",
@@ -6397,6 +6451,9 @@
 
             loadSettings();
             loadSheetHistory();
+
+            // 👇 Dynamically load Chinese voices
+            await loadChineseVoices();
 
             const orderBtn = document.getElementById('speechOrderToggle');
             if (orderBtn) {
