@@ -2791,12 +2791,20 @@
         }
 
         async function loadApiAndPasswordFromSheet() {
-            const e = currentSheetId || DEFAULT_SHEET_ID,
-                t = await findHeaderAndRows(e, "API", [1, 2]);
-            if (t.success) { const e = t.rows.row1?.value || "",
-                    n = t.rows.row2?.value || "";
-                return detectedApiUrl = e && e.startsWith("http") ? e : "", dynamicPassword = n || "012891556", !0 }
-            return !1
+            const e = currentSheetId || DEFAULT_SHEET_ID;
+            if (!e) return false;
+            const t = await findHeaderAndRows(e, "API", [1, 2]);
+            if (t.success) {
+                const e = t.rows.row1?.value || "";
+                const n = t.rows.row2?.value || "";
+                detectedApiUrl = e && e.startsWith("http") ? e : "";
+                dynamicPassword = n || "012891556";
+                // Save to localStorage so they're remembered
+                safeSetItem("vocabMaster_ApiUrl", detectedApiUrl);
+                safeSetItem("vocabMaster_Password", dynamicPassword);
+                return true;
+            }
+            return false;
         }
 
         // ---- RETRY TOAST ----
@@ -3052,7 +3060,12 @@
                 vocabList = s, vocabularyData = vocabList, editUnlocked = !0, updateEditButtonsState();
                 await loadApiAndPasswordFromSheet();
                 buildFirstCharCache();
-                saveAllData(), "random" === appMode ? (historyIndex >= 0 && history[historyIndex] < vocabList.length ||
+                saveAllData();
+                // Save sheet ID to localStorage
+                if (currentSheetId) {
+                    safeSetItem("vocabMaster_SheetId", currentSheetId);
+                }
+                "random" === appMode ? (historyIndex >= 0 && history[historyIndex] < vocabList.length ||
                     pickRandom(), sidebarIndices.length > 0 ? renderRandomSidebar(sidebarIndices[sidebarFocusIdx] || 0) :
                     vocabList.length && pickRandom()) : (normalCurrentIdx >= vocabList.length && (normalCurrentIdx = 0),
                     normalCurrentPage = getNormalPageForIndex(normalCurrentIdx), renderNormalSidebar());
@@ -5310,6 +5323,25 @@
                 bottomCharVisible = true;
             }
 
+            // ===== RESTORE SHEET ID, API URL, AND PASSWORD =====
+            const sheetId = safeGetItem("vocabMaster_SheetId", "");
+            if (sheetId) {
+                currentSheetId = sheetId;
+                console.log("🔑 Restored sheet ID:", sheetId);
+            }
+
+            const apiUrl = safeGetItem("vocabMaster_ApiUrl", "");
+            if (apiUrl) {
+                detectedApiUrl = apiUrl;
+                console.log("🔗 Restored API URL:", apiUrl);
+            }
+
+            const password = safeGetItem("vocabMaster_Password", "");
+            if (password) {
+                dynamicPassword = password;
+                console.log("🔒 Restored password");
+            }
+
             const compressedStr = safeGetItem("vocabMaster_List_Compressed", null);
             if (compressedStr) {
                 try {
@@ -6451,6 +6483,16 @@
 
             loadSettings();
             loadSheetHistory();
+
+            // 👇 If we have a sheet ID, fetch the API and password from the sheet (refresh from source)
+            if (currentSheetId) {
+                try {
+                    await loadApiAndPasswordFromSheet();
+                    console.log("✅ API and password refreshed from sheet");
+                } catch (e) {
+                    console.warn("Could not refresh API/password from sheet, using cached values:", e);
+                }
+            }
 
             // 👇 Dynamically load Chinese voices
             await loadChineseVoices();
