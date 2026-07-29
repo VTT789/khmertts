@@ -2807,10 +2807,10 @@
             return false;
         }
 
-        // ---- RETRY TOAST ----
+        // ---- RETRY TOAST (kept for other operations like add/update) ----
         let retryToastElement = null;
         let retryResolve = null;
-        let __isRetry = false; // flag to suppress pickRandom during retry flow
+        let __isRetry = false; // still used for add/update operations
 
         function showRetryToast(message, retryFn) {
             // Remove any existing retry toast
@@ -3976,7 +3976,8 @@
             setTimeout(syncPageInput, 50);
         };
 
-        // ===== FIXED: delete functions with optimistic search removal + retry suppression =====
+        // ===== FIXED: delete functions WITHOUT retry toast =====
+        // Only show error toast on failure – no retry
         window.deleteFromAddSearch = function(idx, row, searchQuery) {
             const item = vocabList[idx];
             if (!item) { showToast("Item not found"); return }
@@ -4005,8 +4006,8 @@
                     buildFirstCharCache();
                     saveAllData();
                     renderSidebarUI();
-                    // After deletion, if sidebar is empty, call pickRandom (unless this is retry)
-                    if (!__isRetry && vocabList.length > 0 && sidebarIndices.length === 0) {
+                    // After deletion, if sidebar is empty, call pickRandom
+                    if (vocabList.length > 0 && sidebarIndices.length === 0) {
                         pickRandom();
                     } else if (vocabList.length === 0) {
                         updateChineseDisplay("");
@@ -4027,20 +4028,12 @@
                     }
                     showToast("✅ Deleted successfully");
                 } catch (err) {
-                    // Failure: remove from pendingDeletions, show retry toast
+                    // Failure: remove from pendingDeletions, show error toast (NO RETRY)
                     pendingDeletions.delete(idx);
                     if (addChineseInput && window.addModalPerformSearch) {
                         window.addModalPerformSearch(addChineseInput.value);
                     }
-                    const retryFn = () => {
-                        // Retry: add back to pendingDeletions, then call deleteVocabByRow
-                        pendingDeletions.add(idx);
-                        if (addChineseInput && window.addModalPerformSearch) {
-                            window.addModalPerformSearch(addChineseInput.value);
-                        }
-                        return deleteVocabByRow(rowToDelete);
-                    };
-                    showRetryToast("retry Tap ⟳", retryFn);
+                    showToast("❌ Delete failed: " + err.message);
                 }
             }, "delete vocabulary");
         };
@@ -4072,7 +4065,7 @@
                     buildFirstCharCache();
                     saveAllData();
                     renderSidebarUI();
-                    if (!__isRetry && vocabList.length > 0 && sidebarIndices.length === 0) {
+                    if (vocabList.length > 0 && sidebarIndices.length === 0) {
                         pickRandom();
                     } else if (vocabList.length === 0) {
                         updateChineseDisplay("");
@@ -4096,14 +4089,7 @@
                     if (editChineseInput && window.editModalPerformSearch) {
                         window.editModalPerformSearch(editChineseInput.value);
                     }
-                    const retryFn = () => {
-                        pendingDeletions.add(idx);
-                        if (editChineseInput && window.editModalPerformSearch) {
-                            window.editModalPerformSearch(editChineseInput.value);
-                        }
-                        return deleteVocabByRow(rowToDelete);
-                    };
-                    showRetryToast("retry Tap ⟳", retryFn);
+                    showToast("❌ Delete failed: " + err.message);
                 }
             }, "delete vocabulary");
         };
@@ -4775,12 +4761,7 @@
                             historyIndex = 0;
                             renderRandomSidebar(newIdx);
                         } else if (vocabList.length > 0) {
-                            if (!__isRetry) pickRandom();
-                            else {
-                                // During retry, just load the first available word
-                                const firstIdx = vocabList.findIndex((_, i) => !pendingDeletions.has(i));
-                                if (firstIdx >= 0) loadWordByMode(firstIdx, true);
-                            }
+                            pickRandom();
                         } else {
                             renderSidebarUI();
                             updateChineseDisplay("");
@@ -4794,14 +4775,7 @@
                     if (editChineseInput && window.editModalPerformSearch) {
                         window.editModalPerformSearch(editChineseInput.value);
                     }
-                    const retryFn = () => {
-                        pendingDeletions.add(idx);
-                        if (editChineseInput && window.editModalPerformSearch) {
-                            window.editModalPerformSearch(editChineseInput.value);
-                        }
-                        return deleteVocabByRow(rowToDelete);
-                    };
-                    showRetryToast("retry Tap ⟳", retryFn);
+                    showToast("❌ Delete failed: " + err.message);
                 }
             };
             document.getElementById("deleteRowBtn").onclick = () => showPasswordProtectionModal(deleteAction,
