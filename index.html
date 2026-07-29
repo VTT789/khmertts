@@ -4823,6 +4823,7 @@
         let currentAudio = null,
             speechQueue = [],
             isProcessingQueue = !1;
+        let isSpeaking = false; // lock to prevent concurrent speech
 
         async function callEdgeTTS(e, t, n = null) {
             if (e) try { let o = new URLSearchParams;
@@ -4873,42 +4874,62 @@
             t && (killAllSpeech(), speakKhmerEdge(t)) }
 
         async function speakAutoSequence(chinese, khmer) {
-            killAllSpeech();
-
-            const zhReps = parseInt(document.getElementById('zhReps').value) || 1;
-            const kmReps = parseInt(document.getElementById('kmReps').value) || 1;
-            const zhVoice = document.getElementById('zhVoiceSelect').value;
-            const kmVoice = document.getElementById('kmVoiceSelect').value;
-            const rateSlider = document.getElementById('zhRateSlider');
-            let rate = rateSlider ? parseInt(rateSlider.value) : 0;
-            let rateStr = rate === 0 ? '0%' : (rate > 0 ? '+' + rate + '%' : rate + '%');
-
-            const order = getSpeechOrder();
-
-            const speakZh = async () => {
-                if (zhReps > 0 && chinese && chinese.trim()) {
-                    for (let i = 0; i < zhReps; i++) {
-                        await callEdgeTTS(chinese, zhVoice, rateStr);
-                    }
-                }
-            };
-            const speakKm = async () => {
-                if (kmReps > 0 && khmer && khmer.trim()) {
-                    for (let i = 0; i < kmReps; i++) {
-                        await callEdgeTTS(khmer, kmVoice, null);
-                    }
-                }
-            };
-
-            if (order === 'zh_first') {
-                await speakZh();
-                await speakKm();
-            } else {
-                await speakKm();
-                await speakZh();
+            // Prevent overlapping speech
+            if (isSpeaking) {
+                // If already speaking, stop current and wait a moment
+                killAllSpeech();
+                await new Promise(resolve => setTimeout(resolve, 80));
+                // Check again if still speaking (should be false after kill)
+                if (isSpeaking) return;
             }
+            isSpeaking = true;
+            try {
+                killAllSpeech();
+                // Give time for audio cleanup on mobile
+                await new Promise(resolve => setTimeout(resolve, 60));
 
-            if (autoActive) startAutoCycle();
+                const zhReps = parseInt(document.getElementById('zhReps').value) || 1;
+                const kmReps = parseInt(document.getElementById('kmReps').value) || 1;
+                const zhVoice = document.getElementById('zhVoiceSelect').value;
+                const kmVoice = document.getElementById('kmVoiceSelect').value;
+                const rateSlider = document.getElementById('zhRateSlider');
+                let rate = rateSlider ? parseInt(rateSlider.value) : 0;
+                let rateStr = rate === 0 ? '0%' : (rate > 0 ? '+' + rate + '%' : rate + '%');
+
+                const order = getSpeechOrder();
+
+                const speakZh = async () => {
+                    if (zhReps > 0 && chinese && chinese.trim()) {
+                        for (let i = 0; i < zhReps; i++) {
+                            if (!isSpeaking) break; // allow interruption
+                            await callEdgeTTS(chinese, zhVoice, rateStr);
+                            // small delay between repetitions
+                            await new Promise(resolve => setTimeout(resolve, 50));
+                        }
+                    }
+                };
+                const speakKm = async () => {
+                    if (kmReps > 0 && khmer && khmer.trim()) {
+                        for (let i = 0; i < kmReps; i++) {
+                            if (!isSpeaking) break;
+                            await callEdgeTTS(khmer, kmVoice, null);
+                            await new Promise(resolve => setTimeout(resolve, 50));
+                        }
+                    }
+                };
+
+                if (order === 'zh_first') {
+                    await speakZh();
+                    await speakKm();
+                } else {
+                    await speakKm();
+                    await speakZh();
+                }
+
+                if (autoActive) startAutoCycle();
+            } finally {
+                isSpeaking = false;
+            }
         }
 
         let speechOrder = 'zh_first';
