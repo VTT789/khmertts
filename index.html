@@ -2996,6 +2996,123 @@
         // ---- Pending deletions set for optimistic search removal ----
         const pendingDeletions = new Set();
 
+        // ---- Delete lock to prevent concurrent deletions ----
+        let isDeleting = false;
+
+        // ---- Speech cancellation token ----
+        let _speechCancelToken = null;
+
+        function _killAudioOnly() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.src = "";
+                currentAudio = null;
+            }
+            speechQueue = [];
+            isProcessingQueue = false;
+        }
+
+        // override killAllSpeech to also cancel the speech token
+        const origKillAllSpeech = window.killAllSpeech || function() {
+            currentAudio && (currentAudio.pause(), currentAudio.src = "", currentAudio = null);
+            speechQueue = [];
+            isProcessingQueue = false;
+        };
+
+        window.killAllSpeech = function() {
+            if (_speechCancelToken) {
+                _speechCancelToken.cancelled = true;
+                _speechCancelToken = null;
+            }
+            origKillAllSpeech();
+        };
+
+        // also patch the original killAllSpeech variable if it exists
+        const killAllSpeech = window.killAllSpeech;
+
+        // ---- FIXED speakAutoSequence with cancellation token ----
+        async function speakAutoSequence(chinese, khmer) {
+            // Guard: if no text, just return
+            if (!chinese && !khmer) return;
+
+            // Cancel any previous speech
+            if (_speechCancelToken) {
+                _speechCancelToken.cancelled = true;
+            }
+            // Create a new token for this speech
+            const token = { cancelled: false };
+            _speechCancelToken = token;
+
+            // Kill current audio without cancelling our new token
+            _killAudioOnly();
+            await new Promise(resolve => setTimeout(resolve, 30));
+            if (token.cancelled) return;
+
+            // If auto is active, clear any pending timer
+            if (autoTimer) {
+                clearTimeout(autoTimer);
+                autoTimer = null;
+            }
+
+            const zhReps = parseInt(document.getElementById('zhReps').value) || 1;
+            const kmReps = parseInt(document.getElementById('kmReps').value) || 1;
+            const zhVoice = document.getElementById('zhVoiceSelect').value;
+            const kmVoice = document.getElementById('kmVoiceSelect').value;
+            const rateSlider = document.getElementById('zhRateSlider');
+            let rate = rateSlider ? parseInt(rateSlider.value) : 0;
+            let rateStr = rate === 0 ? '0%' : (rate > 0 ? '+' + rate + '%' : rate + '%');
+            const order = getSpeechOrder();
+
+            const speakZh = async () => {
+                if (zhReps > 0 && chinese && chinese.trim()) {
+                    for (let i = 0; i < zhReps; i++) {
+                        if (token.cancelled) break;
+                        try {
+                            await callEdgeTTS(chinese, zhVoice, rateStr);
+                        } catch (e) {
+                            if (!token.cancelled) console.warn('TTS error:', e);
+                        }
+                        if (token.cancelled) break;
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+                }
+            };
+
+            const speakKm = async () => {
+                if (kmReps > 0 && khmer && khmer.trim()) {
+                    for (let i = 0; i < kmReps; i++) {
+                        if (token.cancelled) break;
+                        try {
+                            await callEdgeTTS(khmer, kmVoice, null);
+                        } catch (e) {
+                            if (!token.cancelled) console.warn('TTS error:', e);
+                        }
+                        if (token.cancelled) break;
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+                }
+            };
+
+            try {
+                if (order === 'zh_first') {
+                    await speakZh();
+                    if (token.cancelled) return;
+                    await speakKm();
+                } else {
+                    await speakKm();
+                    if (token.cancelled) return;
+                    await speakZh();
+                }
+            } catch (e) {
+                console.warn('Speech sequence error:', e);
+            }
+
+            if (token.cancelled) return;
+            if (autoActive) startAutoCycle();
+        }
+
+        // -------- end of fixed speakAutoSequence ---------
+
         function openSheetToKhmerColumn(e) {
             if (!currentSheetUrl) { showToast("❌ No sheet loaded"); return }
             const t = currentSheetUrl + "/edit#gid=0&range=D" + e;
@@ -3976,14 +4093,17 @@
             setTimeout(syncPageInput, 50);
         };
 
-        // ===== FIXED: delete functions WITHOUT retry toast =====
-        // Only show error toast on failure – no retry
+        // ===== FIXED: delete functions with lock + use 'row' param =====
         window.deleteFromAddSearch = function(idx, row, searchQuery) {
+            if (isDeleting) {
+                showToast("⏳ Please wait, previous deletion in progress...");
+                return;
+            }
             const item = vocabList[idx];
             if (!item) { showToast("Item not found"); return }
             const displayNum = getDisplayNumberFromArrayIndex(idx);
             if (!confirm(`⚠️ Delete Display #${displayNum} (${item.chinese || item.khmer})?`)) return;
-            const rowToDelete = item.sheetRow;
+            const rowToDelete = row; // use the passed row param directly
 
             // Optimistic: add to pendingDeletions and re-render search results immediately
             pendingDeletions.add(idx);
@@ -3993,6 +4113,7 @@
             }
 
             showPasswordProtectionModal(async function() {
+                isDeleting = true;
                 try {
                     await deleteVocabByRow(rowToDelete);
                     // Success: remove from vocabList, update sheetRows, rebuild cache, re-render
@@ -4028,22 +4149,28 @@
                     }
                     showToast("✅ Deleted successfully");
                 } catch (err) {
-                    // Failure: remove from pendingDeletions, show error toast (NO RETRY)
+                    // Failure: remove from pendingDeletions, show error toast
                     pendingDeletions.delete(idx);
                     if (addChineseInput && window.addModalPerformSearch) {
                         window.addModalPerformSearch(addChineseInput.value);
                     }
                     showToast("❌ Delete failed: " + err.message);
+                } finally {
+                    isDeleting = false;
                 }
             }, "delete vocabulary");
         };
 
         window.deleteFromEditSearch = function(idx, row, searchQuery) {
+            if (isDeleting) {
+                showToast("⏳ Please wait, previous deletion in progress...");
+                return;
+            }
             const item = vocabList[idx];
             if (!item) { showToast("Item not found"); return }
             const displayNum = getDisplayNumberFromArrayIndex(idx);
             if (!confirm(`⚠️ Delete Display #${displayNum} (${item.chinese || item.khmer})?`)) return;
-            const rowToDelete = item.sheetRow;
+            const rowToDelete = row; // use passed row param
 
             // Optimistic: add to pendingDeletions and re-render search results immediately
             pendingDeletions.add(idx);
@@ -4053,6 +4180,7 @@
             }
 
             showPasswordProtectionModal(async function() {
+                isDeleting = true;
                 try {
                     await deleteVocabByRow(rowToDelete);
                     pendingDeletions.delete(idx);
@@ -4090,6 +4218,8 @@
                         window.editModalPerformSearch(editChineseInput.value);
                     }
                     showToast("❌ Delete failed: " + err.message);
+                } finally {
+                    isDeleting = false;
                 }
             }, "delete vocabulary");
         };
@@ -4215,6 +4345,7 @@
         }
 
         // ---- MODIFIED: showAddNewModal with heading row (button outside h3) and optimistic update ----
+        // ---- REMOVED retry on add error: now just shows a toast message ----
         function showAddNewModal() {
             if (!editUnlocked) return void showPasswordModal((() => { showAddNewModal() }));
             const e = document.createElement("div");
@@ -4294,7 +4425,7 @@
                 }
             };
 
-            // ===== MODIFIED: confirmAddBtn with optimistic update and retry =====
+            // ===== MODIFIED: confirmAddBtn with optimistic update and SIMPLE TOAST on error (no retry) =====
             document.getElementById("confirmAddBtn").onclick = () => {
                 const chinese = chineseInput.value.trim();
                 const khmer = khmerInput.value.trim();
@@ -4331,12 +4462,9 @@
                     window.addModalPerformSearch(chineseInput.value.trim());
                 }
 
-                // Fire-and-forget API call with retry on failure
+                // Fire-and-forget API call — on error: just show a toast message, no retry
                 addVocabToSheet(khmer, chinese).catch(err => {
-                    const retryFn = () => {
-                        return addVocabToSheet(khmer, chinese);
-                    };
-                    showRetryToast("retry Tap ⟳", retryFn);
+                    showToast("❌ Add failed: " + err.message);
                 });
             };
 
@@ -4670,7 +4798,7 @@
                 requestOpenSheetRow(window.currentEdit.row);
             };
 
-            // ===== MODIFIED: confirmUpdate with optimistic update and retry =====
+            // ===== MODIFIED: confirmUpdate with optimistic update and retry (kept as original) =====
             const confirmUpdate = () => {
                 const ch = editChineseInput.value.trim();
                 const km = editKhmerInput.value.trim();
@@ -4823,7 +4951,6 @@
         let currentAudio = null,
             speechQueue = [],
             isProcessingQueue = !1;
-        let isSpeaking = false; // lock to prevent concurrent speech
 
         async function callEdgeTTS(e, t, n = null) {
             if (e) try { let o = new URLSearchParams;
@@ -4851,8 +4978,7 @@
         function enqueueSpeech(e, t, n = null) { e && (speechQueue.push({ text: e, voice: t, rate: n }),
                 processSpeechQueue()) }
 
-        function killAllSpeech() { currentAudio && (currentAudio.pause(), currentAudio.src = "", currentAudio = null),
-                speechQueue = [], isProcessingQueue = !1 }
+        // Note: killAllSpeech is already overridden above
 
         function speakChineseEdge(e) {
             if (!e) return;
@@ -4873,64 +4999,7 @@
                 t = e ? e.innerText : "";
             t && (killAllSpeech(), speakKhmerEdge(t)) }
 
-        async function speakAutoSequence(chinese, khmer) {
-            // Prevent overlapping speech
-            if (isSpeaking) {
-                // If already speaking, stop current and wait a moment
-                killAllSpeech();
-                await new Promise(resolve => setTimeout(resolve, 80));
-                // Check again if still speaking (should be false after kill)
-                if (isSpeaking) return;
-            }
-            isSpeaking = true;
-            try {
-                killAllSpeech();
-                // Give time for audio cleanup on mobile
-                await new Promise(resolve => setTimeout(resolve, 60));
-
-                const zhReps = parseInt(document.getElementById('zhReps').value) || 1;
-                const kmReps = parseInt(document.getElementById('kmReps').value) || 1;
-                const zhVoice = document.getElementById('zhVoiceSelect').value;
-                const kmVoice = document.getElementById('kmVoiceSelect').value;
-                const rateSlider = document.getElementById('zhRateSlider');
-                let rate = rateSlider ? parseInt(rateSlider.value) : 0;
-                let rateStr = rate === 0 ? '0%' : (rate > 0 ? '+' + rate + '%' : rate + '%');
-
-                const order = getSpeechOrder();
-
-                const speakZh = async () => {
-                    if (zhReps > 0 && chinese && chinese.trim()) {
-                        for (let i = 0; i < zhReps; i++) {
-                            if (!isSpeaking) break; // allow interruption
-                            await callEdgeTTS(chinese, zhVoice, rateStr);
-                            // small delay between repetitions
-                            await new Promise(resolve => setTimeout(resolve, 50));
-                        }
-                    }
-                };
-                const speakKm = async () => {
-                    if (kmReps > 0 && khmer && khmer.trim()) {
-                        for (let i = 0; i < kmReps; i++) {
-                            if (!isSpeaking) break;
-                            await callEdgeTTS(khmer, kmVoice, null);
-                            await new Promise(resolve => setTimeout(resolve, 50));
-                        }
-                    }
-                };
-
-                if (order === 'zh_first') {
-                    await speakZh();
-                    await speakKm();
-                } else {
-                    await speakKm();
-                    await speakZh();
-                }
-
-                if (autoActive) startAutoCycle();
-            } finally {
-                isSpeaking = false;
-            }
-        }
+        // NOTE: speakAutoSequence is now defined above with cancellation token
 
         let speechOrder = 'zh_first';
 
